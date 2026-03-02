@@ -3,6 +3,7 @@ package com.example.formBuilder.service;
 import com.example.formBuilder.dto.SubmissionRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormField;
+import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.FormRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -128,11 +129,11 @@ public class SubmissionService {
                                     + field.getMaxLength() + " characters");
                 }
 
-//                if (field.getPattern() != null &&
-//                        !stringValue.matches(field.getPattern())) {
-//                    throw new RuntimeException(
-//                            field.getFieldName() + " format invalid");
-//                }
+                if (field.getPattern() != null &&
+                        !stringValue.matches(field.getPattern())) {
+                    throw new ValidationException(
+                            field.getFieldName() + " format invalid");
+                }
             }
 
             case "number" -> {

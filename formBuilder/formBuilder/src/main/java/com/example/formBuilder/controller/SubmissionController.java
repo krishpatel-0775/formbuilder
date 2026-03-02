@@ -19,7 +19,6 @@ public class SubmissionController {
     @PostMapping
     public ResponseEntity<?> submitForm(@RequestBody SubmissionRequest request) {
 
-//        System.out.println("aave chhe...........................................");
         return ResponseEntity.ok(submissionService.submitForm(request));
     }
 }

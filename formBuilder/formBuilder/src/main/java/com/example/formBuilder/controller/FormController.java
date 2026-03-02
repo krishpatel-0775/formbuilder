@@ -4,6 +4,7 @@ package com.example.formBuilder.controller;
 import com.example.formBuilder.dto.FieldRequest;
 import com.example.formBuilder.dto.FormListDto;
 import com.example.formBuilder.dto.FormRequest;
+import com.example.formBuilder.dto.SubmissionRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.service.FormService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
@@ -38,5 +40,11 @@ public class FormController {
     @GetMapping("/{id}")
     public ResponseEntity<Form> getForm(@PathVariable Long id) {
         return ResponseEntity.ok(formService.getFormById(id));
+    }
+
+    @GetMapping("/data/{id}")
+    public ResponseEntity<List<Map<String, Object>>> getFormData(@PathVariable Long id) {
+
+        return ResponseEntity.ok(formService.getAllDataFromTable(id));
     }
 }

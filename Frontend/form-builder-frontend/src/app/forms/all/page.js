@@ -2,12 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { 
+  Clipboard, 
+  Table, 
+  ExternalLink, 
+  Plus, 
+  FileText,
+  CheckCircle 
+} from "lucide-react"; // npm install lucide-react
 
 export default function FormsListPage() {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState(null);
 
-  // ✅ Logic remains untouched
   useEffect(() => {
     fetch("http://localhost:9090/api/forms")
       .then((res) => res.json())
@@ -21,64 +29,103 @@ export default function FormsListPage() {
       });
   }, []);
 
+  const copyToClipboard = (id) => {
+    const url = `${window.location.origin}/forms/${id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   if (loading) {
     return (
-      <div style={loadingContainerStyle}>
-        <div style={spinnerStyle}></div>
-        <p style={{ color: "#64748b", marginTop: "16px", fontWeight: "500" }}>
-          Fetching your forms...
-        </p>
+      <div className="h-[60vh] flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-slate-500 mt-4 font-medium">Loading your dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div style={pageWrapperStyle}>
-      <div style={headerSectionStyle}>
+    <div className="max-w-6xl mx-auto my-12 px-6 font-sans">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
-          <h2 style={mainTitleStyle}>Available Forms</h2>
-          <p style={subtitleStyle}>Select a form below to view and submit responses.</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Form Manager</h1>
+          <p className="text-slate-500 mt-2 text-lg">Create, share, and analyze your data collection.</p>
         </div>
         <Link href="/builder">
-          <button style={createButtonStyle}>+ Create New</button>
+          <button className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95">
+            <Plus size={20} />
+            Create New Form
+          </button>
         </Link>
       </div>
 
-      <hr style={dividerStyle} />
+      <div className="h-px bg-slate-200 w-full mb-10" />
 
       {forms.length === 0 ? (
-        <div style={emptyStateStyle}>
-          <p style={{ fontSize: "1.1rem", fontWeight: "600", color: "#475569" }}>No forms found</p>
-          <p style={{ color: "#94a3b8" }}>Get started by creating your first dynamic form.</p>
+        <div className="text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+          <FileText className="mx-auto text-slate-300 mb-4" size={48} />
+          <p className="text-xl font-bold text-slate-700">No forms yet</p>
+          <p className="text-slate-500">Your dynamic forms will appear here once created.</p>
         </div>
       ) : (
-        <div style={gridStyle}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {forms
-            .filter((form) => form.formName) 
+            .filter((form) => form.formName)
             .map((form) => (
-              <div key={form.id} style={cardStyle}>
-                <div style={cardHeaderStyle}>
-                  <div style={iconBoxStyle}>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
+              <div 
+                key={form.id} 
+                className="group bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all duration-300 flex flex-col"
+              >
+                {/* Card Icon & ID */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <FileText size={24} />
                   </div>
-                  {/* <span style={badgeStyle}>
-                    {form.fields?.length || 0} Fields
-                  </span> */}
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md uppercase tracking-wider">
+                    ID: {form.id.toString().slice(-6)}
+                  </span>
                 </div>
 
-                <h4 style={formTitleStyle}>{form.formName}</h4>
-                <p style={cardIdStyle}>Form ID: {form.id.toString().slice(-6)}</p>
+                {/* Title */}
+                <h3 className="text-xl font-bold text-slate-800 mb-6 group-hover:text-indigo-600 transition-colors capitalize">
+                  {form.formName}
+                </h3>
 
-                <Link href={`/forms/${form.id}`} style={{ textDecoration: "none" }}>
-                  <button style={actionButtonStyle}>
-                    Fill Form
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginLeft: "8px" }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                    </svg>
+                {/* Actions Grid */}
+                <div className="grid grid-cols-2 gap-3 mt-auto">
+                  {/* Share/Copy Link */}
+                  <button
+                    onClick={() => copyToClipboard(form.id)}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
+                      copiedId === form.id 
+                      ? "bg-green-50 border-green-200 text-green-600" 
+                      : "bg-slate-50 border-slate-100 text-slate-600 hover:bg-white hover:border-indigo-300 hover:text-indigo-600"
+                    }`}
+                  >
+                    {copiedId === form.id ? <CheckCircle size={18} /> : <Clipboard size={18} />}
+                    <span className="text-[11px] font-bold mt-1 uppercase tracking-tighter">
+                      {copiedId === form.id ? "Copied!" : "Copy Link"}
+                    </span>
                   </button>
-                </Link>
+
+                  {/* View Data */}
+                  <Link href={`/forms/data/${form.id}`} className="no-underline">
+                    <div className="flex flex-col items-center justify-center p-3 rounded-xl border bg-slate-50 border-slate-100 text-slate-600 hover:bg-white hover:border-indigo-300 hover:text-indigo-600 transition-all h-full">
+                      <Table size={18} />
+                      <span className="text-[11px] font-bold mt-1 uppercase tracking-tighter text-center">Responses</span>
+                    </div>
+                  </Link>
+
+                  {/* Public Fill Form */}
+                  <Link href={`/forms/${form.id}`} className="col-span-2 no-underline">
+                    <div className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 shadow-md shadow-indigo-100 transition-all active:scale-95">
+                      <ExternalLink size={16} />
+                      Fill Form
+                    </div>
+                  </Link>
+                </div>
               </div>
             ))}
         </div>
@@ -86,154 +133,3 @@ export default function FormsListPage() {
     </div>
   );
 }
-
-// --- Professional Styles ---
-
-const pageWrapperStyle = {
-  maxWidth: "1000px",
-  margin: "60px auto",
-  padding: "0 24px",
-  fontFamily: "'Inter', system-ui, sans-serif",
-  color: "#1e293b",
-};
-
-const headerSectionStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-end",
-  marginBottom: "32px",
-};
-
-const mainTitleStyle = {
-  fontSize: "2rem",
-  fontWeight: "800",
-  margin: 0,
-  color: "#0f172a",
-  letterSpacing: "-0.025em",
-};
-
-const subtitleStyle = {
-  margin: "8px 0 0 0",
-  color: "#64748b",
-  fontSize: "1rem",
-};
-
-const createButtonStyle = {
-  padding: "10px 20px",
-  backgroundColor: "#6366f1",
-  color: "white",
-  border: "none",
-  borderRadius: "8px",
-  fontWeight: "600",
-  cursor: "pointer",
-  boxShadow: "0 4px 6px -1px rgba(99, 102, 241, 0.2)",
-};
-
-const dividerStyle = {
-  border: "none",
-  borderTop: "1px solid #e2e8f0",
-  marginBottom: "40px",
-};
-
-const gridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-  gap: "24px",
-};
-
-const cardStyle = {
-  backgroundColor: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "16px",
-  padding: "24px",
-  transition: "all 0.2s ease",
-  display: "flex",
-  flexDirection: "column",
-  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-  ":hover": {
-    transform: "translateY(-4px)",
-    boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-    borderColor: "#6366f1",
-  }
-};
-
-const cardHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "20px",
-};
-
-const iconBoxStyle = {
-  width: "40px",
-  height: "40px",
-  backgroundColor: "#f1f5f9",
-  borderRadius: "10px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#6366f1",
-};
-
-const badgeStyle = {
-  fontSize: "0.75rem",
-  fontWeight: "700",
-  backgroundColor: "#f0fdf4",
-  color: "#16a34a",
-  padding: "4px 10px",
-  borderRadius: "99px",
-  border: "1px solid #dcfce7",
-};
-
-const formTitleStyle = {
-  fontSize: "1.25rem",
-  fontWeight: "700",
-  margin: "0 0 4px 0",
-  color: "#1e293b",
-};
-
-const cardIdStyle = {
-  fontSize: "0.85rem",
-  color: "#94a3b8",
-  marginBottom: "24px",
-};
-
-const actionButtonStyle = {
-  width: "100%",
-  padding: "12px",
-  backgroundColor: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "8px",
-  color: "#475569",
-  fontWeight: "600",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  transition: "all 0.2s",
-};
-
-const emptyStateStyle = {
-  textAlign: "center",
-  padding: "80px 0",
-  backgroundColor: "#f8fafc",
-  borderRadius: "20px",
-  border: "2px dashed #e2e8f0",
-};
-
-const loadingContainerStyle = {
-  height: "60vh",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const spinnerStyle = {
-  width: "32px",
-  height: "32px",
-  border: "3px solid #e2e8f0",
-  borderTop: "3px solid #6366f1",
-  borderRadius: "50%",
-  animation: "spin 1s linear infinite",
-};

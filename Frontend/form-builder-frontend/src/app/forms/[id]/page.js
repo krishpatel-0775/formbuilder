@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"; // Optional: npm install lucide-react
+import { Loader2, CheckCircle2, AlertCircle, Calendar, Mail, Type, Hash, ArrowRight, ShieldCheck } from "lucide-react";
 
 export default function FillFormPage() {
   const { id } = useParams();
@@ -12,6 +12,8 @@ export default function FillFormPage() {
   const [values, setValues] = useState({});
   const [loading, setLoading] = useState(true);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     setMounted(true);
@@ -19,7 +21,6 @@ export default function FillFormPage() {
 
   useEffect(() => {
     if (!id || !mounted) return;
-
     fetch(`http://localhost:9090/api/forms/${id}`)
       .then((res) => res.json())
       .then((data) => {
@@ -37,65 +38,49 @@ export default function FillFormPage() {
     if (fieldType === "number") {
       parsedValue = value === "" ? "" : Number(value);
     }
-    setValues((prev) => ({
-      ...prev,
-      [fieldName]: parsedValue,
-    }));
+    setValues((prev) => ({ ...prev, [fieldName]: parsedValue }));
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    setErrorMessage("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form) return;
-
-    const payload = {
-      formId: form.id,
-      values: values,
-    };
+    setErrorMessage("");
+    setFieldErrors({});
 
     try {
       const response = await fetch("http://localhost:9090/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ formId: form.id, values }),
       });
 
       const contentType = response.headers.get("content-type");
-      let result = contentType && contentType.includes("application/json") 
-        ? await response.json() 
-        : await response.text();
+      let result = contentType && contentType.includes("application/json")
+          ? await response.json()
+          : await response.text();
 
       if (!response.ok) {
-        alert(typeof result === "string" ? result : result.message || "Submission failed");
+        const message = typeof result === "string" ? result : result.error || "Submission failed";
+        setErrorMessage(message);
+        const fieldName = message.split(" ")[0];
+        setFieldErrors({ [fieldName]: message });
         return;
       }
-
       setIsSubmitted(true);
       setValues({});
     } catch (error) {
-      console.error("Submit error:", error);
-      alert("Something went wrong!");
+      setErrorMessage("Something went wrong. Please try again.");
     }
   };
 
   if (!mounted) return null;
 
-  // --- UI COMPONENTS ---
-
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium animate-pulse">Loading your form...</p>
-      </div>
-    );
-  }
-
-  if (!form) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-        <p className="text-red-500 font-semibold text-xl">Form not found</p>
-        <p className="text-slate-500">The link might be broken or the form was deleted.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
       </div>
     );
   }
@@ -103,17 +88,12 @@ export default function FillFormPage() {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-slate-50 flex justify-center items-center p-6">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-10 text-center border border-slate-100">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Thank You!</h1>
-          <p className="text-slate-500 mb-8">Your response for <span className="font-semibold">{form.formName}</span> has been recorded.</p>
-          <button 
-            onClick={() => setIsSubmitted(false)}
-            className="text-indigo-600 font-medium hover:underline"
-          >
-            Submit another response
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-10 text-center border border-slate-200">
+          <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Success!</h1>
+          <p className="text-slate-600 mb-8 font-medium">Your data has been securely recorded.</p>
+          <button onClick={() => setIsSubmitted(false)} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-600 transition-all">
+            Submit New Entry
           </button>
         </div>
       </div>
@@ -121,100 +101,92 @@ export default function FillFormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center p-6 md:p-12">
-      {/* Form Card */}
-      <div className="w-full max-w-2xl bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-hidden">
-        {/* Accent Header */}
-        <div className="h-3 w-full bg-indigo-600" />
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center py-12 px-4">
+      {/* Wider card to utilize screen space */}
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-md border border-slate-300 overflow-hidden">
         
-        <div className="p-8 md:p-12">
-          <header className="mb-10">
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
-              {form.formName}
+        {/* High Contrast Header */}
+        <div className="px-10 py-8 bg-white border-b-2 border-slate-100 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+              <ShieldCheck className="text-indigo-600 w-7 h-7" />
+              {form?.formName}
             </h1>
-            <p className="text-slate-500">Please fill out the details below carefully.</p>
-          </header>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Data Entry Terminal</p>
+          </div>
+          <div className="bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100">
+            <span className="text-xs font-black text-indigo-700 uppercase tracking-tighter">ID: {id?.toString().slice(-6)}</span>
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {form.fields.map((field, index) => {
-              const inputClasses =
-                "w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50/30 text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 placeholder:text-slate-400";
+        <div className="p-10">
+          {errorMessage && (
+            <div className="mb-8 p-4 rounded-xl bg-red-50 border-2 border-red-200 text-red-700 text-sm font-black flex items-center gap-3">
+              <AlertCircle size={18} /> {errorMessage.toUpperCase()}
+            </div>
+          )}
 
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {form?.fields.map((field, index) => {
               const fieldName = field.fieldName;
-              const fieldType = field.fieldType;
+              const hasError = fieldErrors[fieldName];
+              const icons = { 
+                text: <Type size={18} />, 
+                email: <Mail size={18} />, 
+                number: <Hash size={18} />, 
+                date: <Calendar size={18} /> 
+              };
 
               return (
                 <div key={`${field.id}-${index}`} className="group space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1 flex items-center">
-                    {fieldName}
-                    {field.required && <span className="text-red-500 ml-1 text-lg leading-none">*</span>}
-                  </label>
-
-                  {/* Render Inputs based on type */}
-                  <div className="relative">
-                    {fieldType === "text" && (
-                      <input
-                        type="text"
-                        placeholder={`Enter ${fieldName.toLowerCase()}`}
-                        className={inputClasses}
-                        value={values[fieldName] || ""}
-                        onChange={(e) => handleChange(fieldName, e.target.value, fieldType)}
-                        required={field.required}
-                        minLength={field.minLength ?? undefined}
-                        maxLength={field.maxLength ?? undefined}
-                      />
-                    )}
-
-                    {fieldType === "email" && (
-                      <input
-                        type="email"
-                        placeholder="example@domain.com"
-                        className={inputClasses}
-                        value={values[fieldName] || ""}
-                        onChange={(e) => handleChange(fieldName, e.target.value, fieldType)}
-                        required={field.required}
-                        // pattern={field.pattern ?? undefined}
-                      />
-                    )}
-
-                    {fieldType === "number" && (
-                      <input
-                        type="number"
-                        placeholder="0"
-                        className={inputClasses}
-                        value={values[fieldName] || ""}
-                        onChange={(e) => handleChange(fieldName, e.target.value, fieldType)}
-                        onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
-                        required={field.required}
-                        min={field.min ?? undefined}
-                        max={field.max ?? undefined}
-                      />
-                    )}
-
-                    {fieldType === "date" && (
-                      <input
-                        type="date"
-                        className={inputClasses}
-                        value={values[fieldName] || ""}
-                        onChange={(e) => handleChange(fieldName, e.target.value, fieldType)}
-                        required={field.required}
-                      />
-                    )}
+                  <div className="flex justify-between items-center px-1">
+                    {/* Darker Label for Visibility */}
+                    <label className="text-[13px] font-black text-slate-800 uppercase tracking-wider group-focus-within:text-indigo-700 transition-colors">
+                      {fieldName} {field.required && <span className="text-red-600 text-lg">*</span>}
+                    </label>
                   </div>
+
+                  <div className="relative">
+                    <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${hasError ? "text-red-600" : "text-slate-500 group-focus-within:text-indigo-600"}`}>
+                      {icons[field.fieldType] || <Type size={18} />}
+                    </div>
+
+                    <input
+                      type={field.fieldType}
+                      className={`w-full pl-12 pr-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all outline-none leading-relaxed ${
+                        hasError 
+                        ? "border-red-400 bg-red-50 text-red-900 placeholder:text-red-300" 
+                        : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"
+                      }`}
+                      placeholder={`Enter ${fieldName.toLowerCase()}...`}
+                      value={values[fieldName] || ""}
+                      onChange={(e) => handleChange(fieldName, e.target.value, field.fieldType)}
+                      required={field.required}
+                    />
+                  </div>
+
+                  {hasError && (
+                    <p className="text-xs font-black text-red-600 ml-1 flex items-center gap-1 uppercase tracking-tight">
+                      <AlertCircle size={14} /> {fieldErrors[fieldName]}
+                    </p>
+                  )}
                 </div>
               );
             })}
 
-            <div className="pt-4">
+            {/* Bottom Action Section */}
+            <div className="pt-10 border-t-2 border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">Ready for secure upload</p>
+              </div>
               <button
                 type="submit"
-                className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                className="w-full md:w-auto flex items-center justify-center gap-3 bg-slate-900 text-white px-12 py-4 rounded-xl font-black text-base hover:bg-indigo-600 transition-all active:scale-[0.98] shadow-2xl shadow-slate-200"
               >
-                Submit Response
+                SUBMIT DATA
+                <ArrowRight size={20} />
               </button>
-              <p className="text-center text-xs text-slate-400 mt-4">
-                Securely powered by FormBuilder
-              </p>
             </div>
           </form>
         </div>

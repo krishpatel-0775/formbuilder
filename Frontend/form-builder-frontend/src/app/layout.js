@@ -9,7 +9,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body style={bodyStyle}>
-        {/* MODERN NAVIGATION */}
+        {/* NAV SPANS FULL WIDTH */}
         <nav style={navStyle}>
           <div style={navContentStyle}>
             <div style={logoSectionStyle}>
@@ -23,13 +23,12 @@ export default function RootLayout({ children }) {
 
             <div style={linkGroupStyle}>
               <a href="/" style={navLinkStyle}>Builder</a>
-              {/* <a href="/forms/all" style={navLinkStyle}>My Forms</a> */}
               <a href="/forms/all" style={ctaLinkStyle}>My Forms</a>
             </div>
           </div>
         </nav>
 
-        {/* MAIN CONTENT AREA */}
+        {/* MAIN CONTENT AREA SPANS FULL WIDTH */}
         <main style={mainWrapperStyle}>
           {children}
         </main>
@@ -38,30 +37,29 @@ export default function RootLayout({ children }) {
   );
 }
 
-// --- Professional Layout Styles ---
+// --- High-Density Fluid Styles ---
 
 const bodyStyle = {
-  backgroundColor: "#f8fafc", // Soft Slate background
+  backgroundColor: "#ffffff", // Pure white for a cleaner look
   minHeight: "100vh",
   margin: 0,
-  fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+  padding: 0,
+  fontFamily: "'Inter', system-ui, sans-serif",
+  overflowX: "hidden", // Prevent horizontal scroll
 };
 
 const navStyle = {
-  backgroundColor: "rgba(255, 255, 255, 0.8)",
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
-  borderBottom: "1px solid rgba(226, 232, 240, 0.8)",
+  backgroundColor: "#ffffff",
+  borderBottom: "1px solid #f1f5f9",
   position: "sticky",
   top: 0,
   zIndex: 1000,
-  padding: "0 24px",
+  padding: "0 20px", // Minimal side padding for the nav items
 };
 
 const navContentStyle = {
-  maxWidth: "1200px",
-  margin: "0 auto",
-  height: "72px",
+  width: "100%", // Fluid width
+  height: "64px", // Slimmer nav
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -70,67 +68,71 @@ const navContentStyle = {
 const logoSectionStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "12px",
+  gap: "10px",
 };
 
 const logoIconStyle = {
-  width: "36px",
-  height: "36px",
-  backgroundColor: "#6366f1",
+  width: "32px",
+  height: "32px",
+  backgroundColor: "#000000", // High contrast black
   color: "white",
-  borderRadius: "10px",
+  borderRadius: "8px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
 };
 
 const logoTextStyle = {
-  fontSize: "1.25rem",
-  fontWeight: "800",
-  color: "#0f172a",
+  fontSize: "1.1rem",
+  fontWeight: "900",
+  color: "#000000",
   margin: 0,
-  letterSpacing: "-0.02em",
+  letterSpacing: "-0.03em",
+  textTransform: "uppercase",
 };
 
 const proBadgeStyle = {
-  fontSize: "0.65rem",
-  verticalAlign: "middle",
-  backgroundColor: "#f1f5f9",
-  color: "#64748b",
-  padding: "2px 6px",
-  borderRadius: "4px",
+  fontSize: "0.55rem",
+  backgroundColor: "#eff6ff",
+  color: "#3b82f6",
+  padding: "1px 5px",
+  borderRadius: "3px",
   marginLeft: "4px",
+  border: "1px solid #dbeafe",
 };
 
 const linkGroupStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "32px",
+  gap: "24px",
 };
 
 const navLinkStyle = {
-  color: "#64748b",
+  color: "#475569",
   textDecoration: "none",
-  fontSize: "0.95rem",
-  fontWeight: "500",
+  fontSize: "0.85rem",
+  fontWeight: "700",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   transition: "color 0.2s",
-  cursor: "pointer",
 };
 
 const ctaLinkStyle = {
-  backgroundColor: "#0f172a",
+  backgroundColor: "#000000",
   color: "#ffffff",
-  padding: "8px 16px",
-  borderRadius: "8px",
-  fontSize: "0.9rem",
-  fontWeight: "600",
+  padding: "8px 14px",
+  borderRadius: "6px",
+  fontSize: "0.8rem",
+  fontWeight: "800",
   textDecoration: "none",
-  transition: "opacity 0.2s",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
 };
 
 const mainWrapperStyle = {
-  padding: "40px 24px",
-  maxWidth: "1200px",
-  margin: "0 auto",
+  width: "100%", // Full width
+  margin: 0,
+  padding: 0, // Removed all margins and padding from the wrapper
+  display: "flex",
+  flexDirection: "column",
 };

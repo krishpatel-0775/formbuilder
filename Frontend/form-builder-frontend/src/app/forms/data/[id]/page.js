@@ -1,19 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-} from "@tanstack/react-table";
+import { useEffect, useState } from "react";
+import { Download, Database, Search, Inbox } from "lucide-react"; // Optional icons
 
-export default function FormSubmissions() {
-  const params = useParams();
-  const id = params.id;
-
+export default function FormDataPage() {
+  const { id } = useParams();
   const [data, setData] = useState([]);
-  const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,116 +14,96 @@ export default function FormSubmissions() {
 
     fetch(`http://localhost:9090/api/forms/data/${id}`)
       .then((res) => res.json())
-      .then((resData) => {
-        setData(resData);
-
-        if (resData.length > 0) {
-          const generatedColumns = Object.keys(resData[0]).map((key) => ({
-            accessorKey: key,
-            // Replace underscores with spaces for a cleaner header
-            header: key.replace(/_/g, " ").toUpperCase(),
-            cell: (info) => {
-              const value = info.getValue();
-              return value === null || value === "" ? (
-                <span className="text-slate-300">—</span>
-              ) : (
-                <span className="text-slate-600 font-medium">{value.toString()}</span>
-              );
-            },
-          }));
-
-          setColumns(generatedColumns);
-        }
+      .then((result) => {
+        setData(result);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching submissions:", err);
+        console.error(err);
         setLoading(false);
       });
   }, [id]);
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
   if (loading) {
     return (
-      <div className="p-10 flex flex-col items-center justify-center min-h-100">
-        <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-500 font-medium">Fetching responses...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 font-medium tracking-wide">Fetching responses...</p>
       </div>
     );
   }
 
-  if (!data.length) {
+  if (data.length === 0) {
     return (
-      <div className="p-10">
-        <div className="max-w-4xl mx-auto border-2 border-dashed border-slate-200 rounded-3xl p-20 text-center">
-          <p className="text-slate-400 text-lg font-medium">No submissions found yet.</p>
-          <p className="text-slate-300 text-sm mt-1">Once users fill out your form, their data will appear here.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6">
+        <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200 text-center max-w-sm">
+          <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Inbox className="text-slate-400" size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">No responses yet</h2>
+          <p className="text-slate-500 text-sm">Once users submit your form, their data will appear here in a table format.</p>
         </div>
       </div>
     );
   }
 
+  const headers = Object.keys(data[0]);
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Form Submissions
-            </h2>
-            <p className="text-slate-500 mt-1">
-              Review and manage the data collected from your form.
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              <Database className="text-indigo-600" size={20} />
+              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Submission Manager</span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Form Responses</h1>
           </div>
-          <div className="flex items-center gap-3">
-             <span className="px-4 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100 uppercase tracking-wider">
-               {data.length} Total Responses
-             </span>
-          </div>
+          
+          <button 
+            onClick={() => window.print()}
+            className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+          >
+            <Download size={18} />
+            Export Data
+          </button>
         </div>
 
         {/* Table Container */}
-        <div className="bg-white rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id} className="bg-slate-50/50">
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-slate-100"
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
+                <tr className="bg-slate-50/50 border-b border-slate-200">
+                  {headers.map((header) => (
+                    <th 
+                      key={header} 
+                      className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      {header.replace(/_/g, " ")}
+                    </th>
+                  ))}
+                </tr>
               </thead>
-
-              <tbody className="divide-y divide-slate-50">
-                {table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="group hover:bg-indigo-50/30 transition-colors duration-150"
+              <tbody className="divide-y divide-slate-100">
+                {data.map((row, index) => (
+                  <tr 
+                    key={index} 
+                    className="hover:bg-indigo-50/30 transition-colors group"
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
+                    {headers.map((header) => (
+                      <td 
+                        key={header} 
                         className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap"
                       >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
+                        {row[header] !== null ? (
+                          <span className="font-medium text-slate-700">
+                            {row[header].toString()}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 italic text-xs">null</span>
                         )}
                       </td>
                     ))}
@@ -140,9 +113,11 @@ export default function FormSubmissions() {
             </table>
           </div>
           
-          {/* Table Footer / Pagination Placeholder */}
-          <div className="p-6 bg-slate-50/30 border-t border-slate-100 flex justify-end">
-             <p className="text-xs text-slate-400 italic">Showing all synchronized entries</p>
+          {/* Table Footer Stats */}
+          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
+            <p className="text-xs font-medium text-slate-500">
+              Showing <span className="text-slate-900">{data.length}</span> total submissions
+            </p>
           </div>
         </div>
       </div>

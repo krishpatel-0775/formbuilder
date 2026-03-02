@@ -116,6 +116,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
@@ -132,6 +133,20 @@ public class FormService {
     public Form getFormById(Long id) {
         return formRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Form not found"));
+    }
+
+    public List<Map<String, Object>> getAllDataFromTable(Long id) {
+
+        String tableName = "form_" + id;
+
+        // ⚠ IMPORTANT: Prevent SQL Injection
+//        if (!tableName.matches("^[a-zA-Z0-9_]+$")) {
+//            throw new IllegalArgumentException("Invalid table name");
+//        }
+
+        String sql = "SELECT * FROM " + tableName;
+
+        return jdbcTemplate.queryForList(sql);
     }
 
     public List<FormListDto> getAllForms() {
