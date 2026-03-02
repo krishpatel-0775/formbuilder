@@ -1,13 +1,13 @@
 export const metadata = {
-  title: "Dynamic Form Builder",
-  description: "Drag & Drop Form Builder",
+  title: "FormCraft PRO",
+  description: "Premium Drag & Drop Form Builder",
 };
 
 import "./globals.css";
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
       <body style={bodyStyle}>
         {/* NAV SPANS FULL WIDTH */}
         <nav style={navStyle}>
@@ -40,26 +40,28 @@ export default function RootLayout({ children }) {
 // --- High-Density Fluid Styles ---
 
 const bodyStyle = {
-  backgroundColor: "#ffffff", // Pure white for a cleaner look
+  backgroundColor: "#f8fafc", // Light gray background
+  color: "#0f172a", // Dark slate text
   minHeight: "100vh",
   margin: 0,
   padding: 0,
   fontFamily: "'Inter', system-ui, sans-serif",
-  overflowX: "hidden", // Prevent horizontal scroll
+  overflowX: "hidden", 
 };
 
 const navStyle = {
-  backgroundColor: "#ffffff",
-  borderBottom: "1px solid #f1f5f9",
+  backgroundColor: "rgba(255, 255, 255, 0.9)", // slightly transparent white nav
+  backdropFilter: "blur(12px)",
+  borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
   position: "sticky",
   top: 0,
   zIndex: 1000,
-  padding: "0 20px", // Minimal side padding for the nav items
+  padding: "0 32px", 
 };
 
 const navContentStyle = {
-  width: "100%", // Fluid width
-  height: "64px", // Slimmer nav
+  width: "100%", 
+  height: "64px", 
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -68,24 +70,25 @@ const navContentStyle = {
 const logoSectionStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "10px",
+  gap: "12px",
 };
 
 const logoIconStyle = {
   width: "32px",
   height: "32px",
-  backgroundColor: "#000000", // High contrast black
+  background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", // Blue gradient
   color: "white",
   borderRadius: "8px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  boxShadow: "0 4px 10px rgba(59, 130, 246, 0.2)",
 };
 
 const logoTextStyle = {
   fontSize: "1.1rem",
   fontWeight: "900",
-  color: "#000000",
+  color: "#0f172a", // Dark text
   margin: 0,
   letterSpacing: "-0.03em",
   textTransform: "uppercase",
@@ -93,12 +96,12 @@ const logoTextStyle = {
 
 const proBadgeStyle = {
   fontSize: "0.55rem",
-  backgroundColor: "#eff6ff",
-  color: "#3b82f6",
-  padding: "1px 5px",
-  borderRadius: "3px",
-  marginLeft: "4px",
-  border: "1px solid #dbeafe",
+  backgroundColor: "rgba(59, 130, 246, 0.1)",
+  color: "#2563eb",
+  padding: "2px 6px",
+  borderRadius: "4px",
+  marginLeft: "6px",
+  border: "1px solid rgba(59, 130, 246, 0.2)",
 };
 
 const linkGroupStyle = {
@@ -108,31 +111,32 @@ const linkGroupStyle = {
 };
 
 const navLinkStyle = {
-  color: "#475569",
+  color: "#64748b",
   textDecoration: "none",
-  fontSize: "0.85rem",
-  fontWeight: "700",
+  fontSize: "0.75rem",
+  fontWeight: "800",
   textTransform: "uppercase",
   letterSpacing: "0.05em",
   transition: "color 0.2s",
 };
 
 const ctaLinkStyle = {
-  backgroundColor: "#000000",
+  backgroundColor: "#0f172a", // Dark button
   color: "#ffffff",
-  padding: "8px 14px",
+  padding: "8px 16px",
   borderRadius: "6px",
-  fontSize: "0.8rem",
+  fontSize: "0.75rem",
   fontWeight: "800",
   textDecoration: "none",
   textTransform: "uppercase",
   letterSpacing: "0.05em",
+  boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.1)",
 };
 
 const mainWrapperStyle = {
-  width: "100%", // Full width
+  width: "100%", 
   margin: 0,
-  padding: 0, // Removed all margins and padding from the wrapper
+  padding: 0, 
   display: "flex",
   flexDirection: "column",
 };
