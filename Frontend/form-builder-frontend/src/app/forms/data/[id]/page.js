@@ -1,8 +1,9 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; // Added useRouter
 import { useEffect, useState } from "react";
-import { Download, Database, Search, Inbox } from "lucide-react"; // Optional icons
+import { Download, Database, Inbox, ExternalLink, ArrowLeft } from "lucide-react"; // Added ExternalLink & ArrowLeft
+import Link from "next/link"; // Added Link
 
 export default function FormDataPage() {
   const { id } = useParams();
@@ -41,7 +42,14 @@ export default function FormDataPage() {
             <Inbox className="text-slate-400" size={32} />
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">No responses yet</h2>
-          <p className="text-slate-500 text-sm">Once users submit your form, their data will appear here in a table format.</p>
+          <p className="text-slate-500 text-sm mb-6">Once users submit your form, their data will appear here.</p>
+          <Link 
+            href={`/forms/${id}`}
+            className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition-all"
+          >
+            <ExternalLink size={18} />
+            Go to Form Page
+          </Link>
         </div>
       </div>
     );
@@ -62,13 +70,24 @@ export default function FormDataPage() {
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Form Responses</h1>
           </div>
           
-          <button 
-            onClick={() => window.print()}
-            className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-slate-50 transition-all active:scale-95"
-          >
-            <Download size={18} />
-            Export Data
-          </button>
+          <div className="flex items-center gap-3">
+            {/* NEW REDIRECT BUTTON */}
+            <Link 
+              href={`/forms/${id}`}
+              className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-100 transition-all active:scale-95"
+            >
+              <ExternalLink size={18} />
+              View Public Form
+            </Link>
+
+            <button 
+              onClick={() => window.print()}
+              className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+            >
+              <Download size={18} />
+              Export Data
+            </button>
+          </div>
         </div>
 
         {/* Table Container */}
@@ -113,7 +132,6 @@ export default function FormDataPage() {
             </table>
           </div>
           
-          {/* Table Footer Stats */}
           <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
             <p className="text-xs font-medium text-slate-500">
               Showing <span className="text-slate-900">{data.length}</span> total submissions

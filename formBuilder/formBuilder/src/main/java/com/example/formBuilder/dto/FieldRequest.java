@@ -4,6 +4,8 @@ package com.example.formBuilder.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class FieldRequest {
@@ -17,4 +19,6 @@ public class FieldRequest {
     private Integer min;
     private Integer max;
     private String pattern;
+    private String beforeDate;   // max allowed date
+    private String afterDate;    // min allowed date   // min date allowed
 }

@@ -114,6 +114,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -191,6 +192,16 @@ public class FormService {
             formField.setMin(field.getMin());
             formField.setMax(field.getMax());
             formField.setPattern(field.getPattern());
+
+            formField.setBeforeDate(
+                    field.getBeforeDate() != null ?
+                            LocalDate.parse(field.getBeforeDate()) : null
+            );
+
+            formField.setAfterDate(
+                    field.getAfterDate() != null ?
+                            LocalDate.parse(field.getAfterDate()) : null
+            );
 
             formField.setForm(form);
 

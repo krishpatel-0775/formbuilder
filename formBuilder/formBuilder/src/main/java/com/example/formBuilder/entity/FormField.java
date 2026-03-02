@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Setter
@@ -28,6 +30,9 @@ public class FormField {
     private Integer max;
 
     private String pattern;
+
+    private LocalDate beforeDate;
+    private LocalDate afterDate;   // min allowed date    // min date allowed
 
     @JsonBackReference
     @ManyToOne

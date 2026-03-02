@@ -136,6 +136,36 @@ public class SubmissionService {
                 }
             }
 
+            case "date" -> {
+
+                java.time.LocalDate inputDate;
+
+                try {
+                    inputDate = java.time.LocalDate.parse(stringValue);
+                } catch (Exception e) {
+                    throw new RuntimeException(
+                            field.getFieldName() + " must be a valid date (yyyy-MM-dd)");
+                }
+
+                // AFTER validation (minimum date)
+                if (field.getAfterDate() != null &&
+                        inputDate.isBefore(field.getAfterDate())) {
+
+                    throw new RuntimeException(
+                            field.getFieldName() + " must be after "
+                                    + field.getAfterDate());
+                }
+
+                // BEFORE validation (maximum date)
+                if (field.getBeforeDate() != null &&
+                        inputDate.isAfter(field.getBeforeDate())) {
+
+                    throw new RuntimeException(
+                            field.getFieldName() + " must be before "
+                                    + field.getBeforeDate());
+                }
+            }
+
             case "number" -> {
 
                 int number;

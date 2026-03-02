@@ -1,16 +1,24 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { 
-  Type, Hash, Mail, Calendar, Plus, Trash2, 
-  Settings2, GripVertical, Rocket, X, 
-  AlertCircle, ShieldCheck, ChevronRight
+import {
+  Type,
+  Hash,
+  Mail,
+  Calendar,
+  Trash2,
+  Settings2,
+  GripVertical,
+  Rocket,
+  X,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function BuilderPage() {
   const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
-  const [activeFieldId, setActiveFieldId] = useState(null); // Tracks clicked field for the right sidebar
+  const [activeFieldId, setActiveFieldId] = useState(null);
 
   const fieldIcons = {
     text: <Type size={16} />,
@@ -19,10 +27,9 @@ export default function BuilderPage() {
     date: <Calendar size={16} />,
   };
 
-  // Find the currently selected field for the sidebar
-  const activeField = useMemo(() => 
-    fields.find(f => f.id === activeFieldId), 
-    [fields, activeFieldId]
+  const activeField = useMemo(
+    () => fields.find((f) => f.id === activeFieldId),
+    [fields, activeFieldId],
   );
 
   const handleDragStart = (e, type) => {
@@ -44,10 +51,12 @@ export default function BuilderPage() {
       min: "",
       max: "",
       pattern: "",
+      beforeDate: "",
+      afterDate: "",
     };
 
     setFields([...fields, newField]);
-    setActiveFieldId(newField.id); // Auto-focus the new field
+    setActiveFieldId(newField.id);
   };
 
   const handleDragOver = (e) => e.preventDefault();
@@ -69,7 +78,11 @@ export default function BuilderPage() {
   };
 
   const generateColumnName = (label) => {
-    return label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    return label
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_]/g, "");
   };
 
   const saveForm = async () => {
@@ -79,29 +92,56 @@ export default function BuilderPage() {
     try {
       const formattedFields = fields.map((field) => {
         if (!field.label) throw new Error(`Field label is required`);
+
         let fieldData = {
           name: generateColumnName(field.label),
           type: field.type,
           required: field.required,
         };
+
+        // TEXT
         if (field.type === "text") {
-          if (field.minLength) fieldData.minLength = Number(field.minLength);
-          if (field.maxLength) fieldData.maxLength = Number(field.maxLength);
-          if (field.pattern) fieldData.pattern = field.pattern;
+          if (field.minLength)
+            fieldData.minLength = Number(field.minLength);
+          if (field.maxLength)
+            fieldData.maxLength = Number(field.maxLength);
+          if (field.pattern)
+            fieldData.pattern = field.pattern;
         }
+
+        // NUMBER
         if (field.type === "number") {
-          if (field.min) fieldData.min = Number(field.min);
-          if (field.max) fieldData.max = Number(field.max);
+          if (field.min)
+            fieldData.min = Number(field.min);
+          if (field.max)
+            fieldData.max = Number(field.max);
         }
-        if (field.type === "email" && field.pattern) fieldData.pattern = field.pattern;
-        return fieldData;
+
+        // EMAIL
+        if (field.type === "email" && field.pattern) {
+          fieldData.pattern = field.pattern;
+        }
+
+        // ✅ DATE (FIXED POSITION)
+        if (field.type === "date") {
+          if (field.afterDate)
+            fieldData.afterDate = field.afterDate;
+          if (field.beforeDate)
+            fieldData.beforeDate = field.beforeDate;
+        }
+
+        return fieldData; // ✅ now return is last
       });
 
       const response = await fetch("http://localhost:9090/api/forms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formName: formName.trim(), fields: formattedFields }),
+        body: JSON.stringify({
+          formName: formName.trim(),
+          fields: formattedFields,
+        }),
       });
+
       const text = await response.text();
       alert(`✅ ${text}`);
       setFormName("");
@@ -114,11 +154,12 @@ export default function BuilderPage() {
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden">
-      
       {/* --- LEFT SIDEBAR: TOOLBOX --- */}
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col z-20">
         <div className="p-6 border-b border-slate-50">
-          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Components</h2>
+          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+            Components
+          </h2>
         </div>
         <div className="p-4 space-y-2 overflow-y-auto">
           {Object.keys(fieldIcons).map((type) => (
@@ -155,9 +196,9 @@ export default function BuilderPage() {
           </button>
         </header>
 
-        <div 
-          onDrop={handleDrop} 
-          onDragOver={handleDragOver} 
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
           className="flex-1 p-10 overflow-auto bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px]"
         >
           <div className="max-w-3xl mx-auto space-y-3">
@@ -167,11 +208,13 @@ export default function BuilderPage() {
               </div>
             )}
             {fields.map((field) => (
-              <div 
+              <div
                 key={field.id}
                 onClick={() => setActiveFieldId(field.id)}
                 className={`group flex items-center p-4 gap-4 bg-white rounded-2xl border-2 transition-all cursor-pointer ${
-                  activeFieldId === field.id ? "border-indigo-500 shadow-lg ring-4 ring-indigo-500/5" : "border-transparent hover:border-slate-200"
+                  activeFieldId === field.id
+                    ? "border-indigo-500 shadow-lg ring-4 ring-indigo-500/5"
+                    : "border-transparent hover:border-slate-200"
                 }`}
               >
                 <GripVertical size={16} className="text-slate-300" />
@@ -182,13 +225,18 @@ export default function BuilderPage() {
                   <input
                     placeholder="Enter question title..."
                     value={field.label}
-                    onChange={(e) => updateField(field.id, "label", e.target.value)}
+                    onChange={(e) =>
+                      updateField(field.id, "label", e.target.value)
+                    }
                     className="w-full text-sm font-bold text-slate-800 bg-transparent focus:outline-none placeholder:font-normal placeholder:text-slate-300"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeField(field.id);
+                  }}
                   className="text-slate-200 hover:text-red-500 transition-colors p-2"
                 >
                   <Trash2 size={16} />
@@ -200,28 +248,53 @@ export default function BuilderPage() {
       </main>
 
       {/* --- RIGHT SIDEBAR: PROPERTIES --- */}
-      <aside className={`w-80 bg-white border-l border-slate-200 transition-all duration-300 transform ${activeFieldId ? "translate-x-0" : "translate-x-full absolute right-0"}`}>
+      <aside
+        className={`w-80 bg-white border-l border-slate-200 transition-all duration-300 transform ${activeFieldId ? "translate-x-0" : "translate-x-full absolute right-0"}`}
+      >
         {activeField ? (
           <div className="flex flex-col h-full">
             <div className="p-6 border-b border-slate-50 flex items-center justify-between">
               <div>
-                <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Properties</h2>
-                <p className="text-xs font-bold text-slate-900 capitalize">{activeField.type} Settings</p>
+                <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">
+                  Properties
+                </h2>
+                <p className="text-xs font-bold text-slate-900 capitalize">
+                  {activeField.type} Settings
+                </p>
               </div>
-              <button onClick={() => setActiveFieldId(null)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"><X size={16} /></button>
+              <button
+                onClick={() => setActiveFieldId(null)}
+                className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"
+              >
+                <X size={16} />
+              </button>
             </div>
 
             <div className="p-6 space-y-8 overflow-y-auto flex-1">
               {/* Validation: Required */}
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Field Behavior</label>
-                <div 
-                  onClick={() => updateField(activeField.id, "required", !activeField.required)}
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Field Behavior
+                </label>
+                <div
+                  onClick={() =>
+                    updateField(
+                      activeField.id,
+                      "required",
+                      !activeField.required,
+                    )
+                  }
                   className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors"
                 >
-                  <span className="text-xs font-bold text-slate-700">Required Field</span>
-                  <div className={`w-8 h-4 rounded-full transition-colors relative ${activeField.required ? "bg-indigo-600" : "bg-slate-300"}`}>
-                    <div className={`absolute top-1 w-2 h-2 bg-white rounded-full transition-transform ${activeField.required ? "translate-x-5" : "translate-x-1"}`} />
+                  <span className="text-xs font-bold text-slate-700">
+                    Required Field
+                  </span>
+                  <div
+                    className={`w-8 h-4 rounded-full transition-colors relative ${activeField.required ? "bg-indigo-600" : "bg-slate-300"}`}
+                  >
+                    <div
+                      className={`absolute top-1 w-2 h-2 bg-white rounded-full transition-transform ${activeField.required ? "translate-x-5" : "translate-x-1"}`}
+                    />
                   </div>
                 </div>
               </div>
@@ -235,15 +308,43 @@ export default function BuilderPage() {
                 {activeField.type === "text" && (
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <span className="text-[11px] font-bold text-slate-600">Character Range</span>
+                      <span className="text-[11px] font-bold text-slate-600">
+                        Character Range
+                      </span>
                       <div className="flex gap-2">
-                        <input type="number" placeholder="Min" value={activeField.minLength} onChange={(e) => handleNumberInput(e, activeField.id, "minLength")} className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10" />
-                        <input type="number" placeholder="Max" value={activeField.maxLength} onChange={(e) => handleNumberInput(e, activeField.id, "maxLength")} className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10" />
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={activeField.minLength}
+                          onChange={(e) =>
+                            handleNumberInput(e, activeField.id, "minLength")
+                          }
+                          className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={activeField.maxLength}
+                          onChange={(e) =>
+                            handleNumberInput(e, activeField.id, "maxLength")
+                          }
+                          className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <span className="text-[11px] font-bold text-slate-600">Regex Pattern</span>
-                      <input type="text" placeholder="e.g. ^[A-Z]+$" value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)} className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10" />
+                      <span className="text-[11px] font-bold text-slate-600">
+                        Regex Pattern
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="e.g. ^[A-Z]+$"
+                        value={activeField.pattern}
+                        onChange={(e) =>
+                          updateField(activeField.id, "pattern", e.target.value)
+                        }
+                        className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                      />
                     </div>
                   </div>
                 )}
@@ -251,10 +352,28 @@ export default function BuilderPage() {
                 {activeField.type === "number" && (
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <span className="text-[11px] font-bold text-slate-600">Value Range</span>
+                      <span className="text-[11px] font-bold text-slate-600">
+                        Value Range
+                      </span>
                       <div className="flex gap-2">
-                        <input type="number" placeholder="Min" value={activeField.min} onChange={(e) => handleNumberInput(e, activeField.id, "min")} className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10" />
-                        <input type="number" placeholder="Max" value={activeField.max} onChange={(e) => handleNumberInput(e, activeField.id, "max")} className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10" />
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={activeField.min}
+                          onChange={(e) =>
+                            handleNumberInput(e, activeField.id, "min")
+                          }
+                          className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={activeField.max}
+                          onChange={(e) =>
+                            handleNumberInput(e, activeField.id, "max")
+                          }
+                          className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                        />
                       </div>
                     </div>
                   </div>
@@ -262,13 +381,58 @@ export default function BuilderPage() {
 
                 {activeField.type === "email" && (
                   <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-slate-600">Validation Regex</span>
-                    <input type="text" placeholder="Custom email pattern..." value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)} className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10" />
+                    <span className="text-[11px] font-bold text-slate-600">
+                      Validation Regex
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Custom email pattern..."
+                      value={activeField.pattern}
+                      onChange={(e) =>
+                        updateField(activeField.id, "pattern", e.target.value)
+                      }
+                      className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                    />
                   </div>
                 )}
 
                 {activeField.type === "date" && (
-                  <p className="text-[10px] text-slate-400 italic">No specific constraints for date fields yet.</p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-bold text-slate-600">
+                        Date Range
+                      </span>
+                      <div className="flex gap-2">
+                        <input
+                          type="date"
+                          value={activeField.afterDate}
+                          onChange={(e) =>
+                            updateField(
+                              activeField.id,
+                              "afterDate",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                        />
+                        <input
+                          type="date"
+                          value={activeField.beforeDate}
+                          onChange={(e) =>
+                            updateField(
+                              activeField.id,
+                              "beforeDate",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10"
+                        />
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        Left = After Date (Min), Right = Before Date (Max)
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -276,18 +440,23 @@ export default function BuilderPage() {
             <div className="p-6 bg-slate-50 border-t border-slate-100">
               <div className="flex items-center gap-2 text-green-600">
                 <ShieldCheck size={14} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Settings synced</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  Settings synced
+                </span>
               </div>
             </div>
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center p-10 text-center">
             <Settings2 className="w-10 h-10 text-slate-100 mb-4" />
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select a field<br/>to edit properties</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Select a field
+              <br />
+              to edit properties
+            </p>
           </div>
         )}
       </aside>
-
     </div>
   );
 }
