@@ -34,6 +34,12 @@ public class FormField {
     private LocalDate beforeDate;
     private LocalDate afterDate;   // min allowed date    // min date allowed
 
+    @ElementCollection
+    @CollectionTable(name = "form_field_options", joinColumns = @JoinColumn(name = "field_id"))
+    @Column(name = "option_value")
+    private java.util.List<String> options;
+
+
     @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "form_id")

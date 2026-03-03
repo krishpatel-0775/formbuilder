@@ -33,6 +33,9 @@ import {
   CheckCircle2,
   ListPlus,
   ArrowRight,
+  AlignLeft,
+  CircleDot,
+  CheckSquare,
 } from "lucide-react";
 
 // --- Sortable Field Wrapper Component ---
@@ -117,9 +120,12 @@ export default function BuilderPage() {
 
   const fieldIcons = {
     text: <Type size={18} />,
+    textarea: <AlignLeft size={18} />,
     number: <Hash size={18} />,
     email: <Mail size={18} />,
     date: <Calendar size={18} />,
+    radio: <CircleDot size={18} />,
+    checkbox: <CheckSquare size={18} />,
   };
 
   const activeField = useMemo(
@@ -165,6 +171,7 @@ export default function BuilderPage() {
       pattern: "",
       beforeDate: "",
       afterDate: "",
+      options: (type.toLowerCase() === "radio" || type.toLowerCase() === "checkbox") ? ["Option 1", "Option 2"] : [],
     };
 
     setFields([...fields, newField]);
@@ -236,10 +243,14 @@ export default function BuilderPage() {
           required: field.required,
         };
 
-        if (field.type === "text") {
+        if (field.type === "radio" || field.type === "checkbox") {
+          fieldData.options = field.options;
+        }
+
+        if (field.type === "text" || field.type === "textarea") {
           if (field.minLength) fieldData.minLength = Number(field.minLength);
           if (field.maxLength) fieldData.maxLength = Number(field.maxLength);
-          if (field.pattern) fieldData.pattern = field.pattern;
+          if (field.type === "text" && field.pattern) fieldData.pattern = field.pattern;
         }
 
         if (field.type === "number") {
@@ -475,7 +486,7 @@ export default function BuilderPage() {
                   <AlertCircle size={14} /> Constraints
                 </label>
 
-                {activeField.type === "text" && (
+                {(activeField.type === "text" || activeField.type === "textarea") && (
                   <div className="flex flex-col gap-6">
                     <div className="space-y-3">
                       <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
@@ -504,17 +515,58 @@ export default function BuilderPage() {
                         </div>
                       </div>
                     </div>
+                    {activeField.type === "text" && (
+                      <div className="space-y-3">
+                        <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
+                          Regex Pattern
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="e.g. ^[A-Z]+$"
+                          value={activeField.pattern}
+                          onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
+                          className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-blue-600 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-slate-400 shadow-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {(activeField.type === "radio" || activeField.type === "checkbox") && (
+                  <div className="flex flex-col gap-4">
+                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
+                      Choices
+                    </span>
                     <div className="space-y-3">
-                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
-                        Regex Pattern
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="e.g. ^[A-Z]+$"
-                        value={activeField.pattern}
-                        onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
-                        className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-blue-600 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-slate-400 shadow-sm"
-                      />
+                      {activeField.options?.map((opt, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                           <input 
+                             type="text" 
+                             value={opt} 
+                             onChange={(e) => {
+                               const newOptions = [...activeField.options];
+                               newOptions[i] = e.target.value;
+                               updateField(activeField.id, "options", newOptions);
+                             }}
+                             className="flex-1 bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                           />
+                           <button 
+                             onClick={() => {
+                               const newOptions = activeField.options.filter((_, idx) => idx !== i);
+                               updateField(activeField.id, "options", newOptions);
+                             }} 
+                             className="p-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
+                           >
+                             <Trash2 size={16} />
+                           </button>
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])} 
+                        className="w-full p-3 border border-dashed border-blue-300 rounded-xl text-blue-600 font-bold hover:bg-blue-50 text-sm transition-colors"
+                      >
+                        + Add Choice
+                      </button>
                     </div>
                   </div>
                 )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, CheckCircle2, AlertCircle, Calendar, Mail, Type, Hash, ArrowRight, ShieldCheck } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Calendar, Mail, Type, Hash, ArrowRight, ShieldCheck, AlignLeft, CircleDot, CheckSquare } from "lucide-react";
 
 export default function FillFormPage() {
   const { id } = useParams();
@@ -151,6 +151,9 @@ export default function FillFormPage() {
                 email: <Mail size={18} />,
                 number: <Hash size={18} />,
                 date: <Calendar size={18} />,
+                textarea: <AlignLeft size={18} />,
+                radio: <CircleDot size={18} />,
+                checkbox: <CheckSquare size={18} />,
               };
 
               return (
@@ -165,34 +168,88 @@ export default function FillFormPage() {
                   </div>
 
                   <div className="relative">
-                    <div
-                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
-                        hasError
-                          ? "text-red-600"
-                          : "text-slate-500 group-focus-within:text-indigo-600"
-                      }`}
-                    >
-                      {icons[field.fieldType] || <Type size={18} />}
-                    </div>
+                    {field.fieldType === "textarea" ? (
+                      <>
+                        <div className={`absolute left-4 top-4 transition-colors ${hasError ? "text-red-600" : "text-slate-500 group-focus-within:text-indigo-600"}`}>
+                          <AlignLeft size={18} />
+                        </div>
+                        <textarea
+                          className={`w-full pl-12 pr-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all outline-none leading-relaxed min-h-[120px] ${
+                            hasError
+                              ? "border-red-400 bg-red-50 text-red-900 placeholder:text-red-300"
+                              : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"
+                          }`}
+                          placeholder={`Enter ${fieldName.toLowerCase()}...`}
+                          value={values[fieldName] || ""}
+                          onChange={(e) => handleChange(fieldName, e.target.value, field.fieldType)}
+                          required={field.required}
+                        />
+                      </>
+                    ) : field.fieldType === "radio" || field.fieldType === "checkbox" ? (
+                      <div className="flex flex-col gap-3 mt-3 bg-slate-50 border border-slate-100 p-4 rounded-xl">
+                        {field.options?.map((opt, i) => (
+                           <label key={i} className="flex items-center gap-3 cursor-pointer group/opt">
+                             <input 
+                               type={field.fieldType} 
+                               name={fieldName} 
+                               value={opt} 
+                               checked={
+                                 field.fieldType === "radio" 
+                                 ? values[fieldName] === opt 
+                                 : (values[fieldName] || "").split(", ").includes(opt)
+                               }
+                               onChange={(e) => {
+                                 if (field.fieldType === "radio") {
+                                   handleChange(fieldName, opt, field.fieldType);
+                                 } else {
+                                   setValues((prev) => {
+                                      const current = prev[fieldName] ? prev[fieldName].split(", ") : [];
+                                      const next = e.target.checked ? [...current, opt] : current.filter(v => v !== opt);
+                                      return { ...prev, [fieldName]: next.join(", ") };
+                                   });
+                                   setFieldErrors((prev) => ({ ...prev, [fieldName]: "" }));
+                                   setErrorMessage("");
+                                 }
+                               }}
+                               className={`w-4 h-4 cursor-pointer accent-indigo-600 ${field.fieldType === 'radio' ? 'rounded-full' : 'rounded'} border-slate-300`}
+                               required={field.fieldType === "radio" && field.required && !values[fieldName]}
+                             />
+                             <span className="text-[14px] font-bold text-slate-700 group-hover/opt:text-indigo-600 transition-colors uppercase tracking-wide">{opt}</span>
+                           </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                            hasError
+                              ? "text-red-600"
+                              : "text-slate-500 group-focus-within:text-indigo-600"
+                          }`}
+                        >
+                          {icons[field.fieldType] || <Type size={18} />}
+                        </div>
 
-                    <input
-                      type={field.fieldType}
-                      className={`w-full pl-12 pr-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all outline-none leading-relaxed ${
-                        hasError
-                          ? "border-red-400 bg-red-50 text-red-900 placeholder:text-red-300"
-                          : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"
-                      }`}
-                      placeholder={`Enter ${fieldName.toLowerCase()}...`}
-                      value={values[fieldName] || ""}
-                      onChange={(e) =>
-                        handleChange(
-                          fieldName,
-                          e.target.value,
-                          field.fieldType,
-                        )
-                      }
-                      required={field.required}
-                    />
+                        <input
+                          type={field.fieldType}
+                          className={`w-full pl-12 pr-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all outline-none leading-relaxed ${
+                            hasError
+                              ? "border-red-400 bg-red-50 text-red-900 placeholder:text-red-300"
+                              : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"
+                          }`}
+                          placeholder={`Enter ${fieldName.toLowerCase()}...`}
+                          value={values[fieldName] || ""}
+                          onChange={(e) =>
+                            handleChange(
+                              fieldName,
+                              e.target.value,
+                              field.fieldType,
+                            )
+                          }
+                          required={field.required}
+                        />
+                      </>
+                    )}
                   </div>
 
                   {hasError && (

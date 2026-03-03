@@ -203,6 +203,8 @@ public class FormService {
                             LocalDate.parse(field.getAfterDate()) : null
             );
 
+            formField.setOptions(field.getOptions());
+
             formField.setForm(form);
 
             fieldList.add(formField);
@@ -286,10 +288,10 @@ public class FormService {
 
     private String mapType(String type) {
         return switch (type) {
-            case "text", "email" -> "VARCHAR(255)";
+            case "text", "email", "radio" -> "VARCHAR(255)";
             case "number" -> "INT";
             case "date" -> "DATE";
-            case "textarea" -> "TEXT";
+            case "textarea", "checkbox" -> "TEXT";
             default -> "VARCHAR(255)";
         };
     }
