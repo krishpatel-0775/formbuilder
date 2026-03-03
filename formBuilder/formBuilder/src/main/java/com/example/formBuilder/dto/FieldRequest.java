@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,5 +22,5 @@ public class FieldRequest {
     private String pattern;
     private String beforeDate;   // max allowed date
     private String afterDate;    // min allowed date   // min date allowed
-    private java.util.List<String> options;
+    private List<String> options;
 }

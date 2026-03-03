@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Getter
@@ -32,12 +33,12 @@ public class FormField {
     private String pattern;
 
     private LocalDate beforeDate;
-    private LocalDate afterDate;   // min allowed date    // min date allowed
+    private LocalDate afterDate;
 
     @ElementCollection
     @CollectionTable(name = "form_field_options", joinColumns = @JoinColumn(name = "field_id"))
     @Column(name = "option_value")
-    private java.util.List<String> options;
+    private List<String> options;
 
 
     @JsonBackReference
