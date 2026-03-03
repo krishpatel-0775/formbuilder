@@ -42,9 +42,25 @@ public class FormController {
         return ResponseEntity.ok(formService.getFormById(id));
     }
 
+    // get form data by id
     @GetMapping("/data/{id}")
     public ResponseEntity<List<Map<String, Object>>> getFormData(@PathVariable Long id) {
 
         return ResponseEntity.ok(formService.getAllDataFromTable(id));
     }
+
+
+    // form publish endpoint
+    @PostMapping("/publish/{id}")
+    public ResponseEntity<?> publishForm(@PathVariable Long id) {
+        return ResponseEntity.ok(formService.publishForm(id));
+    }
+
+    //record submission delete by id
+    @DeleteMapping("/{formId}/response/{responseId}")
+    public ResponseEntity<?> deleteResponse(@PathVariable Long formId, @PathVariable Long responseId) {
+
+        return ResponseEntity.ok(formService.deleteResponse(formId, responseId));
+    }
+
 }

@@ -120,6 +120,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
+import static java.lang.Boolean.TRUE;
+
 @Service
 @RequiredArgsConstructor
 public class FormService {
@@ -155,10 +158,40 @@ public class FormService {
         List<FormListDto> formListDtos = new ArrayList<>();
 
         for (Form form : forms) {
-            formListDtos.add(new FormListDto(form.getId(), form.getFormName()));
+            formListDtos.add(new FormListDto(form.getId(), form.getFormName(), form.getStatus()));
         }
 
         return formListDtos;
+    }
+
+    //delete response by id
+    public String deleteResponse(Long formId, Long responseId) {
+        String tableName = "form_" + formId;
+
+        String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id = ?";
+
+        jdbcTemplate.update(sql, responseId);
+
+
+        return "response deleted";
+
+    }
+
+    public String publishForm(Long id) {
+        Form form = formRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Form not found"));
+
+        String tableName = form.getTableName();
+
+        List<FormField> fields = fieldRepository.findByFormId(id);
+
+        createDynamicTable(tableName, fields);
+
+        form.setStatus(PUBLISHED);
+
+        formRepository.save(form);
+
+        return "Form Published Successfully";
     }
 
     public String createForm(FormRequest request) {
@@ -175,7 +208,7 @@ public class FormService {
         form.setTableName(tableName);
         formRepository.save(form);
 
-        createDynamicTable(tableName, request.getFields());
+//        createDynamicTable(tableName, request.getFields());
 
         List<FormField> fieldList = new ArrayList<>();
 
@@ -215,32 +248,35 @@ public class FormService {
         return "Form Created Successfully";
     }
 
-    private void createDynamicTable(String tableName, List<FieldRequest> fields) {
+    private void createDynamicTable(String tableName, List<FormField> fields) {
 
         StringBuilder sql = new StringBuilder();
 
         sql.append("CREATE TABLE ")
                 .append(tableName)
-                .append(" (id BIGSERIAL PRIMARY KEY");
+                .append(" (id BIGSERIAL PRIMARY KEY")
+                .append(", is_deleted BOOLEAN DEFAULT FALSE NOT NULL")
+                .append(", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL");
 
-        for (FieldRequest field : fields) {
 
-            validateColumnName(field.getName());
+        for (FormField field : fields) {
+
+            validateColumnName(field.getFieldName());
 
             sql.append(", ")
-                    .append(field.getName())
+                    .append(field.getFieldName())
                     .append(" ")
-                    .append(mapType(field.getType()));
+                    .append(mapType(field.getFieldType()));
 
             // REQUIRED
-            if (Boolean.TRUE.equals(field.getRequired())) {
+            if (TRUE.equals(field.getRequired())) {
                 sql.append(" NOT NULL");
             }
 
             // TEXT length constraints
             if (field.getMinLength() != null) {
                 sql.append(" CHECK (char_length(")
-                        .append(field.getName())
+                        .append(field.getFieldName())
                         .append(") >= ")
                         .append(field.getMinLength())
                         .append(")");
@@ -248,7 +284,7 @@ public class FormService {
 
             if (field.getMaxLength() != null) {
                 sql.append(" CHECK (char_length(")
-                        .append(field.getName())
+                        .append(field.getFieldName())
                         .append(") <= ")
                         .append(field.getMaxLength())
                         .append(")");
@@ -257,7 +293,7 @@ public class FormService {
             // NUMBER constraints
             if (field.getMin() != null) {
                 sql.append(" CHECK (")
-                        .append(field.getName())
+                        .append(field.getFieldName())
                         .append(" >= ")
                         .append(field.getMin())
                         .append(")");
@@ -265,7 +301,7 @@ public class FormService {
 
             if (field.getMax() != null) {
                 sql.append(" CHECK (")
-                        .append(field.getName())
+                        .append(field.getFieldName())
                         .append(" <= ")
                         .append(field.getMax())
                         .append(")");
@@ -274,7 +310,7 @@ public class FormService {
 
             if (field.getPattern() != null) {
                 sql.append(" CHECK (")
-                        .append(field.getName())
+                        .append(field.getFieldName())
                         .append(" ~ '")
                         .append(field.getPattern().replace("'", "''"))
                         .append("')");

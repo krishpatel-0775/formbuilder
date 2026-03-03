@@ -1,281 +1,255 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Loader2, CheckCircle2, AlertCircle, Calendar, Mail, Type, Hash, ArrowRight, ShieldCheck, AlignLeft, CircleDot, CheckSquare } from "lucide-react";
+import { useParams, useRouter } from "next/navigation"; // ✅ Added useRouter
+import { AlertCircle, Send, ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
 
-export default function FillFormPage() {
+export default function PublicFormPage() {
   const { id } = useParams();
-  const router = useRouter();
-
-  const [mounted, setMounted] = useState(false);
-  const [form, setForm] = useState(null);
-  const [values, setValues] = useState({});
+  const router = useRouter(); // ✅ Initialize router
+  const [formConfig, setFormConfig] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
-  const [showSuccess, setShowSuccess] = useState(false); // ✅ Added for popup
-  const [errorMessage, setErrorMessage] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!id || !mounted) return;
+    if (!id) return;
     fetch(`http://localhost:9090/api/forms/${id}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Form not found");
+        return res.json();
+      })
       .then((data) => {
-        setForm(data);
+        setFormConfig(data);
+        const initialData = {};
+        if (data?.fields) {
+          data.fields.forEach((field) => {
+            initialData[field.fieldName] = field.fieldType === "checkbox" ? [] : "";
+          });
+        }
+        setFormData(initialData);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching form:", err);
         setLoading(false);
       });
-  }, [id, mounted]);
+  }, [id]);
 
-  const handleChange = (fieldName, value, fieldType) => {
-    let parsedValue = value;
-    if (fieldType === "number") {
-      parsedValue = value === "" ? "" : Number(value);
+  const validate = () => {
+    const newErrors = {};
+    if (!formConfig || !formConfig.fields) return newErrors;
+
+    formConfig.fields.forEach((field) => {
+      const value = formData[field.fieldName];
+      const name = field.fieldName;
+
+      if (field.required) {
+        if (field.fieldType === "checkbox") {
+          if (!value || value.length === 0) newErrors[name] = `Select at least one option`;
+        } else if (!value || value.toString().trim() === "") {
+          newErrors[name] = `${name} is required`;
+        }
+      }
+
+      const isStringField = ["text", "email", "textarea"].includes(field.fieldType);
+      if (value && isStringField) {
+        if (field.minLength && value.length < field.minLength) {
+          newErrors[name] = `Min ${field.minLength} characters required`;
+        }
+        if (field.maxLength && value.length > field.maxLength) {
+          newErrors[name] = `Max ${field.maxLength} characters allowed`;
+        }
+      }
+
+      if (value && field.fieldType === "number") {
+        const numVal = Number(value);
+        if (field.min !== null && numVal < field.min) newErrors[name] = `Min value: ${field.min}`;
+        if (field.max !== null && numVal > field.max) newErrors[name] = `Max value: ${field.max}`;
+      }
+
+      if (value && field.fieldType === "date") {
+        const selectedDate = new Date(value);
+        selectedDate.setHours(0, 0, 0, 0);
+        if (field.afterDate && selectedDate < new Date(field.afterDate).setHours(0,0,0,0)) {
+            newErrors[name] = `Must be after ${field.afterDate}`;
+        }
+        if (field.beforeDate && selectedDate > new Date(field.beforeDate).setHours(0,0,0,0)) {
+            newErrors[name] = `Must be before ${field.beforeDate}`;
+        }
+      }
+    });
+
+    return newErrors;
+  };
+
+  const handleCheckboxChange = (fieldName, optionValue) => {
+    const currentValues = formData[fieldName] || [];
+    const newValues = currentValues.includes(optionValue)
+      ? currentValues.filter((v) => v !== optionValue)
+      : [...currentValues, optionValue];
+    
+    handleInputChange(fieldName, newValues);
+  };
+
+  const handleInputChange = (fieldName, value) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    if (errors[fieldName]) {
+      setErrors((prev) => {
+        const newErrs = { ...prev };
+        delete newErrs[fieldName];
+        return newErrs;
+      });
     }
-    setValues((prev) => ({ ...prev, [fieldName]: parsedValue }));
-    setFieldErrors((prev) => ({ ...prev, [fieldName]: "" }));
-    setErrorMessage("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form) return;
-    setErrorMessage("");
-    setFieldErrors({});
+    if (!formConfig) return;
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors); 
+      return;
+    }
+
+    setErrors({});
+    setIsSubmitting(true);
+
+    const submissionBody = {
+      formId: parseInt(id),
+      values: formData,
+    };
 
     try {
-      const response = await fetch("http://localhost:9090/api/submissions", {
+      const res = await fetch(`http://localhost:9090/api/submissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: form.id, values }),
+        body: JSON.stringify(submissionBody),
       });
 
-      const contentType = response.headers.get("content-type");
-      let result =
-        contentType && contentType.includes("application/json")
-          ? await response.json()
-          : await response.text();
-
-      if (!response.ok) {
-        const message =
-          typeof result === "string"
-            ? result
-            : result.error || "Submission failed";
-        setErrorMessage(message);
-        const fieldName = message.split(" ")[0];
-        setFieldErrors({ [fieldName]: message });
-        return;
-      }
-
-      // ✅ SHOW SUCCESS POPUP FIRST
-      setShowSuccess(true);
-
-      // ✅ REDIRECT AFTER 2 SECONDS
-      setTimeout(() => {
+      if (res.ok) {
+        // ✅ Redirect to the Data view page after successful submission
         router.push(`/forms/data/${id}`);
-      }, 2000);
-
-    } catch (error) {
-      setErrorMessage("Something went wrong. Please try again.");
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Error: ${errorData.message || "Submission failed"}`);
+      }
+    } catch (err) {
+      alert("Connection failed. Check backend/CORS settings.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (!mounted) return null;
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+      <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+      <p className="text-slate-500 font-bold tracking-widest uppercase text-xs">Loading Form...</p>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center py-12 px-4 relative">
-      
-      {/* ✅ SUCCESS POPUP OVERLAY */}
-      {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl flex flex-col items-center border border-slate-100 scale-110 transition-transform">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
-            </div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">Success!</h2>
-            <p className="text-slate-500 font-bold text-center italic">Response recorded securely.</p>
-            <div className="mt-6 flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Redirecting to data...
-            </div>
+    <div className="min-h-screen bg-[#f8fafc] py-16 px-6">
+      <div className="max-w-2xl mx-auto">
+        <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-8 font-bold text-sm uppercase tracking-widest">
+          <ArrowLeft size={16} /> Back
+        </Link>
+
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-8 md:p-12 border-b border-slate-100 bg-slate-50/50">
+            <h1 className="text-4xl font-black text-slate-900 capitalize mb-2">{formConfig.formName}</h1>
+            <p className="text-slate-500 font-medium">Please fill the details below.</p>
           </div>
-        </div>
-      )}
 
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-md border border-slate-300 overflow-hidden">
-        <div className="px-10 py-8 bg-white border-b-2 border-slate-100 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-              <ShieldCheck className="text-indigo-600 w-7 h-7" />
-              {form?.formName}
-            </h1>
-            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">
-              Data Entry Terminal
-            </p>
-          </div>
-          <div className="bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100">
-            <span className="text-xs font-black text-indigo-700 uppercase tracking-tighter">
-              ID: {id?.toString().slice(-6)}
-            </span>
-          </div>
-        </div>
+          <form onSubmit={handleSubmit} className="p-8 md:p-12 space-y-10">
+            {formConfig?.fields?.map((field) => (
+              <div key={field.id} className="space-y-4">
+                <label className="block text-sm font-black text-slate-700 uppercase tracking-wider">
+                  {field.fieldName} {field.required && <span className="text-red-500">*</span>}
+                </label>
 
-        <div className="p-10">
-          {errorMessage && (
-            <div className="mb-8 p-4 rounded-xl bg-red-50 border-2 border-red-200 text-red-700 text-sm font-black flex items-center gap-3">
-              <AlertCircle size={18} /> {errorMessage.toUpperCase()}
-            </div>
-          )}
+                {field.fieldType === "textarea" && (
+                  <textarea
+                    rows={4}
+                    value={formData[field.fieldName] || ""}
+                    onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
+                    className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-medium resize-none ${errors[field.fieldName] ? "border-red-300 bg-red-50/30" : "border-slate-200 focus:border-blue-500 bg-slate-50/30"}`}
+                  />
+                )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {form?.fields.map((field, index) => {
-              const fieldName = field.fieldName;
-              const hasError = fieldErrors[fieldName];
-              const icons = {
-                text: <Type size={18} />,
-                email: <Mail size={18} />,
-                number: <Hash size={18} />,
-                date: <Calendar size={18} />,
-                textarea: <AlignLeft size={18} />,
-                radio: <CircleDot size={18} />,
-                checkbox: <CheckSquare size={18} />,
-              };
-
-              return (
-                <div key={`${field.id}-${index}`} className="group space-y-2">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="text-[13px] font-black text-slate-800 uppercase tracking-wider group-focus-within:text-indigo-700 transition-colors">
-                      {fieldName}{" "}
-                      {field.required && (
-                        <span className="text-red-600 text-lg">*</span>
-                      )}
-                    </label>
-                  </div>
-
-                  <div className="relative">
-                    {field.fieldType === "textarea" ? (
-                      <>
-                        <div className={`absolute left-4 top-4 transition-colors ${hasError ? "text-red-600" : "text-slate-500 group-focus-within:text-indigo-600"}`}>
-                          <AlignLeft size={18} />
-                        </div>
-                        <textarea
-                          className={`w-full pl-12 pr-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all outline-none leading-relaxed min-h-[120px] ${
-                            hasError
-                              ? "border-red-400 bg-red-50 text-red-900 placeholder:text-red-300"
-                              : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"
-                          }`}
-                          placeholder={`Enter ${fieldName.toLowerCase()}...`}
-                          value={values[fieldName] || ""}
-                          onChange={(e) => handleChange(fieldName, e.target.value, field.fieldType)}
-                          required={field.required}
-                        />
-                      </>
-                    ) : field.fieldType === "radio" || field.fieldType === "checkbox" ? (
-                      <div className="flex flex-col gap-3 mt-3 bg-slate-50 border border-slate-100 p-4 rounded-xl">
-                        {field.options?.map((opt, i) => (
-                           <label key={i} className="flex items-center gap-3 cursor-pointer group/opt">
-                             <input 
-                               type={field.fieldType} 
-                               name={fieldName} 
-                               value={opt} 
-                               checked={
-                                 field.fieldType === "radio" 
-                                 ? values[fieldName] === opt 
-                                 : (values[fieldName] || "").split(", ").includes(opt)
-                               }
-                               onChange={(e) => {
-                                 if (field.fieldType === "radio") {
-                                   handleChange(fieldName, opt, field.fieldType);
-                                 } else {
-                                   setValues((prev) => {
-                                      const current = prev[fieldName] ? prev[fieldName].split(", ") : [];
-                                      const next = e.target.checked ? [...current, opt] : current.filter(v => v !== opt);
-                                      return { ...prev, [fieldName]: next.join(", ") };
-                                   });
-                                   setFieldErrors((prev) => ({ ...prev, [fieldName]: "" }));
-                                   setErrorMessage("");
-                                 }
-                               }}
-                               className={`w-4 h-4 cursor-pointer accent-indigo-600 ${field.fieldType === 'radio' ? 'rounded-full' : 'rounded'} border-slate-300`}
-                               required={field.fieldType === "radio" && field.required && !values[fieldName]}
-                             />
-                             <span className="text-[14px] font-bold text-slate-700 group-hover/opt:text-indigo-600 transition-colors uppercase tracking-wide">{opt}</span>
-                           </label>
-                        ))}
-                      </div>
-                    ) : (
-                      <>
-                        <div
-                          className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
-                            hasError
-                              ? "text-red-600"
-                              : "text-slate-500 group-focus-within:text-indigo-600"
-                          }`}
-                        >
-                          {icons[field.fieldType] || <Type size={18} />}
-                        </div>
-
+                {field.fieldType === "radio" && (
+                  <div className="grid gap-3">
+                    {field.options?.map((opt, idx) => (
+                      <label key={idx} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${formData[field.fieldName] === opt ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-slate-50/50 border-slate-100 text-slate-600"}`}>
                         <input
-                          type={field.fieldType}
-                          className={`w-full pl-12 pr-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all outline-none leading-relaxed ${
-                            hasError
-                              ? "border-red-400 bg-red-50 text-red-900 placeholder:text-red-300"
-                              : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"
-                          }`}
-                          placeholder={`Enter ${fieldName.toLowerCase()}...`}
-                          value={values[fieldName] || ""}
-                          onChange={(e) =>
-                            handleChange(
-                              fieldName,
-                              e.target.value,
-                              field.fieldType,
-                            )
-                          }
-                          required={field.required}
+                          type="radio"
+                          name={field.fieldName}
+                          value={opt}
+                          checked={formData[field.fieldName] === opt}
+                          onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
+                          className="w-4 h-4 text-blue-600"
                         />
-                      </>
-                    )}
+                        <span className="font-bold">{opt}</span>
+                      </label>
+                    ))}
                   </div>
+                )}
 
-                  {hasError && (
-                    <p className="text-xs font-black text-red-600 ml-1 flex items-center gap-1 uppercase tracking-tight">
-                      <AlertCircle size={14} /> {fieldErrors[fieldName]}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+                {field.fieldType === "checkbox" && (
+                  <div className="grid gap-3">
+                    {field.options?.map((opt, idx) => (
+                      <label key={idx} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${formData[field.fieldName]?.includes(opt) ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-slate-50/50 border-slate-100 text-slate-600"}`}>
+                        <input
+                          type="checkbox"
+                          checked={formData[field.fieldName]?.includes(opt)}
+                          onChange={() => handleCheckboxChange(field.fieldName, opt)}
+                          className="w-4 h-4 rounded text-blue-600"
+                        />
+                        <span className="font-bold">{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
 
-            <div className="pt-10 border-t-2 border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">
-                  Ready for secure upload
-                </p>
+                {field.fieldType === "select" && (
+                  <select
+                    value={formData[field.fieldName] || ""}
+                    onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
+                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 bg-slate-50/30 outline-none font-bold appearance-none"
+                  >
+                    <option value="">Select an option</option>
+                    {field.options?.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
+                  </select>
+                )}
+
+                {!["textarea", "radio", "checkbox", "select"].includes(field.fieldType) && (
+                  <input
+                    type={field.fieldType}
+                    value={formData[field.fieldName] || ""}
+                    onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
+                    className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-medium ${errors[field.fieldName] ? "border-red-300 bg-red-50/30" : "border-slate-200 focus:border-blue-500 bg-slate-50/30"}`}
+                  />
+                )}
+
+                {errors[field.fieldName] && (
+                  <div className="flex items-center gap-1.5 text-red-500 px-2 font-bold text-xs uppercase tracking-tight">
+                    <AlertCircle size={14} /> {errors[field.fieldName]}
+                  </div>
+                )}
               </div>
-              <button
-                type="submit"
-                className="w-full md:w-auto flex items-center justify-center gap-3 bg-slate-900 text-white px-12 py-4 rounded-xl font-black text-base hover:bg-indigo-600 transition-all active:scale-[0.98] shadow-2xl shadow-slate-200"
-              >
-                SUBMIT DATA
-                <ArrowRight size={20} />
-              </button>
-            </div>
+            ))}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-6 ${isSubmitting ? "bg-slate-300" : "bg-slate-900 text-white hover:bg-blue-600 shadow-xl"}`}
+            >
+              {isSubmitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
+              {isSubmitting ? "Processing..." : "Submit Response"}
+            </button>
           </form>
         </div>
       </div>

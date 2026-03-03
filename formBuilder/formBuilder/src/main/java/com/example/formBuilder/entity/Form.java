@@ -1,6 +1,7 @@
 package com.example.formBuilder.entity;
 
 
+import com.example.formBuilder.enums.FormStatus;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,6 +25,9 @@ public class Form {
     private String tableName;
 
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Enumerated(EnumType.STRING)
+    private FormStatus status = FormStatus.DRAFT;
 
     @JsonManagedReference
     @OneToMany(mappedBy = "form", cascade = CascadeType.ALL)

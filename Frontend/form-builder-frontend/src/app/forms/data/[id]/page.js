@@ -1,9 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation"; // Added useRouter
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Download, Database, Inbox, ExternalLink, ArrowLeft } from "lucide-react"; // Added ExternalLink & ArrowLeft
-import Link from "next/link"; // Added Link
+import { Download, Database, Inbox, ExternalLink, Trash2 } from "lucide-react"; 
+import Link from "next/link";
 
 export default function FormDataPage() {
   const { id } = useParams();
@@ -16,7 +16,9 @@ export default function FormDataPage() {
     fetch(`http://localhost:9090/api/forms/data/${id}`)
       .then((res) => res.json())
       .then((result) => {
-        setData(result);
+        // ✅ Initial filter: Only show responses that aren't marked as deleted
+        const activeResponses = result.filter(item => item.is_deleted === false || item.is_deleted === undefined);
+        setData(activeResponses);
         setLoading(false);
       })
       .catch((err) => {
@@ -24,6 +26,26 @@ export default function FormDataPage() {
         setLoading(false);
       });
   }, [id]);
+
+  const deleteResponse = async (responseId) => {
+    if (!confirm("Are you sure you want to delete this response?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:9090/api/forms/${id}/response/${responseId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // ✅ Update UI locally: remove the deleted item from state
+        setData((prev) => prev.filter((item) => item.id !== responseId));
+      } else {
+        alert("Failed to delete response");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Error connecting to server");
+    }
+  };
 
   if (loading) {
     return (
@@ -41,7 +63,7 @@ export default function FormDataPage() {
           <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <Inbox className="text-slate-400" size={32} />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">No responses yet</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">No active responses</h2>
           <p className="text-slate-500 text-sm mb-6">Once users submit your form, their data will appear here.</p>
           <Link 
             href={`/forms/${id}`}
@@ -55,7 +77,9 @@ export default function FormDataPage() {
     );
   }
 
-  const headers = Object.keys(data[0]);
+  // Define headers but exclude internal fields from showing in the table UI if you wish
+  // Here we include everything except internal metadata like is_deleted
+  const headers = Object.keys(data[0]).filter(key => key !== 'is_deleted');
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10">
@@ -71,7 +95,6 @@ export default function FormDataPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* NEW REDIRECT BUTTON */}
             <Link 
               href={`/forms/${id}`}
               className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-100 transition-all active:scale-95"
@@ -104,12 +127,14 @@ export default function FormDataPage() {
                       {header.replace(/_/g, " ")}
                     </th>
                   ))}
+                  {/* Action Header */}
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.map((row, index) => (
+                {data.map((row) => (
                   <tr 
-                    key={index} 
+                    key={row.id} 
                     className="hover:bg-indigo-50/30 transition-colors group"
                   >
                     {headers.map((header) => (
@@ -126,6 +151,16 @@ export default function FormDataPage() {
                         )}
                       </td>
                     ))}
+                    {/* Delete Action Button */}
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => deleteResponse(row.id)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete Response"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -134,7 +169,7 @@ export default function FormDataPage() {
           
           <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
             <p className="text-xs font-medium text-slate-500">
-              Showing <span className="text-slate-900">{data.length}</span> total submissions
+              Showing <span className="text-slate-900">{data.length}</span> active submissions
             </p>
           </div>
         </div>
