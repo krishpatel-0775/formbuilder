@@ -23,8 +23,8 @@ export default function FormsListPage() {
   useEffect(() => {
     fetch("http://localhost:9090/api/forms")
       .then((res) => res.json())
-      .then((data) => {
-        setForms(data);
+      .then((res) => {
+        setForms(res.data || []);
         setLoading(false);
       })
       .catch((err) => {

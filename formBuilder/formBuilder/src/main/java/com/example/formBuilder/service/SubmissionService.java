@@ -21,6 +21,19 @@ public class SubmissionService {
     private final FormRepository formRepository;
     private final JdbcTemplate jdbcTemplate;
 
+    //delete response by id
+    public String deleteResponse(Long formId, Long responseId) {
+        String tableName = "form_" + formId;
+
+        String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id = ?";
+
+        jdbcTemplate.update(sql, responseId);
+
+
+        return "response deleted";
+
+    }
+
     public String submitForm(SubmissionRequest request) {
 
         Form form = formRepository.findById(request.getFormId())

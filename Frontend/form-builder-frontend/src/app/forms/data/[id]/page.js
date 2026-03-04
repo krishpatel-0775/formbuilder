@@ -15,9 +15,10 @@ export default function FormDataPage() {
 
     fetch(`http://localhost:9090/api/forms/data/${id}`)
       .then((res) => res.json())
-      .then((result) => {
+      .then((res) => {
         // ✅ Initial filter: Only show responses that aren't marked as deleted
-        const activeResponses = result.filter(item => item.is_deleted === false || item.is_deleted === undefined);
+        const rawData = res.data || [];
+        const activeResponses = rawData.filter(item => item.is_deleted === false || item.is_deleted === undefined);
         setData(activeResponses);
         setLoading(false);
       })
@@ -31,7 +32,7 @@ export default function FormDataPage() {
     if (!confirm("Are you sure you want to delete this response?")) return;
 
     try {
-      const res = await fetch(`http://localhost:9090/api/forms/${id}/response/${responseId}`, {
+      const res = await fetch(`http://localhost:9090/api/submissions/${id}/response/${responseId}`, {
         method: "DELETE",
       });
 

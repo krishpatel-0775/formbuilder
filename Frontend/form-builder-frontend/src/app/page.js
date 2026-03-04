@@ -147,7 +147,7 @@ export default function BuilderPage() {
     if (activeField && activeField.type === "select") {
       fetch("http://localhost:9090/api/forms")
         .then(res => res.json())
-        .then(data => setAvailableForms(data))
+        .then(res => setAvailableForms(res.data || []))
         .catch(err => console.error(err));
     }
   }, [activeField?.id, activeField?.type]);
@@ -157,7 +157,7 @@ export default function BuilderPage() {
     if (activeField && activeField.type === "select" && activeField.sourceTable) {
         fetch(`http://localhost:9090/api/forms/${activeField.sourceTable}`)
             .then(res => res.json())
-            .then(data => setSelectedFormFields(data.fields || []))
+            .then(res => setSelectedFormFields(res.data?.fields || []))
             .catch(console.error);
     } else {
         setSelectedFormFields([]);
@@ -271,13 +271,18 @@ export default function BuilderPage() {
           required: field.required,
         };
 
-        if (field.type === "radio" || field.type === "checkbox" || field.type === "select") {
+        if (field.type === "radio" || field.type === "checkbox") {
           fieldData.options = field.options;
         }
 
         if (field.type === "select") {
-          if (field.sourceTable) fieldData.sourceTable = field.sourceTable;
-          if (field.sourceColumn) fieldData.sourceColumn = field.sourceColumn;
+          if (field.sourceTable && field.sourceColumn) {
+            fieldData.sourceTable = field.sourceTable;
+            fieldData.sourceColumn = field.sourceColumn;
+            fieldData.options = []; // Clear manual options when using other form data
+          } else {
+            fieldData.options = field.options;
+          }
         }
 
         if (field.type === "text" || field.type === "textarea") {
@@ -393,7 +398,7 @@ export default function BuilderPage() {
             }`}
           >
             {showSuccess ? (
-              <><CheckCircle2 size={16} /> PUBLISHED</>
+              <><CheckCircle2 size={16} /> Success</>
             ) : isPublishing ? (
               <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (

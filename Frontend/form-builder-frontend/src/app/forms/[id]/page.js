@@ -21,14 +21,16 @@ export default function PublicFormPage() {
         if (!res.ok) throw new Error("Form not found");
         return res.json();
       })
-      .then(async (data) => {
+      .then(async (res) => {
+        const data = res.data;
         if (data?.fields) {
            await Promise.all(data.fields.map(async (field) => {
                if (field.fieldType === 'select' && field.sourceTable && field.sourceColumn) {
                    try {
                        const optRes = await fetch(`http://localhost:9090/api/forms/${field.sourceTable}/lookup/${field.sourceColumn}`);
                        if (optRes.ok) {
-                           field.options = await optRes.json();
+                           const optJson = await optRes.json();
+                           field.options = optJson.data || [];
                        }
                    } catch (err) {
                        console.error("Failed to fetch dynamic options for", field.fieldName, err);

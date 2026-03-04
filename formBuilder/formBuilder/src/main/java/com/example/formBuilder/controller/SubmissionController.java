@@ -1,7 +1,9 @@
 package com.example.formBuilder.controller;
 
 
+import com.example.formBuilder.dto.ApiResponse;
 import com.example.formBuilder.dto.SubmissionRequest;
+import com.example.formBuilder.service.FormService;
 import com.example.formBuilder.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +16,15 @@ import org.springframework.web.bind.annotation.*;
 public class SubmissionController {
 
     private final SubmissionService submissionService;
-
     //for response submision
     @PostMapping
-    public ResponseEntity<?> submitForm(@RequestBody SubmissionRequest request) {
+    public ResponseEntity<ApiResponse<String>> submitForm(@RequestBody SubmissionRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(submissionService.submitForm(request), null));
+    }
 
-        return ResponseEntity.ok(submissionService.submitForm(request));
+    //record submission delete by id
+    @DeleteMapping("/{formId}/response/{responseId}")
+    public ResponseEntity<ApiResponse<String>> deleteResponse(@PathVariable Long formId, @PathVariable Long responseId) {
+        return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponse(formId, responseId), null));
     }
 }
