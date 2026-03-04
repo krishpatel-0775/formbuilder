@@ -39,7 +39,8 @@ export default function FormDataPage() {
         // ✅ Update UI locally: remove the deleted item from state
         setData((prev) => prev.filter((item) => item.id !== responseId));
       } else {
-        alert("Failed to delete response");
+        const errorMsg = await res.text();
+        alert(`Error: ${errorMsg || "Failed to delete response"}`);
       }
     } catch (err) {
       console.error("Delete error:", err);

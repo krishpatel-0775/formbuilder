@@ -164,6 +164,19 @@ public class FormService {
         return formListDtos;
     }
 
+    public List<String> getLookupValues(Long formId, String columnName) {
+        Form form = getFormById(formId);
+        String tableName = form.getTableName();
+
+        // ⚠ IMPORTANT: Prevent SQL Injection for column name
+        if (!columnName.matches("^[a-zA-Z][a-zA-Z0-9_]*$")) {
+            throw new IllegalArgumentException("Invalid column name");
+        }
+
+        String sql = "SELECT DISTINCT " + columnName + " FROM " + tableName + " WHERE is_deleted = false AND " + columnName + " IS NOT NULL";
+        return jdbcTemplate.queryForList(sql, String.class);
+    }
+
     //delete response by id
     public String deleteResponse(Long formId, Long responseId) {
         String tableName = "form_" + formId;
@@ -239,6 +252,8 @@ public class FormService {
             formField.setOptions(field.getOptions());
 
             formField.setForm(form);
+            formField.setSourceTable(field.getSourceTable());
+            formField.setSourceColumn(field.getSourceColumn());
 
             fieldList.add(formField);
         }
@@ -324,7 +339,7 @@ public class FormService {
 
     private String mapType(String type) {
         return switch (type) {
-            case "text", "email", "radio" -> "VARCHAR(255)";
+            case "text", "email", "radio", "select" -> "VARCHAR(255)";
             case "number" -> "INT";
             case "date" -> "DATE";
             case "textarea", "checkbox" -> "TEXT";

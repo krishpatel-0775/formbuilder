@@ -40,6 +40,11 @@ public class FormField {
     @Column(name = "option_value")
     private List<String> options;
 
+    @Column(name = "source_table")
+    private String sourceTable;
+
+    @Column(name = "source_column")
+    private String sourceColumn;
 
     @JsonBackReference
     @ManyToOne

@@ -63,4 +63,10 @@ public class FormController {
         return ResponseEntity.ok(formService.deleteResponse(formId, responseId));
     }
 
+    // get dynamic lookup values for a form's column
+    @GetMapping("/{id}/lookup/{columnName}")
+    public ResponseEntity<List<String>> getLookupValues(@PathVariable Long id, @PathVariable String columnName) {
+        return ResponseEntity.ok(formService.getLookupValues(id, columnName));
+    }
+
 }

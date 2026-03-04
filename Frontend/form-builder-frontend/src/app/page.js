@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -126,6 +126,7 @@ export default function BuilderPage() {
     date: <Calendar size={18} />,
     radio: <CircleDot size={18} />,
     checkbox: <CheckSquare size={18} />,
+    select: <ListPlus size={18} />,
   };
 
   const activeField = useMemo(
@@ -137,6 +138,31 @@ export default function BuilderPage() {
     () => fields.find((f) => f.id === activeSortId),
     [fields, activeSortId]
   );
+
+  const [availableForms, setAvailableForms] = useState([]);
+  const [selectedFormFields, setSelectedFormFields] = useState([]);
+
+  // Fetch all available forms
+  useEffect(() => {
+    if (activeField && activeField.type === "select") {
+      fetch("http://localhost:9090/api/forms")
+        .then(res => res.json())
+        .then(data => setAvailableForms(data))
+        .catch(err => console.error(err));
+    }
+  }, [activeField?.id, activeField?.type]);
+
+  // Fetch the fields of the specific form chosen for the dynamic dropdown
+  useEffect(() => {
+    if (activeField && activeField.type === "select" && activeField.sourceTable) {
+        fetch(`http://localhost:9090/api/forms/${activeField.sourceTable}`)
+            .then(res => res.json())
+            .then(data => setSelectedFormFields(data.fields || []))
+            .catch(console.error);
+    } else {
+        setSelectedFormFields([]);
+    }
+  }, [activeField?.sourceTable, activeField?.id, activeField?.type]);
 
   // --- DND Kits Sensors ---
   const sensors = useSensors(
@@ -171,7 +197,9 @@ export default function BuilderPage() {
       pattern: "",
       beforeDate: "",
       afterDate: "",
-      options: (type.toLowerCase() === "radio" || type.toLowerCase() === "checkbox") ? ["Option 1", "Option 2"] : [],
+      options: (type.toLowerCase() === "radio" || type.toLowerCase() === "checkbox" || type.toLowerCase() === "select") ? ["Option 1", "Option 2"] : [],
+      sourceTable: "",
+      sourceColumn: "",
     };
 
     setFields([...fields, newField]);
@@ -205,7 +233,7 @@ export default function BuilderPage() {
   };
 
   const updateField = (id, key, value) => {
-    setFields(fields.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
+    setFields((prevFields) => prevFields.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
   };
 
   const removeField = (id) => {
@@ -243,8 +271,13 @@ export default function BuilderPage() {
           required: field.required,
         };
 
-        if (field.type === "radio" || field.type === "checkbox") {
+        if (field.type === "radio" || field.type === "checkbox" || field.type === "select") {
           fieldData.options = field.options;
+        }
+
+        if (field.type === "select") {
+          if (field.sourceTable) fieldData.sourceTable = field.sourceTable;
+          if (field.sourceColumn) fieldData.sourceColumn = field.sourceColumn;
         }
 
         if (field.type === "text" || field.type === "textarea") {
@@ -279,7 +312,10 @@ export default function BuilderPage() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to save form.");
+      if (!response.ok) {
+        const errorMsg = await response.text();
+        throw new Error(errorMsg || "Failed to save form.");
+      }
 
       const text = await response.text();
       
@@ -361,7 +397,7 @@ export default function BuilderPage() {
             ) : isPublishing ? (
               <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
-              <><Rocket size={16} /> PUBLISH FORM</>
+              <><Rocket size={16} /> Draft Form </>
             )}
           </button>
         </header>
@@ -532,42 +568,104 @@ export default function BuilderPage() {
                   </div>
                 )}
                 
-                {(activeField.type === "radio" || activeField.type === "checkbox") && (
+                {(activeField.type === "radio" || activeField.type === "checkbox" || activeField.type === "select") && (
                   <div className="flex flex-col gap-4">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
-                      Choices
-                    </span>
-                    <div className="space-y-3">
-                      {activeField.options?.map((opt, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                           <input 
-                             type="text" 
-                             value={opt} 
-                             onChange={(e) => {
-                               const newOptions = [...activeField.options];
-                               newOptions[i] = e.target.value;
-                               updateField(activeField.id, "options", newOptions);
-                             }}
-                             className="flex-1 bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
-                           />
-                           <button 
-                             onClick={() => {
-                               const newOptions = activeField.options.filter((_, idx) => idx !== i);
-                               updateField(activeField.id, "options", newOptions);
-                             }} 
-                             className="p-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
-                           >
-                             <Trash2 size={16} />
-                           </button>
-                        </div>
-                      ))}
-                      <button 
-                        onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])} 
-                        className="w-full p-3 border border-dashed border-blue-300 rounded-xl text-blue-600 font-bold hover:bg-blue-50 text-sm transition-colors"
-                      >
-                        + Add Choice
-                      </button>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
+                        {activeField.type === 'select' ? 'Data Source Options' : 'Choices'}
+                      </span>
                     </div>
+
+                    {activeField.type === "select" && (
+                      <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+                        <button 
+                          onClick={() => {
+                            updateField(activeField.id, "sourceTable", "");
+                            updateField(activeField.id, "sourceColumn", "");
+                          }}
+                          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-colors ${!activeField.sourceTable ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                        >
+                          Manual List
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (!activeField.sourceTable && availableForms.length > 0) {
+                              updateField(activeField.id, "sourceTable", availableForms[0].id.toString());
+                            }
+                          }}
+                          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-colors ${activeField.sourceTable ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                        >
+                          Other Form Data
+                        </button>
+                      </div>
+                    )}
+
+                    {!activeField.sourceTable ? (
+                      <div className="space-y-3 mt-2">
+                        {activeField.options?.map((opt, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                             <input 
+                               type="text" 
+                               value={opt} 
+                               onChange={(e) => {
+                                 const newOptions = [...activeField.options];
+                                 newOptions[i] = e.target.value;
+                                 updateField(activeField.id, "options", newOptions);
+                               }}
+                               className="flex-1 bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                             />
+                             <button 
+                               onClick={() => {
+                                 const newOptions = activeField.options.filter((_, idx) => idx !== i);
+                                 updateField(activeField.id, "options", newOptions);
+                               }} 
+                               className="p-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
+                             >
+                               <Trash2 size={16} />
+                             </button>
+                          </div>
+                        ))}
+                        <button 
+                          onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])} 
+                          className="w-full p-3 border border-dashed border-blue-300 rounded-xl text-blue-600 font-bold hover:bg-blue-50 text-sm transition-colors mt-2"
+                        >
+                          + Add Choice
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 mt-2">
+                         <div className="flex flex-col space-y-1">
+                            <label className="text-[10px] uppercase font-bold text-slate-400">Source Form</label>
+                            <select 
+                               value={activeField.sourceTable || ""}
+                               onChange={(e) => {
+                                  updateField(activeField.id, "sourceTable", e.target.value);
+                                  updateField(activeField.id, "sourceColumn", "");
+                               }}
+                               className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                            >
+                               <option value="" disabled>Select a form...</option>
+                               {availableForms.map(form => (
+                                  <option key={form.id} value={form.id.toString()}>{form.formName}</option>
+                               ))}
+                            </select>
+                         </div>
+                         <div className="flex flex-col space-y-1">
+                             <label className="text-[10px] uppercase font-bold text-slate-400">Data Column (Target)</label>
+                             <select 
+                                value={activeField.sourceColumn || ""}
+                                onChange={(e) => updateField(activeField.id, "sourceColumn", e.target.value)}
+                                className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                                disabled={!activeField.sourceTable}
+                             >
+                                <option value="" disabled>Select a column to use...</option>
+                                {selectedFormFields.map(f => (
+                                   <option key={f.fieldName} value={f.fieldName}>{f.fieldName} ({f.fieldType})</option>
+                                ))}
+                             </select>
+                         </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

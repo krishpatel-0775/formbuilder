@@ -21,7 +21,22 @@ export default function PublicFormPage() {
         if (!res.ok) throw new Error("Form not found");
         return res.json();
       })
-      .then((data) => {
+      .then(async (data) => {
+        if (data?.fields) {
+           await Promise.all(data.fields.map(async (field) => {
+               if (field.fieldType === 'select' && field.sourceTable && field.sourceColumn) {
+                   try {
+                       const optRes = await fetch(`http://localhost:9090/api/forms/${field.sourceTable}/lookup/${field.sourceColumn}`);
+                       if (optRes.ok) {
+                           field.options = await optRes.json();
+                       }
+                   } catch (err) {
+                       console.error("Failed to fetch dynamic options for", field.fieldName, err);
+                   }
+               }
+           }));
+        }
+
         setFormConfig(data);
         const initialData = {};
         if (data?.fields) {
@@ -134,8 +149,8 @@ export default function PublicFormPage() {
         // ✅ Redirect to the Data view page after successful submission
         router.push(`/forms/data/${id}`);
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        alert(`Error: ${errorData.message || "Submission failed"}`);
+        const errorMsg = await res.text();
+        alert(`Error: ${errorMsg || "Submission failed"}`);
       }
     } catch (err) {
       alert("Connection failed. Check backend/CORS settings.");
@@ -215,14 +230,19 @@ export default function PublicFormPage() {
                 )}
 
                 {field.fieldType === "select" && (
-                  <select
-                    value={formData[field.fieldName] || ""}
-                    onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 bg-slate-50/30 outline-none font-bold appearance-none"
-                  >
-                    <option value="">Select an option</option>
-                    {field.options?.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData[field.fieldName] || ""}
+                      onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
+                      className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-bold appearance-none cursor-pointer ${errors[field.fieldName] ? "border-red-300 bg-red-50/30 text-red-900 focus:border-red-500 focus:ring-4 focus:ring-red-100" : "border-slate-200 hover:border-blue-400 focus:border-blue-500 bg-slate-50/30 focus:ring-4 focus:ring-blue-100 text-slate-800"}`}
+                    >
+                      <option value="" disabled>Select an option</option>
+                      {field.options?.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
                 )}
 
                 {!["textarea", "radio", "checkbox", "select"].includes(field.fieldType) && (

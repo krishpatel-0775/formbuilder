@@ -58,7 +58,8 @@ export default function FormsListPage() {
       );
 
       if (!res.ok) {
-        throw new Error("Failed to publish form");
+        const errorMsg = await res.text();
+        throw new Error(errorMsg || "Failed to publish form");
       }
 
       setForms((prevForms) =>
