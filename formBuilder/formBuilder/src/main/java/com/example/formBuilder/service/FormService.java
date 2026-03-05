@@ -1,12 +1,11 @@
 package com.example.formBuilder.service;
 
-import com.example.formBuilder.dto.FieldRequest;
-import com.example.formBuilder.dto.FormListDto;
-import com.example.formBuilder.dto.FormRequest;
+import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormField;
 import com.example.formBuilder.repository.FormFieldRepository;
 import com.example.formBuilder.repository.FormRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -17,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
 import static java.lang.Boolean.TRUE;
@@ -264,5 +264,137 @@ public class FormService {
                             " (Only letters, numbers, underscore allowed & must start with letter)"
             );
         }
+    }
+
+
+    @Transactional
+    public String updateForm(Long formId, UpdateFormRequest request) {
+
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new RuntimeException("Form not found"));
+
+        // 1. Update form name if provided
+        if (request.getFormName() != null && !request.getFormName().isBlank()) {
+            form.setFormName(request.getFormName());
+        }
+
+        List<UpdateFieldRequest> incoming = request.getFields();
+
+        // 2. Find existing fields
+        List<FormField> existingFields = fieldRepository.findByFormId(formId);
+
+        // IDs that came in from frontend (only non-null ones = existing)
+        Set<Long> incomingIds = incoming.stream()
+                .filter(f -> f.getId() != null)
+                .map(UpdateFieldRequest::getId)
+                .collect(Collectors.toSet());
+
+        // 3. DELETE fields not in incoming list
+        List<FormField> toDelete = existingFields.stream()
+                .filter(f -> !incomingIds.contains(f.getId()))
+                .toList();
+
+        // 4. If PUBLISHED — handle ALTER TABLE for deleted fields
+        if (form.getStatus() == PUBLISHED) {
+            for (FormField deleted : toDelete) {
+                dropColumn(form.getTableName(), deleted.getFieldName());
+            }
+        }
+        fieldRepository.deleteAll(toDelete);
+
+        // 5. UPDATE or INSERT fields
+        for (UpdateFieldRequest fieldReq : incoming) {
+
+            if (fieldReq.getId() != null) {
+                // UPDATE existing field
+                FormField existing = fieldRepository.findById(fieldReq.getId())
+                        .orElseThrow(() -> new RuntimeException("Field not found"));
+
+                String oldName = existing.getFieldName();
+                String newName = fieldReq.getName();
+
+                // If PUBLISHED and name changed → RENAME column
+                if (form.getStatus() == PUBLISHED
+                        && !oldName.equals(newName)) {
+                    renameColumn(form.getTableName(), oldName, newName);
+                }
+
+                applyFieldUpdates(existing, fieldReq);
+                fieldRepository.save(existing);
+
+            } else {
+                // INSERT new field
+                FormField newField = buildFormField(fieldReq, form);
+                fieldRepository.save(newField);
+
+                // If PUBLISHED → ADD COLUMN immediately
+                if (form.getStatus() == PUBLISHED) {
+                    addColumn(form.getTableName(), newField);
+                }
+            }
+        }
+
+        formRepository.save(form);
+        return "Form updated successfully";
+    }
+
+
+    // Rename a column
+    private void renameColumn(String tableName, String oldName, String newName) {
+        validateColumnName(oldName);
+        validateColumnName(newName);
+        String sql = "ALTER TABLE " + tableName +
+                " RENAME COLUMN " + oldName + " TO " + newName;
+        jdbcTemplate.execute(sql);
+    }
+
+    // Drop a column
+    private void dropColumn(String tableName, String columnName) {
+        validateColumnName(columnName);
+        String sql = "ALTER TABLE " + tableName +
+                " DROP COLUMN IF EXISTS " + columnName;
+        jdbcTemplate.execute(sql);
+    }
+
+    // Add a new column
+    private void addColumn(String tableName, FormField field) {
+        validateColumnName(field.getFieldName());
+        StringBuilder sql = new StringBuilder();
+        sql.append("ALTER TABLE ").append(tableName)
+                .append(" ADD COLUMN ").append(field.getFieldName())
+                .append(" ").append(mapType(field.getFieldType()));
+
+        // New columns on published forms can't be NOT NULL
+        // (existing rows would violate it), so skip that constraint
+
+        jdbcTemplate.execute(sql.toString());
+    }
+
+    // Apply FieldRequest values onto a FormField entity
+    private void applyFieldUpdates(FormField field, UpdateFieldRequest req) {
+        validateColumnName(req.getName());
+        field.setFieldName(req.getName());
+        field.setFieldType(req.getType());
+        field.setRequired(req.getRequired());
+        field.setMinLength(req.getMinLength());
+        field.setMaxLength(req.getMaxLength());
+        field.setMin(req.getMin());
+        field.setMax(req.getMax());
+        field.setPattern(req.getPattern());
+        field.setBeforeDate(req.getBeforeDate() != null
+                ? LocalDate.parse(req.getBeforeDate()) : null);
+        field.setAfterDate(req.getAfterDate() != null
+                ? LocalDate.parse(req.getAfterDate()) : null);
+        field.setOptions(req.getOptions());
+        field.setSourceTable(req.getSourceTable());
+        field.setSourceColumn(req.getSourceColumn());
+    }
+
+    // Build a brand new FormField from request
+    private FormField buildFormField(UpdateFieldRequest req, Form form) {
+        FormField f = new FormField();
+        applyFieldUpdates(f, req);
+        f.setForm(form);
+        return f;
     }
 }

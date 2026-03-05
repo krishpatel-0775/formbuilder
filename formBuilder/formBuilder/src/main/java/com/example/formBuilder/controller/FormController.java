@@ -4,6 +4,7 @@ package com.example.formBuilder.controller;
 import com.example.formBuilder.dto.ApiResponse;
 import com.example.formBuilder.dto.FormListDto;
 import com.example.formBuilder.dto.FormRequest;
+import com.example.formBuilder.dto.UpdateFormRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.service.FormService;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,15 @@ public class FormController {
     @GetMapping("/{id}/lookup/{columnName}")
     public ResponseEntity<ApiResponse<List<String>>> getLookupValues(@PathVariable Long id, @PathVariable String columnName) {
         return ResponseEntity.ok(ApiResponse.success(formService.getLookupValues(id, columnName)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> updateForm(
+            @PathVariable Long id,
+            @RequestBody UpdateFormRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success(formService.updateForm(id, request), null)
+        );
     }
 
 }
