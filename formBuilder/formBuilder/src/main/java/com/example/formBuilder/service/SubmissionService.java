@@ -1,14 +1,17 @@
 package com.example.formBuilder.service;
 
+import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.SubmissionRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormField;
+import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.FormRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,7 +24,9 @@ public class SubmissionService {
     private final FormRepository formRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    //delete response by id
+    /**
+     * Soft-deletes a specific response by marking its 'is_deleted' flag to true.
+     */
     public String deleteResponse(Long formId, Long responseId) {
         String tableName = "form_" + formId;
 
@@ -34,11 +39,13 @@ public class SubmissionService {
 
     }
 
-    // form submission
+    /**
+     * Processes and stores a new form submission into the form's generated database table.
+     */
     public String submitForm(SubmissionRequest request) {
 
         Form form = formRepository.findById(request.getFormId())
-                .orElseThrow(() -> new RuntimeException("Form not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + request.getFormId() + " not found"));
 
         String tableName = form.getTableName();
 
@@ -54,10 +61,12 @@ public class SubmissionService {
                                 f -> f
                         ));
 
+        List<String> validationErrors = new ArrayList<>();
+
         // STEP 2 — Validate unknown fields
         for (String key : values.keySet()) {
             if (!fieldMap.containsKey(key)) {
-                throw new RuntimeException("Invalid field: " + key);
+                validationErrors.add("Invalid field: " + key);
             }
         }
 
@@ -69,14 +78,18 @@ public class SubmissionService {
             // Required validation
             if (Boolean.TRUE.equals(field.getRequired())) {
                 if (value == null || value.toString().trim().isEmpty()) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " is required");
+                    validationErrors.add(field.getFieldName() + " is required");
+                    continue; // Skip further validations if null
                 }
             }
 
-            if (value != null) {
-                validateValue(field, value);
+            if (value != null && !value.toString().trim().isEmpty()) {
+                validateValue(field, value, validationErrors);
             }
+        }
+
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException(String.join(", ", validationErrors));
         }
 
         // STEP 4 — Safe column building
@@ -101,8 +114,8 @@ public class SubmissionService {
                             return Integer.parseInt(value.toString());
                         case "date":
                             return java.sql.Date.valueOf(value.toString());
-                        case "time":                                          // ← ADD THIS
-                            return java.sql.Time.valueOf(value.toString());   // ← ADD THIS
+                        case "time":                                          
+                            return java.sql.Time.valueOf(value.toString());   
                         default:
                             return value.toString();
                     }
@@ -118,8 +131,10 @@ public class SubmissionService {
     }
 
 
-    // validate value using constrains
-    private void validateValue(FormField field, Object value) {
+    /**
+     * Validates a submitted value against the constraints defined in the form field metadata.
+     */
+    private void validateValue(FormField field, Object value, List<String> errors) {
 
         String stringValue = value.toString();
 
@@ -129,94 +144,87 @@ public class SubmissionService {
 
                 if (field.getMinLength() != null &&
                         stringValue.length() < field.getMinLength()) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be at least "
+                    errors.add(field.getFieldName() + " must be at least "
                                     + field.getMinLength() + " characters");
                 }
 
                 if (field.getMaxLength() != null &&
                         stringValue.length() > field.getMaxLength()) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be at most "
+                    errors.add(field.getFieldName() + " must be at most "
                                     + field.getMaxLength() + " characters");
                 }
 
                 if (field.getPattern() != null &&
                         !stringValue.matches(field.getPattern())) {
-                    throw new ValidationException(
-                            field.getFieldName() + " format invalid");
+                    errors.add(field.getFieldName() + " format invalid");
                 }
             }
 
             case "date" -> {
 
-                java.time.LocalDate inputDate;
+                java.time.LocalDate inputDate = null;
 
                 try {
                     inputDate = java.time.LocalDate.parse(stringValue);
                 } catch (Exception e) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be a valid date (yyyy-MM-dd)");
+                    errors.add(field.getFieldName() + " must be a valid date (yyyy-MM-dd)");
                 }
 
-                // AFTER validation (minimum date)
-                if (field.getAfterDate() != null &&
-                        inputDate.isBefore(field.getAfterDate())) {
+                if (inputDate != null) {
+                    // AFTER validation (minimum date)
+                    if (field.getAfterDate() != null &&
+                            inputDate.isBefore(field.getAfterDate())) {
+                        errors.add(field.getFieldName() + " must be after "
+                                        + field.getAfterDate());
+                    }
 
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be after "
-                                    + field.getAfterDate());
-                }
-
-                // BEFORE validation (maximum date)
-                if (field.getBeforeDate() != null &&
-                        inputDate.isAfter(field.getBeforeDate())) {
-
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be before "
-                                    + field.getBeforeDate());
+                    // BEFORE validation (maximum date)
+                    if (field.getBeforeDate() != null &&
+                            inputDate.isAfter(field.getBeforeDate())) {
+                        errors.add(field.getFieldName() + " must be before "
+                                        + field.getBeforeDate());
+                    }
                 }
             }
 
             case "url" -> {
-                if (!stringValue.matches("^(https?://)(localhost|[\\w\\-]+(\\.[\\w\\-]+)+)(:\\d+)?(/.*)?$")) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be a valid URL (starting with http:// or https://)");
+                if (!stringValue.matches(AppConstants.URL_REGEX)) {
+                    errors.add(field.getFieldName() + " must be a valid URL (starting with http:// or https://)");
                 }
             }
 
             case "phone" -> {
                 // strips spaces, dashes, brackets, plus sign then checks 7–15 digits
                 String digitsOnly = stringValue.replaceAll("[\\s\\-().+]", "");
-                if (!digitsOnly.matches("^\\d{7,15}$")) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be a valid phone number");
+                if (!digitsOnly.matches(AppConstants.PHONE_REGEX)) {
+                    errors.add(field.getFieldName() + " must be a valid phone number");
                 }
             }
 
             case "number" -> {
 
-                int number;
+                int number = 0;
+                boolean isNumber = true;
 
                 try {
                     number = Integer.parseInt(stringValue);
                 } catch (Exception e) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be a number");
+                    errors.add(field.getFieldName() + " must be a number");
+                    isNumber = false;
                 }
 
-                if (field.getMin() != null &&
-                        number < field.getMin()) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be >= "
-                                    + field.getMin());
-                }
+                if (isNumber) {
+                    if (field.getMin() != null &&
+                            number < field.getMin()) {
+                        errors.add(field.getFieldName() + " must be >= "
+                                        + field.getMin());
+                    }
 
-                if (field.getMax() != null &&
-                        number > field.getMax()) {
-                    throw new RuntimeException(
-                            field.getFieldName() + " must be <= "
-                                    + field.getMax());
+                    if (field.getMax() != null &&
+                            number > field.getMax()) {
+                        errors.add(field.getFieldName() + " must be <= "
+                                        + field.getMax());
+                    }
                 }
             }
         }

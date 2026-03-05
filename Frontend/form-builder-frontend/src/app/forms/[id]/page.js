@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertCircle, Send, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { ENDPOINTS } from "../../../config/apiConfig";
 
 export default function PublicFormPage() {
   const { id } = useParams();
@@ -17,7 +18,7 @@ export default function PublicFormPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:9090/api/forms/${id}`)
+    fetch(`${ENDPOINTS.FORMS}/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Form not found");
         return res.json();
@@ -36,7 +37,7 @@ export default function PublicFormPage() {
               ) {
                 try {
                   const optRes = await fetch(
-                    `http://localhost:9090/api/forms/${field.sourceTable}/lookup/${field.sourceColumn}`
+                    `${ENDPOINTS.FORMS}/${field.sourceTable}/lookup/${field.sourceColumn}`
                   );
                   if (optRes.ok) {
                     const optJson = await optRes.json();
@@ -91,7 +92,7 @@ export default function PublicFormPage() {
 
     formConfig.fields.forEach((field) => {
       const value = formData[field.fieldName];
-      const name  = field.fieldName;
+      const name = field.fieldName;
 
       // ── 1. Required ─────────────────────────────────────────────────────────
       if (field.required) {
@@ -185,7 +186,7 @@ export default function PublicFormPage() {
           try {
             if (!new RegExp(field.pattern).test(strVal))
               push(name, `Phone number does not match the required format.`);
-          } catch (_) {}
+          } catch (_) { }
         }
       }
 
@@ -234,7 +235,7 @@ export default function PublicFormPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("http://localhost:9090/api/submissions", {
+      const res = await fetch(ENDPOINTS.SUBMISSIONS, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ formId: parseInt(id), values: formData }),
@@ -243,8 +244,13 @@ export default function PublicFormPage() {
       if (res.ok) {
         router.push(`/forms/data/${id}`);
       } else {
-        const errorMsg = await res.text();
-        alert(`Error: ${errorMsg || "Submission failed"}`);
+        const errorText = await res.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          alert(`Error: ${errorData.message || "Submission failed"}`);
+        } catch (e) {
+          alert(`Error: ${errorText || "Submission failed"}`);
+        }
       }
     } catch (err) {
       alert("Connection failed. Check backend/CORS settings.");
@@ -330,7 +336,7 @@ export default function PublicFormPage() {
           <form onSubmit={handleSubmit} noValidate className="p-8 md:p-12 space-y-10">
             {formConfig?.fields?.map((field) => {
               const fieldErrors = errors[field.fieldName]; // string[] | undefined
-              const hasError   = fieldErrors && fieldErrors.length > 0;
+              const hasError = fieldErrors && fieldErrors.length > 0;
 
               return (
                 <div
@@ -350,11 +356,10 @@ export default function PublicFormPage() {
                       rows={4}
                       value={formData[field.fieldName] || ""}
                       onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-                      className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-medium resize-none ${
-                        hasError
-                          ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100"
-                          : "border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-slate-50/30"
-                      }`}
+                      className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-medium resize-none ${hasError
+                        ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-slate-50/30"
+                        }`}
                     />
                   )}
 
@@ -364,13 +369,12 @@ export default function PublicFormPage() {
                       {field.options?.map((opt, idx) => (
                         <label
                           key={idx}
-                          className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
-                            formData[field.fieldName] === opt
-                              ? "bg-blue-50 border-blue-200 text-blue-700"
-                              : hasError
+                          className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${formData[field.fieldName] === opt
+                            ? "bg-blue-50 border-blue-200 text-blue-700"
+                            : hasError
                               ? "bg-red-50/20 border-red-200 text-slate-600"
                               : "bg-slate-50/50 border-slate-100 text-slate-600"
-                          }`}
+                            }`}
                         >
                           <input
                             type="radio"
@@ -392,13 +396,12 @@ export default function PublicFormPage() {
                       {field.options?.map((opt, idx) => (
                         <label
                           key={idx}
-                          className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
-                            formData[field.fieldName]?.includes(opt)
-                              ? "bg-blue-50 border-blue-200 text-blue-700"
-                              : hasError
+                          className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${formData[field.fieldName]?.includes(opt)
+                            ? "bg-blue-50 border-blue-200 text-blue-700"
+                            : hasError
                               ? "bg-red-50/20 border-red-200 text-slate-600"
                               : "bg-slate-50/50 border-slate-100 text-slate-600"
-                          }`}
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -418,11 +421,10 @@ export default function PublicFormPage() {
                       <select
                         value={formData[field.fieldName] || ""}
                         onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-                        className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-bold appearance-none cursor-pointer ${
-                          hasError
-                            ? "border-red-300 bg-red-50/30 text-red-900 focus:border-red-400 focus:ring-4 focus:ring-red-100"
-                            : "border-slate-200 hover:border-blue-400 focus:border-blue-500 bg-slate-50/30 focus:ring-4 focus:ring-blue-100 text-slate-800"
-                        }`}
+                        className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-bold appearance-none cursor-pointer ${hasError
+                          ? "border-red-300 bg-red-50/30 text-red-900 focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                          : "border-slate-200 hover:border-blue-400 focus:border-blue-500 bg-slate-50/30 focus:ring-4 focus:ring-blue-100 text-slate-800"
+                          }`}
                       >
                         <option value="" disabled>Select an option</option>
                         {field.options?.map((opt, idx) => (
@@ -443,11 +445,10 @@ export default function PublicFormPage() {
                       type={field.fieldType === "phone" ? "tel" : field.fieldType}
                       value={formData[field.fieldName] || ""}
                       onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-                      className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-medium ${
-                        hasError
-                          ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100"
-                          : "border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-slate-50/30"
-                      }`}
+                      className={`w-full px-6 py-4 rounded-2xl border transition-all outline-none font-medium ${hasError
+                        ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-slate-50/30"
+                        }`}
                     />
                   )}
 
@@ -469,11 +470,10 @@ export default function PublicFormPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-6 ${
-                isSubmitting
-                  ? "bg-slate-300 cursor-not-allowed text-slate-500"
-                  : "bg-slate-900 text-white hover:bg-blue-600 shadow-xl hover:shadow-blue-600/20 active:scale-[0.99]"
-              }`}
+              className={`w-full py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-6 ${isSubmitting
+                ? "bg-slate-300 cursor-not-allowed text-slate-500"
+                : "bg-slate-900 text-white hover:bg-blue-600 shadow-xl hover:shadow-blue-600/20 active:scale-[0.99]"
+                }`}
             >
               {isSubmitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
               {isSubmitting ? "Processing..." : "Submit Response"}

@@ -1,6 +1,6 @@
 package com.example.formBuilder.controller;
 
-
+import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.ApiResponse;
 import com.example.formBuilder.dto.FormListDto;
 import com.example.formBuilder.dto.FormRequest;
@@ -15,51 +15,51 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
-@RequestMapping("/api/forms")
+@CrossOrigin(origins = AppConstants.FRONTEND_URL)
+@RequestMapping(AppConstants.API_BASE_FORMS)
 @RequiredArgsConstructor
 public class FormController {
 
     private final FormService formService;
 
-    // get all forms
+    // Retrieves a summary list of all available forms.
     @GetMapping
     public ResponseEntity<ApiResponse<List<FormListDto>>> getAllForms() {
         return ResponseEntity.ok(ApiResponse.success(formService.getAllForms()));
     }
 
-    // this for form build
+    // Creates a new form structure and saves its field definitions.
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createForm(@RequestBody FormRequest request) {
         return ResponseEntity.ok(ApiResponse.success(formService.createForm(request), null));
     }
 
-    // get form by id
-    @GetMapping("/{id}")
+    // Retrieves the metadata and structure for a specific form by its ID.
+    @GetMapping(AppConstants.API_FORM_BY_ID)
     public ResponseEntity<ApiResponse<Form>> getForm(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(formService.getFormById(id)));
     }
 
-    // get form data by id
-    @GetMapping("/data/{id}")
+    // Retrieves all submitted data responses for a specific published form.
+    @GetMapping(AppConstants.API_FORM_DATA)
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getFormData(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(formService.getAllDataFromTable(id)));
     }
 
 
-    // form publish endpoint
-    @PostMapping("/publish/{id}")
+    // Publishes a form, moving it out of draft state and generating its dynamic database table.
+    @PostMapping(AppConstants.API_FORM_PUBLISH)
     public ResponseEntity<ApiResponse<String>> publishForm(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(formService.publishForm(id), null));
     }
 
-    // get dynamic lookup values for a form's column
-    @GetMapping("/{id}/lookup/{columnName}")
+    // Retrieves dynamic drop-down lookup values from a specific column of a published form.
+    @GetMapping(AppConstants.API_FORM_LOOKUP)
     public ResponseEntity<ApiResponse<List<String>>> getLookupValues(@PathVariable Long id, @PathVariable String columnName) {
         return ResponseEntity.ok(ApiResponse.success(formService.getLookupValues(id, columnName)));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(AppConstants.API_FORM_BY_ID)
     public ResponseEntity<ApiResponse<String>> updateForm(
             @PathVariable Long id,
             @RequestBody UpdateFormRequest request) {
