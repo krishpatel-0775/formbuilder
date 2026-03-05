@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
@@ -31,16 +32,18 @@ public class FormService {
     private static final Pattern VALID_NAME =
             Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
 
+
+    // get a single form data for show form in frontend
     public Form getFormById(Long id) {
         return formRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Form not found"));
     }
 
+    // get all data of a perticular form using id
     public List<Map<String, Object>> getAllDataFromTable(Long id) {
 
         String tableName = "form_" + id;
 
-         //⚠ IMPORTANT: Prevent SQL Injection
         if (!tableName.matches("^[a-zA-Z0-9_]+$")) {
             throw new IllegalArgumentException("Invalid table name");
         }
@@ -50,6 +53,7 @@ public class FormService {
         return jdbcTemplate.queryForList(sql);
     }
 
+    // return all form data for show form list
     public List<FormListDto> getAllForms() {
         List<Form> forms = formRepository.findAll();
         List<FormListDto> formListDtos = new ArrayList<>();
@@ -61,6 +65,7 @@ public class FormService {
         return formListDtos;
     }
 
+    // get drop down value in form
     public List<String> getLookupValues(Long formId, String columnName) {
         Form form = getFormById(formId);
         String tableName = form.getTableName();
@@ -74,6 +79,7 @@ public class FormService {
         return jdbcTemplate.queryForList(sql, String.class);
     }
 
+    // for form publish ( draft state -> published state)
     public String publishForm(Long id) {
         Form form = formRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Form not found"));
@@ -91,6 +97,8 @@ public class FormService {
         return "Form Published Successfully";
     }
 
+
+    //create form (dynamic form is not create)
     public String createForm(FormRequest request) {
 
         if (request.getFields() == null || request.getFields().isEmpty()) {
@@ -105,11 +113,20 @@ public class FormService {
         form.setTableName(tableName);
         formRepository.save(form);
 
-//        createDynamicTable(tableName, request.getFields());
-
         List<FormField> fieldList = new ArrayList<>();
 
         for (FieldRequest field : request.getFields()) {
+
+            Set<String> reserved = Set.of(
+                    "select","from","where","join","table","order",
+                    "group","limit","offset","insert","update",
+                    "delete","index","primary","key","constraint",
+                    "id"
+            );
+
+            if(reserved.contains(field.getName().toLowerCase())){
+                throw new RuntimeException(field.getName() + " is a reserved field name. Please choose a different name.");
+            }
 
             FormField formField = new FormField();
 
@@ -147,6 +164,7 @@ public class FormService {
         return "Form Created Successfully";
     }
 
+    // create dynamic table according field
     private void createDynamicTable(String tableName, List<FormField> fields) {
 
         StringBuilder sql = new StringBuilder();
@@ -221,6 +239,8 @@ public class FormService {
         jdbcTemplate.execute(sql.toString());
     }
 
+
+    //give data type according field type
     private String mapType(String type) {
         return switch (type) {
             case "text", "email", "radio", "select" -> "VARCHAR(255)";
@@ -231,6 +251,7 @@ public class FormService {
         };
     }
 
+    //validate column name it is valide or not
     private void validateColumnName(String name) {
 
         if (name == null || name.trim().isEmpty()) {

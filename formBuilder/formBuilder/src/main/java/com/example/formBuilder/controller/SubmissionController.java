@@ -16,13 +16,16 @@ import org.springframework.web.bind.annotation.*;
 public class SubmissionController {
 
     private final SubmissionService submissionService;
-    //for response submision
+
+
+    //for response submission
     @PostMapping
     public ResponseEntity<ApiResponse<String>> submitForm(@RequestBody SubmissionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.submitForm(request), null));
     }
 
-    //record submission delete by id
+
+    //record submission delete by id ( this is soft delete )
     @DeleteMapping("/{formId}/response/{responseId}")
     public ResponseEntity<ApiResponse<String>> deleteResponse(@PathVariable Long formId, @PathVariable Long responseId) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponse(formId, responseId), null));

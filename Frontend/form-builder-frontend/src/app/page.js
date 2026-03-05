@@ -39,7 +39,16 @@ import {
 } from "lucide-react";
 
 // --- Sortable Field Wrapper Component ---
-function SortableFieldItem({ field, idx, isActive, activeFieldId, setActiveFieldId, removeField, updateField, fieldIcons }) {
+function SortableFieldItem({
+  field,
+  idx,
+  isActive,
+  activeFieldId,
+  setActiveFieldId,
+  removeField,
+  updateField,
+  fieldIcons,
+}) {
   const {
     attributes,
     listeners,
@@ -68,19 +77,24 @@ function SortableFieldItem({ field, idx, isActive, activeFieldId, setActiveField
       }`}
     >
       {/* Index / Reorder handle */}
-      <div 
-        {...attributes} 
+      <div
+        {...attributes}
         {...listeners}
         className="flex flex-col items-center justify-center w-8 cursor-grab active:cursor-grabbing hover:bg-slate-50 p-1 rounded-lg transition-colors"
       >
-        <span className="text-[10px] font-black text-slate-400 mb-1 pointer-events-none">{idx + 1}</span>
-        <GripVertical size={16} className="text-slate-300 group-hover:text-slate-500 transition-colors pointer-events-none" />
+        <span className="text-[10px] font-black text-slate-400 mb-1 pointer-events-none">
+          {idx + 1}
+        </span>
+        <GripVertical
+          size={16}
+          className="text-slate-300 group-hover:text-slate-500 transition-colors pointer-events-none"
+        />
       </div>
 
       <div className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-500 rounded-xl border border-slate-100 shadow-inner">
         {fieldIcons[field.type]}
       </div>
-      
+
       <div className="flex-1">
         <input
           placeholder="Enter question title..."
@@ -90,7 +104,9 @@ function SortableFieldItem({ field, idx, isActive, activeFieldId, setActiveField
           onClick={(e) => e.stopPropagation()}
         />
         {field.required && (
-          <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-1 inline-block">* REQUIRED</span>
+          <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-1 inline-block">
+            * REQUIRED
+          </span>
         )}
       </div>
 
@@ -99,14 +115,13 @@ function SortableFieldItem({ field, idx, isActive, activeFieldId, setActiveField
           e.stopPropagation();
           removeField(field.id);
         }}
-        className={`opacity-0 group-hover:opacity-100 flex items-center justify-center w-10 h-10 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 ${isDragging ? 'hidden' : ''}`}
+        className={`opacity-0 group-hover:opacity-100 flex items-center justify-center w-10 h-10 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 ${isDragging ? "hidden" : ""}`}
       >
         <Trash2 size={16} />
       </button>
     </div>
   );
 }
-
 
 export default function BuilderPage() {
   const [formName, setFormName] = useState("");
@@ -136,7 +151,7 @@ export default function BuilderPage() {
 
   const activeSortField = useMemo(
     () => fields.find((f) => f.id === activeSortId),
-    [fields, activeSortId]
+    [fields, activeSortId],
   );
 
   const [availableForms, setAvailableForms] = useState([]);
@@ -146,21 +161,25 @@ export default function BuilderPage() {
   useEffect(() => {
     if (activeField && activeField.type === "select") {
       fetch("http://localhost:9090/api/forms")
-        .then(res => res.json())
-        .then(res => setAvailableForms(res.data || []))
-        .catch(err => console.error(err));
+        .then((res) => res.json())
+        .then((res) => setAvailableForms(res.data || []))
+        .catch((err) => console.error(err));
     }
   }, [activeField?.id, activeField?.type]);
 
   // Fetch the fields of the specific form chosen for the dynamic dropdown
   useEffect(() => {
-    if (activeField && activeField.type === "select" && activeField.sourceTable) {
-        fetch(`http://localhost:9090/api/forms/${activeField.sourceTable}`)
-            .then(res => res.json())
-            .then(res => setSelectedFormFields(res.data?.fields || []))
-            .catch(console.error);
+    if (
+      activeField &&
+      activeField.type === "select" &&
+      activeField.sourceTable
+    ) {
+      fetch(`http://localhost:9090/api/forms/${activeField.sourceTable}`)
+        .then((res) => res.json())
+        .then((res) => setSelectedFormFields(res.data?.fields || []))
+        .catch(console.error);
     } else {
-        setSelectedFormFields([]);
+      setSelectedFormFields([]);
     }
   }, [activeField?.sourceTable, activeField?.id, activeField?.type]);
 
@@ -173,7 +192,7 @@ export default function BuilderPage() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragStart = (e, type) => {
@@ -197,7 +216,12 @@ export default function BuilderPage() {
       pattern: "",
       beforeDate: "",
       afterDate: "",
-      options: (type.toLowerCase() === "radio" || type.toLowerCase() === "checkbox" || type.toLowerCase() === "select") ? ["Option 1", "Option 2"] : [],
+      options:
+        type.toLowerCase() === "radio" ||
+        type.toLowerCase() === "checkbox" ||
+        type.toLowerCase() === "select"
+          ? ["Option 1", "Option 2"]
+          : [],
       sourceTable: "",
       sourceColumn: "",
     };
@@ -216,7 +240,7 @@ export default function BuilderPage() {
 
   const handleSortEnd = (event) => {
     const { active, over } = event;
-    
+
     if (active.id !== over?.id) {
       setFields((items) => {
         const oldIndex = items.findIndex((i) => i.id === active.id);
@@ -224,7 +248,7 @@ export default function BuilderPage() {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
-    
+
     setActiveSortId(null);
   };
 
@@ -233,7 +257,9 @@ export default function BuilderPage() {
   };
 
   const updateField = (id, key, value) => {
-    setFields((prevFields) => prevFields.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
+    setFields((prevFields) =>
+      prevFields.map((f) => (f.id === id ? { ...f, [key]: value } : f)),
+    );
   };
 
   const removeField = (id) => {
@@ -288,7 +314,8 @@ export default function BuilderPage() {
         if (field.type === "text" || field.type === "textarea") {
           if (field.minLength) fieldData.minLength = Number(field.minLength);
           if (field.maxLength) fieldData.maxLength = Number(field.maxLength);
-          if (field.type === "text" && field.pattern) fieldData.pattern = field.pattern;
+          if (field.type === "text" && field.pattern)
+            fieldData.pattern = field.pattern;
         }
 
         if (field.type === "number") {
@@ -318,12 +345,12 @@ export default function BuilderPage() {
       });
 
       if (!response.ok) {
-        const errorMsg = await response.text();
-        throw new Error(errorMsg || "Failed to save form.");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save form.");
       }
 
       const text = await response.text();
-      
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
 
@@ -348,9 +375,11 @@ export default function BuilderPage() {
               Components
             </h2>
           </div>
-          <p className="text-[11px] text-slate-500 font-medium tracking-wide">Drag & drop to build</p>
+          <p className="text-[11px] text-slate-500 font-medium tracking-wide">
+            Drag & drop to build
+          </p>
         </div>
-        
+
         <div className="p-6 space-y-3 overflow-y-auto">
           {Object.keys(fieldIcons).map((type) => (
             <div
@@ -363,8 +392,12 @@ export default function BuilderPage() {
                 {fieldIcons[type]}
               </div>
               <div>
-                <span className="text-sm font-bold capitalize text-slate-700 group-hover:text-slate-900 transition-colors">{type}</span>
-                <p className="text-[10px] text-slate-500 mt-0.5">Custom input field</p>
+                <span className="text-sm font-bold capitalize text-slate-700 group-hover:text-slate-900 transition-colors">
+                  {type}
+                </span>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Custom input field
+                </p>
               </div>
             </div>
           ))}
@@ -375,7 +408,7 @@ export default function BuilderPage() {
       <main className="flex-1 flex flex-col min-w-0 bg-[#f1f5f9] relative overflow-hidden">
         {/* Abstract Background Elements */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
-        
+
         <header className="h-20 border-b border-slate-200 px-8 flex items-center justify-between z-10 backdrop-blur-xl bg-white/80">
           <div className="relative w-full max-w-lg">
             <input
@@ -392,17 +425,21 @@ export default function BuilderPage() {
             onClick={saveForm}
             disabled={isPublishing || showSuccess}
             className={`flex items-center gap-2 px-8 py-3 rounded-full text-sm font-bold transition-all active:scale-95 shadow-md ${
-              showSuccess 
-              ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-              : "bg-slate-900 text-white hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-600/20"
+              showSuccess
+                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                : "bg-slate-900 text-white hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-600/20"
             }`}
           >
             {showSuccess ? (
-              <><CheckCircle2 size={16} /> Success</>
+              <>
+                <CheckCircle2 size={16} /> Success
+              </>
             ) : isPublishing ? (
               <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
-              <><Rocket size={16} /> Draft Form </>
+              <>
+                <Rocket size={16} /> Draft Form{" "}
+              </>
             )}
           </button>
         </header>
@@ -418,25 +455,29 @@ export default function BuilderPage() {
                 <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-6 shadow-inner border border-slate-200">
                   <ArrowRight className="text-slate-400 -rotate-90" size={32} />
                 </div>
-                <p className="text-lg font-bold text-slate-700 tracking-wide">Canvas is empty</p>
-                <p className="text-sm tracking-wide text-slate-500 mt-2">Drop components from the left sidebar to start building.</p>
+                <p className="text-lg font-bold text-slate-700 tracking-wide">
+                  Canvas is empty
+                </p>
+                <p className="text-sm tracking-wide text-slate-500 mt-2">
+                  Drop components from the left sidebar to start building.
+                </p>
               </div>
             )}
 
             {fields.length > 0 && (
-              <DndContext 
+              <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragStart={handleSortStart}
                 onDragEnd={handleSortEnd}
                 onDragCancel={handleSortCancel}
               >
-                <SortableContext 
+                <SortableContext
                   items={fields.map((f) => f.id)}
                   strategy={verticalListSortingStrategy}
                 >
                   {fields.map((field, idx) => (
-                    <SortableFieldItem 
+                    <SortableFieldItem
                       key={field.id}
                       field={field}
                       idx={idx}
@@ -449,7 +490,7 @@ export default function BuilderPage() {
                     />
                   ))}
                 </SortableContext>
-                
+
                 <DragOverlay>
                   {activeSortField ? (
                     <div className="group relative flex items-center p-5 gap-5 bg-white/80 backdrop-blur-md rounded-[1.5rem] border border-blue-400 shadow-[0_15px_40px_rgba(59,130,246,0.2)] ring-2 ring-blue-400/50 cursor-grabbing rotate-2 scale-[1.02] transition-transform">
@@ -505,18 +546,26 @@ export default function BuilderPage() {
                   Field Behavior
                 </label>
                 <div
-                  onClick={() => updateField(activeField.id, "required", !activeField.required)}
+                  onClick={() =>
+                    updateField(
+                      activeField.id,
+                      "required",
+                      !activeField.required,
+                    )
+                  }
                   className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer border transition-all ${
-                    activeField.required 
-                    ? "bg-blue-50 border-blue-200 text-blue-900 shadow-sm" 
-                    : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    activeField.required
+                      ? "bg-blue-50 border-blue-200 text-blue-900 shadow-sm"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  <span className="text-sm font-bold">
-                    Required Field
-                  </span>
-                  <div className={`w-10 h-5 rounded-full transition-colors relative shadow-inner ${activeField.required ? "bg-blue-600" : "bg-slate-300"}`}>
-                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${activeField.required ? "translate-x-6" : "translate-x-1"}`} />
+                  <span className="text-sm font-bold">Required Field</span>
+                  <div
+                    className={`w-10 h-5 rounded-full transition-colors relative shadow-inner ${activeField.required ? "bg-blue-600" : "bg-slate-300"}`}
+                  >
+                    <div
+                      className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${activeField.required ? "translate-x-6" : "translate-x-1"}`}
+                    />
                   </div>
                 </div>
               </div>
@@ -527,7 +576,8 @@ export default function BuilderPage() {
                   <AlertCircle size={14} /> Constraints
                 </label>
 
-                {(activeField.type === "text" || activeField.type === "textarea") && (
+                {(activeField.type === "text" ||
+                  activeField.type === "textarea") && (
                   <div className="flex flex-col gap-6">
                     <div className="space-y-3">
                       <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
@@ -535,21 +585,29 @@ export default function BuilderPage() {
                       </span>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="relative">
-                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Min</span>
+                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">
+                            Min
+                          </span>
                           <input
                             type="number"
                             value={activeField.minLength}
-                            onChange={(e) => handleNumberInput(e, activeField.id, "minLength")}
+                            onChange={(e) =>
+                              handleNumberInput(e, activeField.id, "minLength")
+                            }
                             className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-transparent shadow-sm"
                             placeholder="0"
                           />
                         </div>
                         <div className="relative">
-                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Max</span>
+                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">
+                            Max
+                          </span>
                           <input
                             type="number"
                             value={activeField.maxLength}
-                            onChange={(e) => handleNumberInput(e, activeField.id, "maxLength")}
+                            onChange={(e) =>
+                              handleNumberInput(e, activeField.id, "maxLength")
+                            }
                             className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-transparent shadow-sm"
                             placeholder="0"
                           />
@@ -565,25 +623,35 @@ export default function BuilderPage() {
                           type="text"
                           placeholder="e.g. ^[A-Z]+$"
                           value={activeField.pattern}
-                          onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
+                          onChange={(e) =>
+                            updateField(
+                              activeField.id,
+                              "pattern",
+                              e.target.value,
+                            )
+                          }
                           className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-blue-600 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-slate-400 shadow-sm"
                         />
                       </div>
                     )}
                   </div>
                 )}
-                
-                {(activeField.type === "radio" || activeField.type === "checkbox" || activeField.type === "select") && (
+
+                {(activeField.type === "radio" ||
+                  activeField.type === "checkbox" ||
+                  activeField.type === "select") && (
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
-                        {activeField.type === 'select' ? 'Data Source Options' : 'Choices'}
+                        {activeField.type === "select"
+                          ? "Data Source Options"
+                          : "Choices"}
                       </span>
                     </div>
 
                     {activeField.type === "select" && (
                       <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
-                        <button 
+                        <button
                           onClick={() => {
                             updateField(activeField.id, "sourceTable", "");
                             updateField(activeField.id, "sourceColumn", "");
@@ -592,10 +660,17 @@ export default function BuilderPage() {
                         >
                           Manual List
                         </button>
-                        <button 
+                        <button
                           onClick={() => {
-                            if (!activeField.sourceTable && availableForms.length > 0) {
-                              updateField(activeField.id, "sourceTable", availableForms[0].id.toString());
+                            if (
+                              !activeField.sourceTable &&
+                              availableForms.length > 0
+                            ) {
+                              updateField(
+                                activeField.id,
+                                "sourceTable",
+                                availableForms[0].id.toString(),
+                              );
                             }
                           }}
                           className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-colors ${activeField.sourceTable ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
@@ -609,29 +684,44 @@ export default function BuilderPage() {
                       <div className="space-y-3 mt-2">
                         {activeField.options?.map((opt, i) => (
                           <div key={i} className="flex items-center gap-2">
-                             <input 
-                               type="text" 
-                               value={opt} 
-                               onChange={(e) => {
-                                 const newOptions = [...activeField.options];
-                                 newOptions[i] = e.target.value;
-                                 updateField(activeField.id, "options", newOptions);
-                               }}
-                               className="flex-1 bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
-                             />
-                             <button 
-                               onClick={() => {
-                                 const newOptions = activeField.options.filter((_, idx) => idx !== i);
-                                 updateField(activeField.id, "options", newOptions);
-                               }} 
-                               className="p-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
-                             >
-                               <Trash2 size={16} />
-                             </button>
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) => {
+                                const newOptions = [...activeField.options];
+                                newOptions[i] = e.target.value;
+                                updateField(
+                                  activeField.id,
+                                  "options",
+                                  newOptions,
+                                );
+                              }}
+                              className="flex-1 bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                            />
+                            <button
+                              onClick={() => {
+                                const newOptions = activeField.options.filter(
+                                  (_, idx) => idx !== i,
+                                );
+                                updateField(
+                                  activeField.id,
+                                  "options",
+                                  newOptions,
+                                );
+                              }}
+                              className="p-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         ))}
-                        <button 
-                          onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])} 
+                        <button
+                          onClick={() =>
+                            updateField(activeField.id, "options", [
+                              ...(activeField.options || []),
+                              `Option ${(activeField.options?.length || 0) + 1}`,
+                            ])
+                          }
                           className="w-full p-3 border border-dashed border-blue-300 rounded-xl text-blue-600 font-bold hover:bg-blue-50 text-sm transition-colors mt-2"
                         >
                           + Add Choice
@@ -639,36 +729,58 @@ export default function BuilderPage() {
                       </div>
                     ) : (
                       <div className="space-y-4 mt-2">
-                         <div className="flex flex-col space-y-1">
-                            <label className="text-[10px] uppercase font-bold text-slate-400">Source Form</label>
-                            <select 
-                               value={activeField.sourceTable || ""}
-                               onChange={(e) => {
-                                  updateField(activeField.id, "sourceTable", e.target.value);
-                                  updateField(activeField.id, "sourceColumn", "");
-                               }}
-                               className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
-                            >
-                               <option value="" disabled>Select a form...</option>
-                               {availableForms.map(form => (
-                                  <option key={form.id} value={form.id.toString()}>{form.formName}</option>
-                               ))}
-                            </select>
-                         </div>
-                         <div className="flex flex-col space-y-1">
-                             <label className="text-[10px] uppercase font-bold text-slate-400">Data Column (Target)</label>
-                             <select 
-                                value={activeField.sourceColumn || ""}
-                                onChange={(e) => updateField(activeField.id, "sourceColumn", e.target.value)}
-                                className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
-                                disabled={!activeField.sourceTable}
-                             >
-                                <option value="" disabled>Select a column to use...</option>
-                                {selectedFormFields.map(f => (
-                                   <option key={f.fieldName} value={f.fieldName}>{f.fieldName} ({f.fieldType})</option>
-                                ))}
-                             </select>
-                         </div>
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[10px] uppercase font-bold text-slate-400">
+                            Source Form
+                          </label>
+                          <select
+                            value={activeField.sourceTable || ""}
+                            onChange={(e) => {
+                              updateField(
+                                activeField.id,
+                                "sourceTable",
+                                e.target.value,
+                              );
+                              updateField(activeField.id, "sourceColumn", "");
+                            }}
+                            className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                          >
+                            <option value="" disabled>
+                              Select a form...
+                            </option>
+                            {availableForms.map((form) => (
+                              <option key={form.id} value={form.id.toString()}>
+                                {form.formName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[10px] uppercase font-bold text-slate-400">
+                            Data Column (Target)
+                          </label>
+                          <select
+                            value={activeField.sourceColumn || ""}
+                            onChange={(e) =>
+                              updateField(
+                                activeField.id,
+                                "sourceColumn",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                            disabled={!activeField.sourceTable}
+                          >
+                            <option value="" disabled>
+                              Select a column to use...
+                            </option>
+                            {selectedFormFields.map((f) => (
+                              <option key={f.fieldName} value={f.fieldName}>
+                                {f.fieldName} ({f.fieldType})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -682,21 +794,29 @@ export default function BuilderPage() {
                       </span>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="relative">
-                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Min</span>
+                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">
+                            Min
+                          </span>
                           <input
                             type="number"
                             value={activeField.min}
-                            onChange={(e) => handleNumberInput(e, activeField.id, "min")}
+                            onChange={(e) =>
+                              handleNumberInput(e, activeField.id, "min")
+                            }
                             className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-transparent shadow-sm"
                             placeholder="0"
                           />
                         </div>
                         <div className="relative">
-                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Max</span>
+                          <span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">
+                            Max
+                          </span>
                           <input
                             type="number"
                             value={activeField.max}
-                            onChange={(e) => handleNumberInput(e, activeField.id, "max")}
+                            onChange={(e) =>
+                              handleNumberInput(e, activeField.id, "max")
+                            }
                             className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-transparent shadow-sm"
                             placeholder="0"
                           />
@@ -715,7 +835,9 @@ export default function BuilderPage() {
                       type="text"
                       placeholder="Custom pattern..."
                       value={activeField.pattern}
-                      onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
+                      onChange={(e) =>
+                        updateField(activeField.id, "pattern", e.target.value)
+                      }
                       className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-blue-600 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-slate-400 shadow-sm"
                     />
                   </div>
@@ -729,20 +851,36 @@ export default function BuilderPage() {
                       </span>
                       <div className="flex flex-col gap-3">
                         <div className="relative">
-                          <span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">After Date</span>
+                          <span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">
+                            After Date
+                          </span>
                           <input
                             type="date"
                             value={activeField.afterDate}
-                            onChange={(e) => updateField(activeField.id, "afterDate", e.target.value)}
+                            onChange={(e) =>
+                              updateField(
+                                activeField.id,
+                                "afterDate",
+                                e.target.value,
+                              )
+                            }
                             className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
                           />
                         </div>
                         <div className="relative">
-                          <span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">Before Date</span>
+                          <span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">
+                            Before Date
+                          </span>
                           <input
                             type="date"
                             value={activeField.beforeDate}
-                            onChange={(e) => updateField(activeField.id, "beforeDate", e.target.value)}
+                            onChange={(e) =>
+                              updateField(
+                                activeField.id,
+                                "beforeDate",
+                                e.target.value,
+                              )
+                            }
                             className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
                           />
                         </div>
@@ -767,4 +905,3 @@ export default function BuilderPage() {
     </div>
   );
 }
-
