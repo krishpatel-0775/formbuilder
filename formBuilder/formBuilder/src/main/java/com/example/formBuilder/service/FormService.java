@@ -140,6 +140,8 @@ public class FormService {
             formField.setMax(field.getMax());
             formField.setPattern(field.getPattern());
 
+            formField.setDefaultValue(field.getDefaultValue());
+
             formField.setBeforeDate(
                     field.getBeforeDate() != null ?
                             LocalDate.parse(field.getBeforeDate()) : null
@@ -243,9 +245,10 @@ public class FormService {
     //give data type according field type
     private String mapType(String type) {
         return switch (type) {
-            case "text", "email", "radio", "select" -> "VARCHAR(255)";
+            case "text", "email", "radio", "select", "url", "phone" -> "VARCHAR(255)";
             case "number" -> "INT";
             case "date" -> "DATE";
+            case "time" -> "TIME";
             case "textarea", "checkbox" -> "TEXT";
             default -> "VARCHAR(255)";
         };
@@ -381,6 +384,9 @@ public class FormService {
         field.setMin(req.getMin());
         field.setMax(req.getMax());
         field.setPattern(req.getPattern());
+
+        field.setDefaultValue(req.getDefaultValue());
+
         field.setBeforeDate(req.getBeforeDate() != null
                 ? LocalDate.parse(req.getBeforeDate()) : null);
         field.setAfterDate(req.getAfterDate() != null

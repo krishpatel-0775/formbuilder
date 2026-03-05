@@ -93,23 +93,19 @@ public class SubmissionService {
         Object[] safeValues = formFields.stream()
                 .filter(f -> values.containsKey(f.getFieldName()))
                 .map(f -> {
-
                     Object value = values.get(f.getFieldName());
-
                     if (value == null) return null;
 
                     switch (f.getFieldType()) {
-
                         case "number":
                             return Integer.parseInt(value.toString());
-
                         case "date":
                             return java.sql.Date.valueOf(value.toString());
-
+                        case "time":                                          // ← ADD THIS
+                            return java.sql.Time.valueOf(value.toString());   // ← ADD THIS
                         default:
                             return value.toString();
                     }
-
                 })
                 .toArray();
 
@@ -179,6 +175,22 @@ public class SubmissionService {
                     throw new RuntimeException(
                             field.getFieldName() + " must be before "
                                     + field.getBeforeDate());
+                }
+            }
+
+            case "url" -> {
+                if (!stringValue.matches("^(https?://)(localhost|[\\w\\-]+(\\.[\\w\\-]+)+)(:\\d+)?(/.*)?$")) {
+                    throw new RuntimeException(
+                            field.getFieldName() + " must be a valid URL (starting with http:// or https://)");
+                }
+            }
+
+            case "phone" -> {
+                // strips spaces, dashes, brackets, plus sign then checks 7–15 digits
+                String digitsOnly = stringValue.replaceAll("[\\s\\-().+]", "");
+                if (!digitsOnly.matches("^\\d{7,15}$")) {
+                    throw new RuntimeException(
+                            field.getFieldName() + " must be a valid phone number");
                 }
             }
 

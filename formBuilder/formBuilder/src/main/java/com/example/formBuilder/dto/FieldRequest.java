@@ -23,6 +23,7 @@ public class FieldRequest {
     private String beforeDate;   // max allowed date
     private String afterDate;    // min allowed date   // min date allowed
     private List<String> options;
+    private String defaultValue;
     private String sourceTable;
     private String sourceColumn;
 }

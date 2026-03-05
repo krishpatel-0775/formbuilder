@@ -20,6 +20,7 @@ public class UpdateFieldRequest {
     private String beforeDate;
     private String afterDate;
     private List<String> options;
+    private String defaultValue;
     private String sourceTable;
     private String sourceColumn;
 }

@@ -46,6 +46,9 @@ public class FormField {
     @Column(name = "source_column")
     private String sourceColumn;
 
+    @Column(name = "default_value")
+    private String defaultValue;
+
     @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "form_id")
