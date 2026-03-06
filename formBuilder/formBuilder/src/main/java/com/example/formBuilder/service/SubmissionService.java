@@ -114,8 +114,12 @@ public class SubmissionService {
                             return Integer.parseInt(value.toString());
                         case "date":
                             return java.sql.Date.valueOf(value.toString());
-                        case "time":                                          
-                            return java.sql.Time.valueOf(value.toString());   
+                        case "time":
+                            String timeValue = value.toString();
+                            if (timeValue.length() == 5) {
+                                timeValue = timeValue + ":00";
+                            }
+                            return java.sql.Time.valueOf(timeValue);
                         default:
                             return value.toString();
                     }
