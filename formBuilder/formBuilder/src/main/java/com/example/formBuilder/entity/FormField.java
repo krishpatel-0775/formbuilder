@@ -35,6 +35,9 @@ public class FormField {
     private LocalDate beforeDate;
     private LocalDate afterDate;
 
+    private String minTime;
+    private String maxTime;
+
     @ElementCollection
     @CollectionTable(name = "form_field_options", joinColumns = @JoinColumn(name = "field_id"))
     @Column(name = "option_value")

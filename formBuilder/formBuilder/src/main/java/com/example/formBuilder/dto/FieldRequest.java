@@ -20,10 +20,12 @@ public class FieldRequest {
     private Integer min;
     private Integer max;
     private String pattern;
-    private String beforeDate;   // max allowed date
-    private String afterDate;    // min allowed date   // min date allowed
+    private String beforeDate;
+    private String afterDate;
     private List<String> options;
     private String defaultValue;
     private String sourceTable;
     private String sourceColumn;
+    private String minTime;
+    private String maxTime;
 }

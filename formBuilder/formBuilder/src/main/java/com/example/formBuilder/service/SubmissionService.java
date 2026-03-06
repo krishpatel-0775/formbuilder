@@ -23,6 +23,7 @@ public class SubmissionService {
 
     private final FormRepository formRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final RuleEngineService ruleEngineService;
 
     /**
      * Soft-deletes a specific response by marking its 'is_deleted' flag to true.
@@ -92,6 +93,9 @@ public class SubmissionService {
             throw new ValidationException(String.join(", ", validationErrors));
         }
 
+        // STEP 4 — Evaluate form rules (VALIDATION_ERROR + REQUIRE enforcement)
+        ruleEngineService.validateSubmission(form, values);
+
         // STEP 4 — Safe column building
         String columns = formFields.stream()
                 .filter(f -> values.containsKey(f.getFieldName()))
@@ -107,21 +111,29 @@ public class SubmissionService {
                 .filter(f -> values.containsKey(f.getFieldName()))
                 .map(f -> {
                     Object value = values.get(f.getFieldName());
-                    if (value == null) return null;
 
+                    // Treat null or blank string as SQL NULL — safe for optional fields
+                    if (value == null || value.toString().trim().isEmpty()) return null;
+
+                    String strVal = value.toString().trim();
                     switch (f.getFieldType()) {
                         case "number":
-                            return Integer.parseInt(value.toString());
-                        case "date":
-                            return java.sql.Date.valueOf(value.toString());
-                        case "time":
-                            String timeValue = value.toString();
-                            if (timeValue.length() == 5) {
-                                timeValue = timeValue + ":00";
+                            try {
+                                return Integer.parseInt(strVal);
+                            } catch (NumberFormatException e) {
+                                try { return Double.parseDouble(strVal); }
+                                catch (NumberFormatException e2) { return null; }
                             }
-                            return java.sql.Time.valueOf(timeValue);
+                        case "date":
+                            try { return java.sql.Date.valueOf(strVal); }
+                            catch (Exception e) { return null; }
+                        case "time":
+                            try {
+                                if (strVal.length() == 5) strVal = strVal + ":00";
+                                return java.sql.Time.valueOf(strVal);
+                            } catch (Exception e) { return null; }
                         default:
-                            return value.toString();
+                            return strVal;
                     }
                 })
                 .toArray();
@@ -130,6 +142,9 @@ public class SubmissionService {
                 " (" + columns + ") VALUES (" + placeholders + ")";
 
         jdbcTemplate.update(sql, safeValues);
+
+        // STEP 6 — Trigger post-submission workflows (notifications, hooks, etc.)
+        ruleEngineService.executePostSubmissionWorkflows(form, values);
 
         return "Form Submitted Successfully";
     }

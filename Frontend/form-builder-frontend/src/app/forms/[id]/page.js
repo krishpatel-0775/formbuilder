@@ -1,10 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertCircle, Send, ArrowLeft, Loader2 } from "lucide-react";
+import { AlertCircle, Send, ArrowLeft, Loader2, Eye } from "lucide-react";
 import Link from "next/link";
 import { ENDPOINTS } from "../../../config/apiConfig";
+
+const evaluateConditionNode = (node, values) => {
+  if (!node) return false;
+  if (node.conditions && node.conditions.length > 0) {
+    const isAnd = node.logicalOperator !== "OR";
+    for (let c of node.conditions) {
+      const met = evaluateConditionNode(c, values);
+      if (isAnd && !met) return false;
+      if (!isAnd && met) return true;
+    }
+    return isAnd;
+  }
+
+  const val1 = (values[node.field] || "").toString().toLowerCase();
+  const val2 = (node.value || "").toString().toLowerCase();
+
+  switch (node.operator) {
+    case "EQUALS": return val1 === val2;
+    case "NOT_EQUALS": return val1 !== val2;
+    case "CONTAINS": return val1.includes(val2);
+    case "GREATER_THAN": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) > Number(val2);
+    case "LESS_THAN": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) < Number(val2);
+    default: return false;
+  }
+};
 
 export default function PublicFormPage() {
   const { id } = useParams();
@@ -15,6 +40,12 @@ export default function PublicFormPage() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // fieldVisibility: { fieldName: "SHOW" | "HIDE" } — from rule engine
+  const [fieldVisibility, setFieldVisibility] = useState({});
+  // showTargetFields: Set of field names that have a SHOW rule — hidden by default
+  const [showTargetFields, setShowTargetFields] = useState(new Set());
+  const [formRules, setFormRules] = useState([]);
+  const [dynamicRequiredFields, setDynamicRequiredFields] = useState(new Set());
 
   useEffect(() => {
     if (!id) return;
@@ -68,6 +99,29 @@ export default function PublicFormPage() {
         }
 
         setFormData(initialData);
+
+        // Load rules to discover which fields are SHOW-controlled (hidden by default)
+        try {
+          const rulesRes = await fetch(ENDPOINTS.formRules(id));
+          if (rulesRes.ok) {
+            const rulesJson = await rulesRes.json();
+            const rawRules = rulesJson.data;
+            if (rawRules) {
+              const parsed = JSON.parse(rawRules);
+              setFormRules(parsed);
+              // Collect all fields targeted by a SHOW action
+              const targets = new Set(
+                parsed
+                  .filter((r) => r.action?.type === "SHOW" && r.action?.targetField)
+                  .map((r) => r.action.targetField)
+              );
+              setShowTargetFields(targets);
+            }
+          }
+        } catch (e) {
+          console.warn("Could not load rules for visibility defaults:", e);
+        }
+
         setLoading(false);
       })
       .catch((err) => {
@@ -75,6 +129,46 @@ export default function PublicFormPage() {
         setLoading(false);
       });
   }, [id]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Evaluate field visibility whenever formData changes (debounced 300ms)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const evaluateVisibility = useCallback(
+    async (currentData) => {
+      if (!id) return;
+      try {
+        const res = await fetch(`${ENDPOINTS.VISIBILITY}?formId=${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(currentData),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          setFieldVisibility(json.data || {});
+        }
+      } catch (e) {
+        // Silently ignore — visibility errors should not break the form
+      }
+    },
+    [id]
+  );
+
+  useEffect(() => {
+    if (!formConfig) return;
+
+    const required = new Set();
+    formRules.forEach(rule => {
+      if (rule.action?.type === "REQUIRE" && rule.action.targetField) {
+        if (evaluateConditionNode(rule.condition, formData)) {
+          required.add(rule.action.targetField);
+        }
+      }
+    });
+    setDynamicRequiredFields(required);
+
+    const timer = setTimeout(() => evaluateVisibility(formData), 300);
+    return () => clearTimeout(timer);
+  }, [formData, formConfig, evaluateVisibility, formRules]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // validate() — collects EVERY violation for EVERY field into string[]
@@ -91,16 +185,20 @@ export default function PublicFormPage() {
     if (!formConfig?.fields) return newErrors;
 
     formConfig.fields.forEach((field) => {
+      // Skip fields that are currently hidden (HIDE rule or SHOW-controlled + condition not met)
+      if (fieldVisibility[field.fieldName] === "HIDE") return;
+      if (showTargetFields.has(field.fieldName) && fieldVisibility[field.fieldName] !== "SHOW") return;
+
       const value = formData[field.fieldName];
       const name = field.fieldName;
 
       // ── 1. Required ─────────────────────────────────────────────────────────
-      if (field.required) {
+      if (field.required || dynamicRequiredFields.has(field.fieldName)) {
         if (field.fieldType === "checkbox") {
           if (!value || value.length === 0)
-            push(name, "Please select at least one option.");
+            push(name, field.required ? "Please select at least one option." : "This field is required based on the form rules.");
         } else if (!value || value.toString().trim() === "") {
-          push(name, `This field is required.`);
+          push(name, field.required ? "This field is required." : "This field is required based on the form rules.");
         }
       }
 
@@ -197,6 +295,24 @@ export default function PublicFormPage() {
       // }
     });
 
+    // ── 10. Rule Engine Validation Errors ─────────────────────────────────────
+    formRules.forEach(rule => {
+      if (rule.action?.type === "VALIDATION_ERROR") {
+        if (evaluateConditionNode(rule.condition, formData)) {
+          let target = rule.action.targetField;
+          // Fallback to the first condition's field if targetField isn't explicitly set
+          if (!target && rule.condition?.conditions?.length > 0) {
+            target = rule.condition.conditions[0].field;
+          }
+          if (target) {
+            push(target, rule.action.message || "Submission rejected by rules.");
+          } else {
+            push("_ruleError", rule.action.message || "Submission rejected by rules.");
+          }
+        }
+      }
+    });
+
     return newErrors;
   };
 
@@ -247,9 +363,13 @@ export default function PublicFormPage() {
         const errorText = await res.text();
         try {
           const errorData = JSON.parse(errorText);
-          alert(`Error: ${errorData.message || "Submission failed"}`);
+          // Show rule engine validation error as a form-level error
+          setErrors((prev) => ({
+            ...prev,
+            _ruleError: [errorData.message || "Submission failed"],
+          }));
         } catch (e) {
-          alert(`Error: ${errorText || "Submission failed"}`);
+          setErrors((prev) => ({ ...prev, _ruleError: [errorText || "Submission failed"] }));
         }
       }
     } catch (err) {
@@ -277,7 +397,9 @@ export default function PublicFormPage() {
       </div>
     );
 
-  const totalErrors = Object.values(errors).reduce((acc, msgs) => acc + msgs.length, 0);
+  const totalErrors = Object.entries(errors)
+    .filter(([k]) => k !== "_ruleError")
+    .reduce((acc, [, msgs]) => acc + msgs.length, 0);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-16 px-6">
@@ -311,7 +433,7 @@ export default function PublicFormPage() {
                 </p>
               </div>
               <ul className="px-5 py-4 space-y-1.5">
-                {Object.entries(errors).map(([fieldName, msgs]) =>
+                {Object.entries(errors).filter(([k]) => k !== "_ruleError").map(([fieldName, msgs]) =>
                   msgs.map((msg, i) => (
                     <li key={`${fieldName}-${i}`} className="flex items-start gap-2">
                       <span className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
@@ -334,9 +456,34 @@ export default function PublicFormPage() {
 
           {/* ── Form fields ─────────────────────────────────────────────────── */}
           <form onSubmit={handleSubmit} noValidate className="p-8 md:p-12 space-y-10">
+
+            {/* Rule engine validation error banner */}
+            {errors._ruleError && (
+              <div className="rounded-2xl border border-red-300 bg-red-50 px-5 py-4 flex items-start gap-3">
+                <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-black text-red-700">Submission Rejected</p>
+                  <p className="text-xs text-red-600 mt-0.5 font-medium">{errors._ruleError[0]}</p>
+                </div>
+              </div>
+            )}
+
             {formConfig?.fields?.map((field) => {
               const fieldErrors = errors[field.fieldName]; // string[] | undefined
               const hasError = fieldErrors && fieldErrors.length > 0;
+              const visState = fieldVisibility[field.fieldName];
+
+              // Fields targeted by a SHOW rule → hidden by default, shown only when rule triggers
+              const isShowControlled = showTargetFields.has(field.fieldName);
+              const isRuleShown = visState === "SHOW";
+              const isRuleHidden = visState === "HIDE";
+              const isRuleRequired = dynamicRequiredFields.has(field.fieldName);
+
+              // Hide this field if:
+              //   1. An explicit HIDE rule fired, OR
+              //   2. This field is SHOW-controlled but the SHOW condition isn't met yet
+              if (isRuleHidden) return null;
+              if (isShowControlled && !isRuleShown) return null;
 
               return (
                 <div
@@ -345,9 +492,19 @@ export default function PublicFormPage() {
                   className="space-y-3"
                 >
                   {/* Label */}
-                  <label className="block text-sm font-black text-slate-700 uppercase tracking-wider">
-                    {field.fieldName}{" "}
-                    {field.required && <span className="text-red-500">*</span>}
+                  <label className="block text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                    <span>{field.fieldName}</span>
+                    {(field.required || isRuleRequired) && <span className="text-red-500">*</span>}
+                    {isRuleShown && (
+                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full normal-case tracking-normal">
+                        ✓ shown by rule
+                      </span>
+                    )}
+                    {isRuleRequired && (
+                      <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full normal-case tracking-normal">
+                        ★ required by rule
+                      </span>
+                    )}
                   </label>
 
                   {/* TEXTAREA */}

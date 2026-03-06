@@ -12,9 +12,11 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Type, Hash, Mail, Calendar, Trash2, GripVertical, X, AlertCircle, ShieldCheck,
   CheckCircle2, ListPlus, ArrowRight, AlignLeft, CircleDot, CheckSquare,
-  Save, ArrowLeft, Loader2, Phone, Clock, Link, SlidersHorizontal,
+  Save, ArrowLeft, Loader2, Phone, Clock, Link, SlidersHorizontal, GitBranch, AlertTriangle
 } from "lucide-react";
 import NextLink from "next/link";
+import RuleBuilder from "../../../../components/RuleBuilder";
+import { ENDPOINTS } from "../../../../config/apiConfig";
 
 // ─── Default Value Panel ───────────────────────────────────────────────────────
 function DefaultValuePanel({ activeField, updateField }) {
@@ -147,6 +149,8 @@ export default function EditFormPage() {
   const [formStatus, setFormStatus] = useState("DRAFT");
   const [availableForms, setAvailableForms] = useState([]);
   const [selectedFormFields, setSelectedFormFields] = useState([]);
+  const [rules, setRules] = useState([]);
+  const [sidebarTab, setSidebarTab] = useState("properties"); // "properties" | "logic"
 
   const fieldIcons = {
     text: <Type size={18} />, textarea: <AlignLeft size={18} />, number: <Hash size={18} />,
@@ -182,6 +186,23 @@ export default function EditFormPage() {
         }));
         setFields(loadedFields);
         setIsLoading(false);
+
+        // Load rules (async IIFE to allow await inside .then)
+        (async () => {
+          try {
+            const rulesRes = await fetch(ENDPOINTS.formRules(id));
+            if (rulesRes.ok) {
+              const rulesJson = await rulesRes.json();
+              const raw = rulesJson.data;
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                setRules(parsed.map((r) => ({ ...r, _id: Date.now() + Math.random() })));
+              }
+            }
+          } catch (e) {
+            console.warn("Could not load rules:", e);
+          }
+        })();
       })
       .catch((err) => { console.error(err); alert("Failed to load form. Redirecting..."); router.push("/forms/all"); });
   }, [id]);
@@ -236,7 +257,34 @@ export default function EditFormPage() {
   };
   const handleSortCancel = () => setActiveSortId(null);
 
-  const updateField = (id, key, value) => setFields((p) => p.map((f) => f.id === id ? { ...f, [key]: value } : f));
+  const updateField = (id, key, value) => {
+    if (key === "label") {
+      setFields((p) => {
+        const field = p.find((f) => f.id === id);
+        if (field && field.label !== value) {
+          const oldCol = field.label ? field.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+          const newCol = value ? value.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+          if (oldCol && newCol && oldCol !== newCol) {
+            setRules((prevRules) => prevRules.map((r) => {
+              let newRule = { ...r };
+              if (newRule.action?.targetField === oldCol) {
+                newRule.action = { ...newRule.action, targetField: newCol };
+              }
+              if (newRule.condition?.conditions) {
+                newRule.condition.conditions = newRule.condition.conditions.map((c) =>
+                  c.field === oldCol ? { ...c, field: newCol } : c
+                );
+              }
+              return newRule;
+            }));
+          }
+        }
+        return p.map((f) => (f.id === id ? { ...f, [key]: value } : f));
+      });
+    } else {
+      setFields((p) => p.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
+    }
+  };
   const removeField = (id) => { setFields(fields.filter((f) => f.id !== id)); if (activeFieldId === id) setActiveFieldId(null); };
   const handleNumberInput = (e, id, key) => { const v = e.target.value; if (v === "" || /^\d+$/.test(v)) updateField(id, key, v); };
   const generateColumnName = (label) => label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
@@ -272,6 +320,18 @@ export default function EditFormPage() {
         body: JSON.stringify({ formName: formName.trim(), fields: formattedFields }),
       });
       if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || "Failed to update form."); }
+
+      // Save rules separately
+      try {
+        await fetch(ENDPOINTS.formRules(id), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(rules),
+        });
+      } catch (e) {
+        console.warn("Failed to save rules:", e);
+      }
+
       setShowSuccess(true);
       setTimeout(() => { setShowSuccess(false); router.push("/forms/all"); }, 1500);
     } catch (err) { alert(`❌ ${err.message}`); }
@@ -398,189 +458,293 @@ export default function EditFormPage() {
         </div>
       </main>
 
-      {/* RIGHT SIDEBAR */}
-      <aside className={`w-80 bg-white border-l border-slate-200 shadow-[-10px_0_30px_rgba(0,0,0,0.03)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId ? "translate-x-0" : "translate-x-full"}`}>
+      {/* RIGHT SIDEBAR — Field Properties OR Rules Panel */}
+      <aside className={`w-[400px] bg-white border-l border-slate-200 shadow-[-20px_0_40px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId ? "translate-x-0" : "translate-x-full"}`}>
         {activeField && (
           <>
-            <div className="p-8 border-b border-slate-100 flex items-start justify-between bg-gradient-to-b from-slate-50/50 to-transparent">
-              <div>
-                <h2 className="text-[10px] font-black text-violet-600 uppercase tracking-[0.2em] mb-2">Properties</h2>
-                <p className="text-lg font-bold text-slate-900 capitalize">{activeField.type} Settings</p>
+            {/* Sidebar header with field type + close */}
+            <div className="px-6 pt-6 pb-0 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 flex items-center justify-center bg-slate-100 text-slate-600 rounded-xl text-sm">
+                  {fieldIcons[activeField.type]}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em]">Field Settings</p>
+                  <p className="text-sm font-black text-slate-900 capitalize">{activeField.type}</p>
+                </div>
               </div>
-              <button onClick={() => setActiveFieldId(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
-                <X size={16} />
+              <button onClick={() => { setActiveFieldId(null); setSidebarTab("properties"); }}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-400 transition-colors">
+                <X size={15} />
               </button>
             </div>
 
-            <div className="p-8 space-y-10 overflow-y-auto flex-1">
-
-              {/* Required Toggle */}
-              <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Field Behavior</label>
-                <div onClick={() => updateField(activeField.id, "required", !activeField.required)}
-                  className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer border transition-all ${activeField.required ? "bg-violet-50 border-violet-200 text-violet-900 shadow-sm" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"}`}>
-                  <span className="text-sm font-bold">Required Field</span>
-                  <div className={`w-10 h-5 rounded-full transition-colors relative shadow-inner ${activeField.required ? "bg-violet-600" : "bg-slate-300"}`}>
-                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${activeField.required ? "translate-x-6" : "translate-x-1"}`} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Default Value */}
-              <DefaultValuePanel activeField={activeField} updateField={updateField} />
-
-              {/* Constraints */}
-              <div className="space-y-6">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <AlertCircle size={14} /> Constraints
-                </label>
-
-                {(activeField.type === "text" || activeField.type === "textarea") && (
-                  <div className="flex flex-col gap-6">
-                    <div className="space-y-3">
-                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Character Range</span>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Min</span>
-                          <input type="number" value={activeField.minLength} onChange={(e) => handleNumberInput(e, activeField.id, "minLength")} placeholder="0"
-                            className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                        <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Max</span>
-                          <input type="number" value={activeField.maxLength} onChange={(e) => handleNumberInput(e, activeField.id, "maxLength")} placeholder="0"
-                            className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                      </div>
-                    </div>
-                    {activeField.type === "text" && (
-                      <div className="space-y-3">
-                        <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Regex Pattern</span>
-                        <input type="text" placeholder="e.g. ^[A-Z]+$" value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
-                          className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-violet-600 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {(activeField.type === "radio" || activeField.type === "checkbox" || activeField.type === "select") && (
-                  <div className="flex flex-col gap-4">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">{activeField.type === "select" ? "Data Source Options" : "Choices"}</span>
-                    {activeField.type === "select" && (
-                      <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
-                        <button onClick={() => { updateField(activeField.id, "sourceTable", ""); updateField(activeField.id, "sourceColumn", ""); }}
-                          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-colors ${!activeField.sourceTable ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Manual List</button>
-                        <button onClick={() => { if (!activeField.sourceTable && availableForms.length > 0) updateField(activeField.id, "sourceTable", availableForms[0].id.toString()); }}
-                          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-colors ${activeField.sourceTable ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Other Form Data</button>
-                      </div>
-                    )}
-                    {!activeField.sourceTable ? (
-                      <div className="space-y-3 mt-2">
-                        {activeField.options?.map((opt, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <input type="text" value={opt} onChange={(e) => { const n = [...activeField.options]; n[i] = e.target.value; updateField(activeField.id, "options", n); }}
-                              className="flex-1 bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" />
-                            <button onClick={() => { const n = activeField.options.filter((_, idx) => idx !== i); updateField(activeField.id, "options", n); }}
-                              className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={16} /></button>
-                          </div>
-                        ))}
-                        <button onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])}
-                          className="w-full p-3 border border-dashed border-violet-300 rounded-xl text-violet-600 font-bold hover:bg-violet-50 text-sm transition-colors mt-2">+ Add Choice</button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 mt-2">
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400">Source Form</label>
-                          <select value={activeField.sourceTable || ""} onChange={(e) => { updateField(activeField.id, "sourceTable", e.target.value); updateField(activeField.id, "sourceColumn", ""); }}
-                            className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm">
-                            <option value="" disabled>Select a form...</option>
-                            {availableForms.map((f) => <option key={f.id} value={f.id.toString()}>{f.formName}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400">Data Column</label>
-                          <select value={activeField.sourceColumn || ""} onChange={(e) => updateField(activeField.id, "sourceColumn", e.target.value)}
-                            className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" disabled={!activeField.sourceTable}>
-                            <option value="" disabled>Select a column...</option>
-                            {selectedFormFields.map((f) => <option key={f.fieldName} value={f.fieldName}>{f.fieldName} ({f.fieldType})</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeField.type === "number" && (
-                  <div className="space-y-3">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Value Range</span>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Min</span>
-                        <input type="number" value={activeField.min} onChange={(e) => handleNumberInput(e, activeField.id, "min")} placeholder="0"
-                          className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                      <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Max</span>
-                        <input type="number" value={activeField.max} onChange={(e) => handleNumberInput(e, activeField.id, "max")} placeholder="0"
-                          className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                    </div>
-                  </div>
-                )}
-
-                {activeField.type === "email" && (
-                  <div className="space-y-3">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Validation Regex</span>
-                    <input type="text" placeholder="Custom pattern..." value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
-                      className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-violet-600 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" />
-                  </div>
-                )}
-
-                {activeField.type === "date" && (
-                  <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Date Range Limitations</span>
-                    <div className="flex flex-col gap-3">
-                      <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">After Date</span>
-                        <input type="date" value={activeField.afterDate} onChange={(e) => updateField(activeField.id, "afterDate", e.target.value)}
-                          className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                      <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">Before Date</span>
-                        <input type="date" value={activeField.beforeDate} onChange={(e) => updateField(activeField.id, "beforeDate", e.target.value)}
-                          className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                    </div>
-                  </div>
-                )}
-
-                {activeField.type === "phone" && (
-                  <div className="space-y-3">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Regex Pattern (optional)</span>
-                    <input type="text" placeholder="e.g. ^\+91[0-9]{10}$" value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
-                      className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-violet-600 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all placeholder:text-slate-400 shadow-sm" />
-                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
-                      <p className="text-[11px] text-slate-500 font-medium">Leave empty to use default validation (7–15 digits).</p>
-                    </div>
-                  </div>
-                )}
-
-                {activeField.type === "time" && (
-                  <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Time Range</span>
-                    <div className="flex flex-col gap-3">
-                      <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">After Time</span>
-                        <input type="time" value={activeField.afterTime ?? ""} onChange={(e) => updateField(activeField.id, "afterTime", e.target.value)}
-                          className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                      <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">Before Time</span>
-                        <input type="time" value={activeField.beforeTime ?? ""} onChange={(e) => updateField(activeField.id, "beforeTime", e.target.value)}
-                          className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
-                    </div>
-                  </div>
-                )}
-
-                {activeField.type === "url" && (
-                  <div className="space-y-3">
-                    <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Validation Info</span>
-                    <div className="p-4 bg-violet-50 border border-violet-100 rounded-xl">
-                      <p className="text-xs font-bold text-violet-700">Auto-validated</p>
-                      <p className="text-[11px] text-violet-500 mt-1 font-medium leading-relaxed">
-                        URL must start with <code className="bg-violet-100 px-1 rounded">http://</code> or <code className="bg-violet-100 px-1 rounded">https://</code>.
-                      </p>
-                    </div>
-                  </div>
-                )}
+            {/* Tab switcher */}
+            <div className="px-6 pt-4 pb-0 flex-shrink-0">
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                <button
+                  onClick={() => setSidebarTab("properties")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-black transition-all ${sidebarTab === "properties" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  <SlidersHorizontal size={12} /> Properties
+                </button>
+                <button
+                  onClick={() => setSidebarTab("logic")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-black transition-all relative ${sidebarTab === "logic" ? "bg-indigo-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  <GitBranch size={12} /> Logic
+                  {(() => {
+                    const fn = activeField.label ? activeField.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+                    const count = rules.filter((r) => r.action?.targetField === fn).length;
+                    return count > 0 ? (
+                      <span className={`ml-1 text-[9px] font-black px-1.5 py-0.5 rounded-full ${sidebarTab === "logic" ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-700"}`}>{count}</span>
+                    ) : null;
+                  })()}
+                </button>
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-200">
+            {/* Divider */}
+            <div className="border-b border-slate-100 mt-4 flex-shrink-0" />
+
+            {/* PROPERTIES TAB */}
+            {sidebarTab === "properties" && (
+              <div className="p-6 space-y-8 overflow-y-auto flex-1">
+
+                {/* Required Toggle */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Field Behavior</label>
+                  <div onClick={() => updateField(activeField.id, "required", !activeField.required)}
+                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer border transition-all ${activeField.required ? "bg-violet-50 border-violet-200 text-violet-900 shadow-sm" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"}`}>
+                    <span className="text-sm font-bold">Required Field</span>
+                    <div className={`w-10 h-5 rounded-full transition-colors relative shadow-inner ${activeField.required ? "bg-violet-600" : "bg-slate-300"}`}>
+                      <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${activeField.required ? "translate-x-6" : "translate-x-1"}`} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Default Value */}
+                <DefaultValuePanel activeField={activeField} updateField={updateField} />
+
+                {/* Constraints */}
+                <div className="space-y-6">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <AlertCircle size={14} /> Constraints
+                  </label>
+
+                  {(activeField.type === "text" || activeField.type === "textarea") && (
+                    <div className="flex flex-col gap-6">
+                      <div className="space-y-3">
+                        <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Character Range</span>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Min</span>
+                            <input type="number" value={activeField.minLength} onChange={(e) => handleNumberInput(e, activeField.id, "minLength")} placeholder="0"
+                              className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                          <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Max</span>
+                            <input type="number" value={activeField.maxLength} onChange={(e) => handleNumberInput(e, activeField.id, "maxLength")} placeholder="0"
+                              className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                        </div>
+                      </div>
+                      {activeField.type === "text" && (
+                        <div className="space-y-3">
+                          <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Regex Pattern</span>
+                          <input type="text" placeholder="e.g. ^[A-Z]+$" value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
+                            className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-violet-600 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {(activeField.type === "radio" || activeField.type === "checkbox" || activeField.type === "select") && (
+                    <div className="flex flex-col gap-4">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">
+                        {activeField.type === "select" ? "Data Source Options" : "Choices"}
+                      </span>
+                      {activeField.type === "select" && (
+                        <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+                          <button onClick={() => { updateField(activeField.id, "sourceTable", ""); updateField(activeField.id, "sourceColumn", ""); }}
+                            className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-colors ${!activeField.sourceTable ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Manual List</button>
+                          <button onClick={() => { if (!activeField.sourceTable && availableForms.length > 0) updateField(activeField.id, "sourceTable", availableForms[0].id.toString()); }}
+                            className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-colors ${activeField.sourceTable ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Other Form Data</button>
+                        </div>
+                      )}
+                      {!activeField.sourceTable ? (
+                        <div className="space-y-3 mt-2">
+                          {activeField.options?.map((opt, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <input type="text" value={opt} onChange={(e) => { const n = [...activeField.options]; n[i] = e.target.value; updateField(activeField.id, "options", n); }}
+                                className="flex-1 bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" />
+                              <button onClick={() => { const n = activeField.options.filter((_, idx) => idx !== i); updateField(activeField.id, "options", n); }}
+                                className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={16} /></button>
+                            </div>
+                          ))}
+                          <button onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])}
+                            className="w-full p-3 border border-dashed border-violet-300 rounded-xl text-violet-600 font-bold hover:bg-violet-50 text-sm transition-colors mt-2">+ Add Choice</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 mt-2">
+                          <div className="flex flex-col space-y-1">
+                            <label className="text-[10px] uppercase font-bold text-slate-400">Source Form</label>
+                            <select value={activeField.sourceTable || ""} onChange={(e) => { updateField(activeField.id, "sourceTable", e.target.value); updateField(activeField.id, "sourceColumn", ""); }}
+                              className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm">
+                              <option value="" disabled>Select a form...</option>
+                              {availableForms.map((f) => <option key={f.id} value={f.id.toString()}>{f.formName}</option>)}
+                            </select>
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <label className="text-[10px] uppercase font-bold text-slate-400">Data Column (Target)</label>
+                            <select value={activeField.sourceColumn || ""} onChange={(e) => updateField(activeField.id, "sourceColumn", e.target.value)}
+                              className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" disabled={!activeField.sourceTable}>
+                              <option value="" disabled>Select a column to use...</option>
+                              {selectedFormFields.map((f) => <option key={f.fieldName} value={f.fieldName}>{f.fieldName} ({f.fieldType})</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeField.type === "number" && (
+                    <div className="space-y-3">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Value Range</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Min</span>
+                          <input type="number" value={activeField.min} onChange={(e) => handleNumberInput(e, activeField.id, "min")} placeholder="0"
+                            className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                        <div className="relative"><span className="absolute left-3 top-3 text-[10px] text-slate-400 font-bold uppercase">Max</span>
+                          <input type="number" value={activeField.max} onChange={(e) => handleNumberInput(e, activeField.id, "max")} placeholder="0"
+                            className="w-full bg-white border border-slate-200 pt-7 pb-3 px-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeField.type === "email" && (
+                    <div className="space-y-3">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Validation Regex</span>
+                      <input type="text" placeholder="Custom pattern..." value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
+                        className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-violet-600 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" />
+                    </div>
+                  )}
+
+                  {activeField.type === "date" && (
+                    <div className="space-y-4">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Date Range Limitations</span>
+                      <div className="flex flex-col gap-3">
+                        <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">After Date</span>
+                          <input type="date" value={activeField.afterDate} onChange={(e) => updateField(activeField.id, "afterDate", e.target.value)}
+                            className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                        <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">Before Date</span>
+                          <input type="date" value={activeField.beforeDate} onChange={(e) => updateField(activeField.id, "beforeDate", e.target.value)}
+                            className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeField.type === "phone" && (
+                    <div className="space-y-3">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Regex Pattern (optional)</span>
+                      <input type="text" placeholder="e.g. ^\+91[0-9]{10}$" value={activeField.pattern} onChange={(e) => updateField(activeField.id, "pattern", e.target.value)}
+                        className="w-full bg-white border border-slate-200 p-4 rounded-xl text-sm font-mono text-violet-600 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all placeholder:text-slate-400 shadow-sm" />
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                        <p className="text-[11px] text-slate-500 font-medium">Leave empty to use default validation (7–15 digits).</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeField.type === "time" && (
+                    <div className="space-y-4">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Time Range</span>
+                      <div className="flex flex-col gap-3">
+                        <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">After Time</span>
+                          <input type="time" value={activeField.afterTime ?? ""} onChange={(e) => updateField(activeField.id, "afterTime", e.target.value)}
+                            className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                        <div className="relative"><span className="absolute left-3 top-2 text-[10px] text-slate-400 font-bold uppercase">Before Time</span>
+                          <input type="time" value={activeField.beforeTime ?? ""} onChange={(e) => updateField(activeField.id, "beforeTime", e.target.value)}
+                            className="w-full bg-white border border-slate-200 pt-6 pb-2 px-3 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all shadow-sm" /></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeField.type === "url" && (
+                    <div className="space-y-3">
+                      <span className="text-[11px] font-bold text-slate-500 tracking-wide uppercase">Validation Info</span>
+                      <div className="p-4 bg-violet-50 border border-violet-100 rounded-xl">
+                        <p className="text-xs font-bold text-violet-700">Auto-validated</p>
+                        <p className="text-[11px] text-violet-500 mt-1 font-medium leading-relaxed">
+                          URL must start with <code className="bg-violet-100 px-1 rounded">http://</code> or <code className="bg-violet-100 px-1 rounded">https://</code>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )} {/* end PROPERTIES TAB */}
+
+            {/* LOGIC TAB */}
+            {sidebarTab === "logic" && (() => {
+              const fieldName = activeField.label
+                ? activeField.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "")
+                : "";
+
+              if (!fieldName) {
+                return (
+                  <div className="flex-1 flex flex-col justify-center items-center text-center p-8 text-slate-500">
+                    <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <p className="text-sm font-bold text-slate-700">Question Title Required</p>
+                    <p className="text-xs mt-2 text-slate-500 max-w-[200px]">
+                      Please enter a question title for this field in the Properties tab before adding logic rules.
+                    </p>
+                  </div>
+                );
+              }
+
+              const allFieldNames = fields
+                .map((f) => f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "")
+                .filter(Boolean);
+              // Rules that target this field
+              const fieldRules = rules.filter((r) => r.action?.targetField === fieldName);
+              // All other rules
+              const otherRules = rules.filter((r) => r.action?.targetField !== fieldName);
+
+              const handleFieldRulesChange = (updated) => {
+                setRules([...otherRules, ...updated]);
+              };
+
+              const addFieldRule = () => {
+                const newRule = {
+                  _id: Date.now() + Math.random(),
+                  condition: { logicalOperator: "AND", conditions: [{ field: "", operator: "EQUALS", value: "" }] },
+                  action: { type: "SHOW", targetField: fieldName, message: "" },
+                };
+                setRules([...rules, newRule]);
+              };
+
+              return (
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {/* Logic tab info banner */}
+                  <div className="mx-4 mt-4 mb-2 px-4 py-3 bg-orange-50 border border-orange-100 rounded-2xl flex items-start gap-3 flex-shrink-0">
+                    <GitBranch size={14} className="text-orange-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-orange-700 font-medium leading-relaxed">
+                      Rules here control when <strong className="font-black">{activeField.label || "this field"}</strong> is shown, hidden, or required.
+                    </p>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 pb-4">
+                    <RuleBuilder
+                      rules={fieldRules}
+                      onChange={handleFieldRulesChange}
+                      fieldNames={allFieldNames}
+                      defaultTargetField={fieldName}
+                      onAddRule={addFieldRule}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Shared footer */}
+            <div className="p-6 bg-slate-50 border-t border-slate-200 flex-shrink-0">
               <div className="flex items-center justify-center gap-2 bg-white border border-slate-100 py-3 rounded-xl shadow-sm">
                 <ShieldCheck size={16} className="text-emerald-500" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Settings are auto-saved</span>

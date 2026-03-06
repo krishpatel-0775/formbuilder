@@ -4,6 +4,7 @@ import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.ApiResponse;
 import com.example.formBuilder.dto.FormListDto;
 import com.example.formBuilder.dto.FormRequest;
+import com.example.formBuilder.dto.FormRuleDTO;
 import com.example.formBuilder.dto.UpdateFormRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.service.FormService;
@@ -68,4 +69,17 @@ public class FormController {
         );
     }
 
+    // Retrieves the rule configuration JSON for a specific form.
+    @GetMapping(AppConstants.API_FORM_RULES)
+    public ResponseEntity<ApiResponse<String>> getFormRules(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(formService.getFormRules(id)));
+    }
+
+    // Saves or replaces the rule configuration for a specific form.
+    @PostMapping(AppConstants.API_FORM_RULES)
+    public ResponseEntity<ApiResponse<String>> saveFormRules(
+            @PathVariable Long id,
+            @RequestBody java.util.List<FormRuleDTO> rules) {
+        return ResponseEntity.ok(ApiResponse.success(formService.saveFormRules(id, rules), null));
+    }
 }

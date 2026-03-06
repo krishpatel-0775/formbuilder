@@ -8,8 +8,10 @@ import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.FormFieldRepository;
 import com.example.formBuilder.repository.FormRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
 import static java.lang.Boolean.TRUE;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FormService {
@@ -32,6 +35,7 @@ public class FormService {
     private final FormFieldRepository fieldRepository;
     private final JdbcTemplate jdbcTemplate;
     private final SchemaManager schemaManager;
+    private final ObjectMapper objectMapper;
 
     private static final Pattern VALID_NAME =
             Pattern.compile(AppConstants.VALID_NAME_REGEX);
@@ -127,6 +131,16 @@ public class FormService {
 
         String tableName = "form_" + form.getId();
         form.setTableName(tableName);
+
+        // Serialize rules if provided
+        if (request.getRules() != null && !request.getRules().isEmpty()) {
+            try {
+                form.setRules(objectMapper.writeValueAsString(request.getRules()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize rules — rules will not be saved: {}", e.getMessage());
+            }
+        }
+
         formRepository.save(form);
 
         List<FormField> fieldList = new ArrayList<>();
@@ -157,6 +171,10 @@ public class FormService {
             formField.setPattern(field.getPattern());
 
             formField.setDefaultValue(field.getDefaultValue());
+
+            formField.setMinTime(field.getMinTime());
+            formField.setMaxTime(field.getMaxTime());
+
 
             formField.setBeforeDate(
                     field.getBeforeDate() != null ?
@@ -290,5 +308,36 @@ public class FormService {
         applyFieldUpdates(f, req);
         f.setForm(form);
         return f;
+    }
+
+    /**
+     * Retrieves the raw rules JSON string for a form.
+     *
+     * @param formId the form ID
+     * @return the rules JSON string, or null if no rules are configured
+     */
+    public String getFormRules(Long formId) {
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + formId + " not found"));
+        return form.getRules();
+    }
+
+    /**
+     * Saves or replaces the rules for a form by serializing the provided list to JSON.
+     *
+     * @param formId the form ID
+     * @param rules  the list of rules to persist
+     * @return a success message
+     */
+    public String saveFormRules(Long formId, List<FormRuleDTO> rules) {
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + formId + " not found"));
+        try {
+            form.setRules(objectMapper.writeValueAsString(rules));
+            formRepository.save(form);
+        } catch (Exception e) {
+            throw new ValidationException("Failed to save rules: " + e.getMessage());
+        }
+        return "Rules saved successfully";
     }
 }
