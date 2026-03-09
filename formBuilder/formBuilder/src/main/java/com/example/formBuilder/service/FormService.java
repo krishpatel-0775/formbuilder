@@ -3,11 +3,14 @@ package com.example.formBuilder.service;
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.Form;
+import com.example.formBuilder.entity.Admin;
 import com.example.formBuilder.entity.FormField;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
+import com.example.formBuilder.repository.AdminRepository;
 import com.example.formBuilder.repository.FormFieldRepository;
 import com.example.formBuilder.repository.FormRepository;
+import com.example.formBuilder.security.SessionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +27,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
-import static java.lang.Boolean.TRUE;
 
 @Slf4j
 @Service
@@ -36,22 +38,36 @@ public class FormService {
     private final JdbcTemplate jdbcTemplate;
     private final SchemaManager schemaManager;
     private final ObjectMapper objectMapper;
+    private final AdminRepository adminRepository;
+
+    private Admin getCurrentAdmin() {
+        String username = SessionUtil.getCurrentAdminUsername();
+        if (username == null) throw new ValidationException("Unauthorized");
+        return adminRepository.findByUsername(username)
+                .orElseThrow(() -> new ValidationException("Admin not found"));
+    }
+
+    private Form getFormForAdmin(Long id) {
+        Admin admin = getCurrentAdmin();
+        Form form = formRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
+        if (!form.getAdmin().getId().equals(admin.getId())) {
+            throw new ValidationException("Unauthorized access to this form");
+        }
+        return form;
+    }
 
     private static final Pattern VALID_NAME =
             Pattern.compile(AppConstants.VALID_NAME_REGEX);
 
-    /**
-     * Retrieves a specific form entity by its ID.
-     */
     public Form getFormById(Long id) {
         return formRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
     }
 
-    /**
-     * Retrieves all submitted response data for a particular form's generated table.
-     */
     public List<Map<String, Object>> getAllDataFromTable(Long id) {
+        // Ensure administration privileges over this form
+        getFormForAdmin(id);
 
         String tableName = "form_" + id;
 
@@ -64,11 +80,9 @@ public class FormService {
         return jdbcTemplate.queryForList(sql);
     }
 
-    /**
-     * Retrieves a high-level summary list of all forms for dashboard display.
-     */
     public List<FormListDto> getAllForms() {
-        List<Form> forms = formRepository.findAll();
+        Admin admin = getCurrentAdmin();
+        List<Form> forms = formRepository.findByAdminId(admin.getId());
         List<FormListDto> formListDtos = new ArrayList<>();
 
         for (Form form : forms) {
@@ -78,14 +92,10 @@ public class FormService {
         return formListDtos;
     }
 
-    /**
-     * Fetches distinct drop-down values from a specific database column within a form.
-     */
     public List<String> getLookupValues(Long formId, String columnName) {
         Form form = getFormById(formId);
         String tableName = form.getTableName();
 
-        // ⚠ IMPORTANT: Prevent SQL Injection for column name
         if (!columnName.matches("^[a-zA-Z][a-zA-Z0-9_]*$")) {
             throw new IllegalArgumentException("Invalid column name");
         }
@@ -94,13 +104,8 @@ public class FormService {
         return jdbcTemplate.queryForList(sql, String.class);
     }
 
-    /**
-     * Publishes a draft form by generating its corresponding dynamic database table
-     * and changing its status to PUBLISHED.
-     */
     public String publishForm(Long id) {
-        Form form = formRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
+        Form form = getFormForAdmin(id);
 
         String tableName = form.getTableName();
 
@@ -115,11 +120,8 @@ public class FormService {
         return "Form Published Successfully";
     }
 
-    /**
-     * Creates a new form definition along with its composite fields.
-     * Note: This does not generate the dynamic database table (see publishForm).
-     */
     public String createForm(FormRequest request) {
+        Admin admin = getCurrentAdmin();
 
         if (request.getFields() == null || request.getFields().isEmpty()) {
             throw new ValidationException("Form must contain at least one field");
@@ -127,6 +129,7 @@ public class FormService {
 
         Form form = new Form();
         form.setFormName(request.getFormName());
+        form.setAdmin(admin);
         form = formRepository.save(form);
 
         String tableName = "form_" + form.getId();
@@ -203,35 +206,25 @@ public class FormService {
     @Transactional
     public String updateForm(Long formId, UpdateFormRequest request) {
 
-        Form form = formRepository.findById(formId)
-                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + formId + " not found"));
+        Form form = getFormForAdmin(formId);
 
-        // 1. Update form name if provided
-        /** 1. Update form name if provided */
         if (request.getFormName() != null && !request.getFormName().isBlank()) {
             form.setFormName(request.getFormName());
         }
 
         List<UpdateFieldRequest> incoming = request.getFields();
 
-        /**
-     * Maps an application field type (e.g., text, number, date) to its corresponding PostgreSQL data type.
-     */
-        /** 2. Find existing fields */
         List<FormField> existingFields = fieldRepository.findByFormId(formId);
 
-        /** IDs that came in from frontend (only non-null ones = existing) */
         Set<Long> incomingIds = incoming.stream()
                 .filter(f -> f.getId() != null)
                 .map(UpdateFieldRequest::getId)
                 .collect(Collectors.toSet());
 
-        // 3. DELETE fields not in incoming list
         List<FormField> toDelete = existingFields.stream()
                 .filter(f -> !incomingIds.contains(f.getId()))
                 .toList();
 
-        // 4. If PUBLISHED — handle ALTER TABLE for deleted fields
         if (form.getStatus() == PUBLISHED) {
             for (FormField deleted : toDelete) {
                 schemaManager.dropColumn(form.getTableName(), deleted.getFieldName());
@@ -239,18 +232,15 @@ public class FormService {
         }
         fieldRepository.deleteAll(toDelete);
 
-        // 5. UPDATE or INSERT fields
         for (UpdateFieldRequest fieldReq : incoming) {
 
             if (fieldReq.getId() != null) {
-                // UPDATE existing field
                 FormField existing = fieldRepository.findById(fieldReq.getId())
                         .orElseThrow(() -> new ResourceNotFoundException("Field with ID " + fieldReq.getId() + " not found"));
 
                 String oldName = existing.getFieldName();
                 String newName = fieldReq.getName();
 
-                // If PUBLISHED and name changed → RENAME column
                 if (form.getStatus() == PUBLISHED
                         && !oldName.equals(newName)) {
                     schemaManager.renameColumn(form.getTableName(), oldName, newName);
@@ -260,11 +250,9 @@ public class FormService {
                 fieldRepository.save(existing);
 
             } else {
-                // INSERT new field
                 FormField newField = buildFormField(fieldReq, form);
                 fieldRepository.save(newField);
 
-                // If PUBLISHED → ADD COLUMN immediately
                 if (form.getStatus() == PUBLISHED) {
                     schemaManager.addColumn(form.getTableName(), newField);
                 }
@@ -275,9 +263,6 @@ public class FormService {
         return "Form updated successfully";
     }
 
-    /**
-     * Applies updates from an incoming UpdateFieldRequest to an existing FormField entity.
-     */
     private void applyFieldUpdates(FormField field, UpdateFieldRequest req) {
         schemaManager.validateColumnName(req.getName());
         field.setFieldName(req.getName());
@@ -300,9 +285,6 @@ public class FormService {
         field.setSourceColumn(req.getSourceColumn());
     }
 
-    /**
-     * Builds and initializes a new FormField entity from an incoming UpdateFieldRequest.
-     */
     private FormField buildFormField(UpdateFieldRequest req, Form form) {
         FormField f = new FormField();
         applyFieldUpdates(f, req);
@@ -310,28 +292,13 @@ public class FormService {
         return f;
     }
 
-    /**
-     * Retrieves the raw rules JSON string for a form.
-     *
-     * @param formId the form ID
-     * @return the rules JSON string, or null if no rules are configured
-     */
     public String getFormRules(Long formId) {
-        Form form = formRepository.findById(formId)
-                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + formId + " not found"));
+        Form form = getFormForAdmin(formId);
         return form.getRules();
     }
 
-    /**
-     * Saves or replaces the rules for a form by serializing the provided list to JSON.
-     *
-     * @param formId the form ID
-     * @param rules  the list of rules to persist
-     * @return a success message
-     */
     public String saveFormRules(Long formId, List<FormRuleDTO> rules) {
-        Form form = formRepository.findById(formId)
-                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + formId + " not found"));
+        Form form = getFormForAdmin(formId);
         try {
             form.setRules(objectMapper.writeValueAsString(rules));
             formRepository.save(form);

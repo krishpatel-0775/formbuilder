@@ -162,7 +162,7 @@ export default function EditFormPage() {
   // Load form
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:9090/api/forms/${id}`)
+    fetch(`http://localhost:9090/api/forms/${id}`, { credentials: "include" })
       .then((res) => { if (!res.ok) throw new Error("Form not found"); return res.json(); })
       .then((res) => {
         const data = res.data;
@@ -190,7 +190,7 @@ export default function EditFormPage() {
         // Load rules (async IIFE to allow await inside .then)
         (async () => {
           try {
-            const rulesRes = await fetch(ENDPOINTS.formRules(id));
+            const rulesRes = await fetch(ENDPOINTS.formRules(id), { credentials: "include" });
             if (rulesRes.ok) {
               const rulesJson = await rulesRes.json();
               const raw = rulesJson.data;
@@ -210,14 +210,14 @@ export default function EditFormPage() {
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
     if (af?.type === "select") {
-      fetch("http://localhost:9090/api/forms").then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
+      fetch("http://localhost:9090/api/forms", { credentials: "include" }).then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
     }
   }, [activeFieldId, fields]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
     if (af?.type === "select" && af?.sourceTable) {
-      fetch(`http://localhost:9090/api/forms/${af.sourceTable}`).then(r => r.json()).then(r => setSelectedFormFields(r.data?.fields || [])).catch(console.error);
+      fetch(`http://localhost:9090/api/forms/${af.sourceTable}`, { credentials: "include" }).then(r => r.json()).then(r => setSelectedFormFields(r.data?.fields || [])).catch(console.error);
     } else { setSelectedFormFields([]); }
   }, [activeFieldId, fields.find((f) => f.id === activeFieldId)?.sourceTable]);
 
@@ -318,6 +318,7 @@ export default function EditFormPage() {
       const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ formName: formName.trim(), fields: formattedFields }),
+        credentials: "include"
       });
       if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || "Failed to update form."); }
 
@@ -356,6 +357,7 @@ export default function EditFormPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(cleanRules),
+          credentials: "include"
         });
       } catch (e) {
         console.warn("Failed to save rules:", e);

@@ -23,7 +23,7 @@ export default function FormsListPage() {
   const [copiedApiId, setCopiedApiId] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:9090/api/forms")
+    fetch("http://localhost:9090/api/forms", { credentials: "include" })
       .then((res) => res.json())
       .then((res) => {
         setForms(res.data || []);
@@ -53,6 +53,7 @@ export default function FormsListPage() {
     try {
       const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
         method: "POST",
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -132,15 +133,14 @@ export default function FormsListPage() {
                 <div className="p-8 pb-4">
                   <div className="flex justify-between items-center mb-8">
                     <div className="px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         REF: {form.id.toString().padStart(4, "0")}
                       </span>
                     </div>
-                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                      form.status === "PUBLISHED" 
-                      ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
-                      : "bg-amber-50 text-amber-600 border border-amber-100"
-                    }`}>
+                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${form.status === "PUBLISHED"
+                        ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                        : "bg-amber-50 text-amber-600 border border-amber-100"
+                      }`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                       {form.status || "DRAFT"}
                     </div>
@@ -155,11 +155,10 @@ export default function FormsListPage() {
                     <button
                       onClick={() => copyToClipboard(form.id)}
                       title="Copy Share Link"
-                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${
-                        copiedId === form.id
+                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${copiedId === form.id
                           ? "bg-emerald-50 border-emerald-200 text-emerald-600"
                           : "bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-blue-200 hover:text-blue-600"
-                      }`}
+                        }`}
                     >
                       {copiedId === form.id ? <Check size={18} /> : <Clipboard size={18} />}
                       <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">Share</span>
@@ -168,11 +167,10 @@ export default function FormsListPage() {
                     <button
                       onClick={() => copyApiEndpoint(form.id)}
                       title="Copy API Endpoint"
-                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${
-                        copiedApiId === form.id
+                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${copiedApiId === form.id
                           ? "bg-indigo-50 border-indigo-200 text-indigo-600"
                           : "bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-indigo-200 hover:text-indigo-600"
-                      }`}
+                        }`}
                     >
                       {copiedApiId === form.id ? <Check size={18} /> : <Code2 size={18} />}
                       <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">API</span>
@@ -203,11 +201,10 @@ export default function FormsListPage() {
                       <button
                         onClick={() => publishForm(form.id)}
                         disabled={form.status === "PUBLISHED"}
-                        className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-sm ${
-                          form.status === "PUBLISHED"
+                        className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-sm ${form.status === "PUBLISHED"
                             ? "bg-emerald-100 text-emerald-700 cursor-default border border-emerald-200"
                             : "bg-white border border-slate-200 text-amber-600 hover:border-amber-400 hover:bg-amber-50"
-                        }`}
+                          }`}
                       >
                         <CheckCircle size={16} />
                         <span>{form.status === "PUBLISHED" ? "LIVE" : "PUBLISH"}</span>

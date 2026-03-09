@@ -190,13 +190,13 @@ export default function BuilderPage() {
 
     useEffect(() => {
         if (activeField?.type === "select") {
-            fetch("http://localhost:9090/api/forms").then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
+            fetch("http://localhost:9090/api/forms", { credentials: "include" }).then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
         }
     }, [activeField?.id, activeField?.type]);
 
     useEffect(() => {
         if (activeField?.type === "select" && activeField?.sourceTable) {
-            fetch(`http://localhost:9090/api/forms/${activeField.sourceTable}`).then(r => r.json()).then(r => setSelectedFormFields(r.data?.fields || [])).catch(console.error);
+            fetch(`http://localhost:9090/api/forms/${activeField.sourceTable}`, { credentials: "include" }).then(r => r.json()).then(r => setSelectedFormFields(r.data?.fields || [])).catch(console.error);
         } else { setSelectedFormFields([]); }
     }, [activeField?.sourceTable, activeField?.id, activeField?.type]);
 
@@ -298,6 +298,7 @@ export default function BuilderPage() {
             const res = await fetch("http://localhost:9090/api/forms", {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ formName: formName.trim(), fields: formattedFields, rules }),
+                credentials: "include"
             });
             if (!res.ok) { const err = await res.json(); throw new Error(err.message || "Failed to save form."); }
             setShowSuccess(true);

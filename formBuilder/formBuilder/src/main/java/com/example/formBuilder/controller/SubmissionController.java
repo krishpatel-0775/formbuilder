@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = AppConstants.FRONTEND_URL)
+@CrossOrigin(origins = AppConstants.FRONTEND_URL, allowCredentials = "true")
 @RequestMapping(AppConstants.API_BASE_SUBMISSIONS)
 @RequiredArgsConstructor
 public class SubmissionController {

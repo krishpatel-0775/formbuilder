@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Download, Database, Inbox, ExternalLink, Trash2 } from "lucide-react"; 
+import { Download, Database, Inbox, ExternalLink, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 export default function FormDataPage() {
@@ -13,7 +13,7 @@ export default function FormDataPage() {
   useEffect(() => {
     if (!id) return;
 
-    fetch(`http://localhost:9090/api/forms/data/${id}`)
+    fetch(`http://localhost:9090/api/forms/data/${id}`, { credentials: "include" })
       .then((res) => res.json())
       .then((res) => {
         // ✅ Initial filter: Only show responses that aren't marked as deleted
@@ -34,6 +34,7 @@ export default function FormDataPage() {
     try {
       const res = await fetch(`http://localhost:9090/api/submissions/${id}/response/${responseId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -67,7 +68,7 @@ export default function FormDataPage() {
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">No active responses</h2>
           <p className="text-slate-500 text-sm mb-6">Once users submit your form, their data will appear here.</p>
-          <Link 
+          <Link
             href={`/forms/${id}`}
             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition-all"
           >
@@ -95,9 +96,9 @@ export default function FormDataPage() {
             </div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Form Responses</h1>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <Link 
+            <Link
               href={`/forms/${id}`}
               className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-100 transition-all active:scale-95"
             >
@@ -105,7 +106,7 @@ export default function FormDataPage() {
               View Public Form
             </Link>
 
-            <button 
+            <button
               onClick={() => window.print()}
               className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-slate-50 transition-all active:scale-95"
             >
@@ -122,8 +123,8 @@ export default function FormDataPage() {
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-200">
                   {headers.map((header) => (
-                    <th 
-                      key={header} 
+                    <th
+                      key={header}
                       className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap"
                     >
                       {header.replace(/_/g, " ")}
@@ -135,13 +136,13 @@ export default function FormDataPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {data.map((row) => (
-                  <tr 
-                    key={row.id} 
+                  <tr
+                    key={row.id}
                     className="hover:bg-indigo-50/30 transition-colors group"
                   >
                     {headers.map((header) => (
-                      <td 
-                        key={header} 
+                      <td
+                        key={header}
                         className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap"
                       >
                         {row[header] !== null ? (
@@ -168,7 +169,7 @@ export default function FormDataPage() {
               </tbody>
             </table>
           </div>
-          
+
           <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
             <p className="text-xs font-medium text-slate-500">
               Showing <span className="text-slate-900">{data.length}</span> active submissions
