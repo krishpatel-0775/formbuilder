@@ -323,10 +323,39 @@ export default function EditFormPage() {
 
       // Save rules separately
       try {
+        const cleanRules = rules.map(rule => {
+          const r = { ...rule };
+          delete r._id;
+
+          if (r.action) {
+            if (!r.action.targetField) delete r.action.targetField;
+            if (!r.action.message) delete r.action.message;
+          }
+
+          if (r.condition) {
+            const processCondition = (cond) => {
+              const cleaned = { ...cond };
+              if (!cleaned.field) delete cleaned.field;
+              if (!cleaned.operator) delete cleaned.operator;
+              if (cleaned.value === undefined || cleaned.value === null || cleaned.value === "") delete cleaned.value;
+              if (!cleaned.logicalOperator) delete cleaned.logicalOperator;
+
+              if (cleaned.conditions && cleaned.conditions.length > 0) {
+                cleaned.conditions = cleaned.conditions.map(processCondition);
+              } else {
+                delete cleaned.conditions;
+              }
+              return cleaned;
+            };
+            r.condition = processCondition(r.condition);
+          }
+          return r;
+        });
+
         await fetch(ENDPOINTS.formRules(id), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(rules),
+          body: JSON.stringify(cleanRules),
         });
       } catch (e) {
         console.warn("Failed to save rules:", e);
