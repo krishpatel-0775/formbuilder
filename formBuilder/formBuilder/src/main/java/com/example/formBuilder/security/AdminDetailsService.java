@@ -26,9 +26,9 @@ public class AdminDetailsService implements UserDetailsService {
                 );
 
         return new User(
-                admin.getUsername(), // Using username as the principal
+                admin.getUsername(),
                 admin.getPassword(),
-                Collections.emptyList() // No authorities/roles (simplified requirement)
+                Collections.emptyList()
         );
     }
 }

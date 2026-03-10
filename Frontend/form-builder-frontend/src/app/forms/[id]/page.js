@@ -50,11 +50,17 @@ export default function PublicFormPage() {
   useEffect(() => {
     if (!id) return;
     fetch(`${ENDPOINTS.FORMS}/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Form not found");
+      .then(async (res) => {
+        if (!res.ok) {
+          return null;
+        }
         return res.json();
       })
       .then(async (res) => {
+        if (!res) {
+          setLoading(false);
+          return;
+        }
         const data = res.data;
 
         // Fetch dynamic dropdown options
@@ -82,45 +88,63 @@ export default function PublicFormPage() {
           );
         }
 
-        setFormConfig(data);
-
-        // Pre-fill from defaultValue
-        const initialData = {};
-        if (data?.fields) {
-          data.fields.forEach((field) => {
-            if (field.fieldType === "checkbox") {
-              initialData[field.fieldName] = field.defaultValue
-                ? field.defaultValue.split(",").map((v) => v.trim()).filter(Boolean)
-                : [];
-            } else {
-              initialData[field.fieldName] = field.defaultValue ?? "";
-            }
-          });
-        }
-
-        setFormData(initialData);
-
-        // Load rules to discover which fields are SHOW-controlled (hidden by default)
+        let parsedRules = [];
         try {
-          const rulesRes = await fetch(ENDPOINTS.formRules(id));
-          if (rulesRes.ok) {
-            const rulesJson = await rulesRes.json();
-            const rawRules = rulesJson.data;
-            if (rawRules) {
-              const parsed = JSON.parse(rawRules);
-              setFormRules(parsed);
-              // Collect all fields targeted by a SHOW action
-              const targets = new Set(
-                parsed
-                  .filter((r) => r.action?.type === "SHOW" && r.action?.targetField)
-                  .map((r) => r.action.targetField)
-              );
-              setShowTargetFields(targets);
+          if (data.rules) {
+            parsedRules = JSON.parse(data.rules);
+            setFormRules(parsedRules);
+
+            // Collect all fields targeted by a SHOW action
+            const targets = new Set(
+              parsedRules
+                .filter((r) => r.action?.type === "SHOW" && r.action?.targetField && r.action.targetField !== "__FIELD_ORDER__")
+                .map((r) => r.action.targetField)
+            );
+            setShowTargetFields(targets);
+
+            // Reorder fields if order list found
+            const orderRule = parsedRules.find(r => r.action?.targetField === "__FIELD_ORDER__");
+            if (orderRule && orderRule.action?.message && data.fields) {
+              const orderArray = orderRule.action.message.split(",");
+              data.fields.sort((a, b) => {
+                let aName = a.fieldName || "";
+                let bName = b.fieldName || "";
+                let aIdx = orderArray.indexOf(aName);
+                let bIdx = orderArray.indexOf(bName);
+                if (aIdx === -1) aIdx = 999;
+                if (bIdx === -1) bIdx = 999;
+                return aIdx - bIdx;
+              });
             }
           }
         } catch (e) {
           console.warn("Could not load rules for visibility defaults:", e);
         }
+
+        setFormConfig(data);
+
+        const initialData = {};
+        if (data?.fields) {
+          data.fields.forEach((field) => {
+            if (field.fieldType === "checkbox") {
+              const defaultVals = field.defaultValue
+                ? field.defaultValue.split(",").map((v) => v.trim()).filter(Boolean)
+                : [];
+              initialData[field.fieldName] = field.options?.length > 0
+                ? defaultVals.filter(v => field.options.includes(v))
+                : defaultVals;
+            } else if (["radio", "select"].includes(field.fieldType)) {
+              let v = field.defaultValue ?? "";
+              if (v && field.options?.length > 0 && !field.options.includes(v)) {
+                v = "";
+              }
+              initialData[field.fieldName] = v;
+            } else {
+              initialData[field.fieldName] = field.defaultValue ?? "";
+            }
+          });
+        }
+        setFormData(initialData);
 
         setLoading(false);
       })

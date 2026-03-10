@@ -30,10 +30,7 @@ public class Form {
     @Enumerated(EnumType.STRING)
     private FormStatus status = FormStatus.DRAFT;
 
-    /**
-     * JSON array of form rules evaluated by the RuleEngineService during submission.
-     * Each rule follows the FormRuleDTO structure: { condition, action }.
-     */
+
     @Column(columnDefinition = "TEXT")
     private String rules;
 

@@ -36,14 +36,7 @@ public class SubmissionController {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponse(formId, responseId), null));
     }
 
-    /**
-     * Evaluates the current field visibility state based on the provided field values.
-     * Call this endpoint as the user fills in the form to dynamically show/hide fields.
-     *
-     * @param formId the ID of the form whose rules will be evaluated
-     * @param values the current map of field names to values
-     * @return a map of field names to their visibility state ("SHOW" or "HIDE")
-     */
+
     @PostMapping(AppConstants.API_SUBMISSION_VISIBILITY)
     public ResponseEntity<ApiResponse<Map<String, String>>> evaluateVisibility(
             @RequestParam Long formId,

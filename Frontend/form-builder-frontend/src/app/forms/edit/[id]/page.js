@@ -163,8 +163,9 @@ export default function EditFormPage() {
   useEffect(() => {
     if (!id) return;
     fetch(`http://localhost:9090/api/forms/${id}`, { credentials: "include" })
-      .then((res) => { if (!res.ok) throw new Error("Form not found"); return res.json(); })
+      .then((res) => { if (!res.ok) { alert("Failed to load form. Redirecting..."); router.push("/forms/all"); return null; } return res.json(); })
       .then((res) => {
+        if (!res) return;
         const data = res.data;
         setFormName(data.formName || "");
         setFormStatus(data.status || "DRAFT");
@@ -184,25 +185,30 @@ export default function EditFormPage() {
           options: f.options?.length > 0 ? f.options : noOpts.includes(f.fieldType) ? [] : ["Option 1", "Option 2"],
           sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
         }));
+        let rulesArr = [];
+        try {
+          if (data.rules) {
+            rulesArr = JSON.parse(data.rules) || [];
+            const orderRule = rulesArr.find(r => r.action?.targetField === "__FIELD_ORDER__");
+            if (orderRule && orderRule.action?.message) {
+              const orderArray = orderRule.action.message.split(",");
+              loadedFields.sort((a, b) => {
+                let aName = a.label ? a.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+                let bName = b.label ? b.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+                let aIdx = orderArray.indexOf(aName);
+                let bIdx = orderArray.indexOf(bName);
+                if (aIdx === -1) aIdx = 999;
+                if (bIdx === -1) bIdx = 999;
+                return aIdx - bIdx;
+              });
+            }
+            rulesArr = rulesArr.filter(r => r.action?.targetField !== "__FIELD_ORDER__");
+          }
+        } catch (e) { console.warn("Could not parse rules", e); }
+
+        setRules(rulesArr.map((r) => ({ ...r, _id: Date.now() + Math.random() })));
         setFields(loadedFields);
         setIsLoading(false);
-
-        // Load rules (async IIFE to allow await inside .then)
-        (async () => {
-          try {
-            const rulesRes = await fetch(ENDPOINTS.formRules(id), { credentials: "include" });
-            if (rulesRes.ok) {
-              const rulesJson = await rulesRes.json();
-              const raw = rulesJson.data;
-              if (raw) {
-                const parsed = JSON.parse(raw);
-                setRules(parsed.map((r) => ({ ...r, _id: Date.now() + Math.random() })));
-              }
-            }
-          } catch (e) {
-            console.warn("Could not load rules:", e);
-          }
-        })();
       })
       .catch((err) => { console.error(err); alert("Failed to load form. Redirecting..."); router.push("/forms/all"); });
   }, [id]);
@@ -351,6 +357,12 @@ export default function EditFormPage() {
             r.condition = processCondition(r.condition);
           }
           return r;
+        });
+
+        const currentOrderList = fields.map(f => f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "").filter(Boolean).join(",");
+        cleanRules.push({
+          condition: { logicalOperator: "AND", conditions: [] },
+          action: { type: "SHOW", targetField: "__FIELD_ORDER__", message: currentOrderList }
         });
 
         await fetch(ENDPOINTS.formRules(id), {

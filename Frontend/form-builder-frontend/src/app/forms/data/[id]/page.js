@@ -147,7 +147,15 @@ export default function FormDataPage() {
                       >
                         {row[header] !== null ? (
                           <span className="font-medium text-slate-700">
-                            {row[header].toString()}
+                            {header === "created_at" && typeof row[header] === "string"
+                              ? new Date(row[header]).toLocaleString("en-US", {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                              : row[header].toString()}
                           </span>
                         ) : (
                           <span className="text-slate-300 italic text-xs">null</span>

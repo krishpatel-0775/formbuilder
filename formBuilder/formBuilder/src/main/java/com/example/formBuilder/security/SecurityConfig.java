@@ -31,6 +31,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/api/forms/*",
+                                "/api/forms/*/lookup/*",
+                                "/api/forms/*/rules"
+                        ).permitAll()
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/api/submissions",
+                                "/api/submissions/visibility"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
