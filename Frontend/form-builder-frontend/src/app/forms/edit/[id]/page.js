@@ -12,7 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Type, Hash, Mail, Calendar, Trash2, GripVertical, X, AlertCircle, ShieldCheck,
   CheckCircle2, ListPlus, ArrowRight, AlignLeft, CircleDot, CheckSquare,
-  Save, ArrowLeft, Loader2, Phone, Clock, Link, SlidersHorizontal, GitBranch, AlertTriangle
+  Save, ArrowLeft, Loader2, Phone, Clock, Link, SlidersHorizontal, GitBranch, AlertTriangle, ChevronRight
 } from "lucide-react";
 import NextLink from "next/link";
 import RuleBuilder from "../../../../components/RuleBuilder";
@@ -102,6 +102,33 @@ function SortableFieldItem({ field, idx, isActive, setActiveFieldId, removeField
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : 1, opacity: isDragging ? 0.4 : 1 };
 
+  // ── Page Break special render ──────────────────────────────────────────────
+  if (field.type === "page_break") {
+    return (
+      <div ref={setNodeRef} style={style} className="relative flex items-center group">
+        <div {...attributes} {...listeners}
+          className="absolute left-0 z-10 flex items-center gap-1.5 cursor-grab active:cursor-grabbing px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors">
+          <GripVertical size={14} className="text-slate-300 group-hover:text-slate-500" />
+        </div>
+        <div className="flex-1 flex items-center gap-3 ml-8">
+          <div className="flex-1 border-t-2 border-dashed border-indigo-300" />
+          <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-full shadow-sm flex-shrink-0">
+            <ChevronRight size={14} className="text-indigo-500" />
+            <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">
+              {field.label || "Page Break"}
+            </span>
+            <ChevronRight size={14} className="text-indigo-500" />
+          </div>
+          <div className="flex-1 border-t-2 border-dashed border-indigo-300" />
+        </div>
+        <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+          className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 ${isDragging ? "hidden" : ""}`}>
+          <Trash2 size={14} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div ref={setNodeRef} style={style} onClick={() => setActiveFieldId(field.id)}
       className={`group relative flex items-center p-5 gap-5 bg-white rounded-[1.5rem] border shadow-sm transition-all duration-300 cursor-pointer ${isActive ? "border-violet-400 shadow-[0_8px_30px_rgba(139,92,246,0.12)] ring-1 ring-violet-400" : "border-slate-200 hover:border-slate-300 hover:shadow-md text-slate-800"}`}>
@@ -157,7 +184,10 @@ export default function EditFormPage() {
     email: <Mail size={18} />, date: <Calendar size={18} />, phone: <Phone size={18} />,
     time: <Clock size={18} />, url: <Link size={18} />, radio: <CircleDot size={18} />,
     checkbox: <CheckSquare size={18} />, select: <ListPlus size={18} />,
+    page_break: <ChevronRight size={18} />,
   };
+
+  const regularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select"];
 
   // Load form
   useEffect(() => {
@@ -169,7 +199,7 @@ export default function EditFormPage() {
         const data = res.data;
         setFormName(data.formName || "");
         setFormStatus(data.status || "DRAFT");
-        const noOpts = ["text", "textarea", "number", "email", "date", "phone", "time", "url"];
+        const noOpts = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "page_break"];
         const loadedFields = (data.fields || []).map((f) => ({
           id: f.id * 1000 + Math.floor(Math.random() * 100),
           _dbId: f.id,
@@ -241,6 +271,17 @@ export default function EditFormPage() {
     e.preventDefault();
     const type = e.dataTransfer.getData("fieldType");
     if (!type) return;
+
+    if (type === "page_break") {
+      const breakCount = fields.filter(f => f.type === "page_break").length + 1;
+      const newBreak = {
+        id: Date.now(), _dbId: null, label: `Page ${breakCount + 1}`, type: "page_break",
+        required: false, defaultValue: "", options: [],
+      };
+      setFields([...fields, newBreak]);
+      return;
+    }
+
     const newField = {
       id: Date.now(), _dbId: null, label: "", type: type.toLowerCase(), required: false, defaultValue: "",
       minLength: "", maxLength: "", min: "", max: "", pattern: "",
@@ -250,6 +291,15 @@ export default function EditFormPage() {
     };
     setFields([...fields, newField]);
     setActiveFieldId(newField.id);
+  };
+
+  const addPageBreak = () => {
+    const breakCount = fields.filter(f => f.type === "page_break").length + 1;
+    const newBreak = {
+      id: Date.now(), _dbId: null, label: `Page ${breakCount + 1}`, type: "page_break",
+      required: false, defaultValue: "", options: [],
+    };
+    setFields([...fields, newBreak]);
   };
 
   const handleDragOver = (e) => e.preventDefault();
@@ -297,10 +347,15 @@ export default function EditFormPage() {
 
   const saveForm = async () => {
     if (!formName.trim()) return alert("Please name your form.");
-    if (fields.length === 0) return alert("Add at least one field.");
+    const realFields = fields.filter(f => f.type !== "page_break");
+    if (realFields.length === 0) return alert("Add at least one field.");
     setIsSaving(true);
     try {
-      const formattedFields = fields.map((field) => {
+      const formattedFields = fields.map((field, idx) => {
+        if (field.type === "page_break") {
+          // Preserve existing DB id if this page_break was already saved
+          return { id: field._dbId ?? null, name: `page_break_${idx}`, type: "page_break" };
+        }
         if (!field.label) throw new Error("All fields must have a label.");
         let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required };
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
@@ -403,7 +458,20 @@ export default function EditFormPage() {
           <p className="text-[11px] text-slate-500 font-medium tracking-wide">Drag & drop to add fields</p>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto flex-1">
-          {Object.keys(fieldIcons).map((type) => (
+          {/* Page Break button */}
+          <div draggable onDragStart={(e) => handleDragStart(e, "page_break")}
+            onClick={addPageBreak}
+            className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-sm cursor-pointer hover:bg-indigo-100 hover:border-indigo-300 hover:shadow-md transition-all group hover:-translate-y-0.5">
+            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-100 border border-indigo-200 shadow-inner group-hover:bg-indigo-200 text-indigo-500 transition-all duration-300">
+              <ChevronRight size={18} />
+            </div>
+            <div>
+              <span className="text-sm font-bold text-indigo-700 group-hover:text-indigo-900 transition-colors">Page Break</span>
+              <p className="text-[10px] text-indigo-500 mt-0.5">Split form into pages</p>
+            </div>
+          </div>
+          <div className="border-t border-slate-100 pt-2" />
+          {regularFieldTypes.map((type) => (
             <div key={type} draggable onDragStart={(e) => handleDragStart(e, type)}
               className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm cursor-grab hover:bg-slate-50 hover:border-violet-200 hover:shadow-md transition-all group hover:-translate-y-0.5">
               <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 shadow-inner group-hover:bg-violet-50 group-hover:text-violet-600 group-hover:border-violet-100 text-slate-400 transition-all duration-300">
@@ -502,7 +570,7 @@ export default function EditFormPage() {
       </main>
 
       {/* RIGHT SIDEBAR — Field Properties OR Rules Panel */}
-      <aside className={`w-[400px] bg-white border-l border-slate-200 shadow-[-20px_0_40px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId ? "translate-x-0" : "translate-x-full"}`}>
+      <aside className={`w-[400px] bg-white border-l border-slate-200 shadow-[-20px_0_40px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId && activeField?.type !== "page_break" ? "translate-x-0" : "translate-x-full"}`}>
         {activeField && (
           <>
             {/* Sidebar header with field type + close */}

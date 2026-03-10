@@ -32,6 +32,9 @@ public class SchemaManager {
                 .append(", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL");
 
         for (FormField field : fields) {
+            // Page breaks are display-only markers — they have no DB column
+            if ("page_break".equals(field.getFieldType())) continue;
+
             validateColumnName(field.getFieldName());
 
             sql.append(", ")

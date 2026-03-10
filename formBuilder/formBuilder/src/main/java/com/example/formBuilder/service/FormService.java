@@ -189,15 +189,20 @@ public class FormService {
 
         for (FieldRequest field : request.getFields()) {
 
-            Set<String> reserved = Set.of(
-                    "select","from","where","join","table","order",
-                    "group","limit","offset","insert","update",
-                    "delete","index","primary","key","constraint",
-                    "id"
-            );
+            // Page break fields are structural markers — persist them but never as DB columns
+            boolean isPageBreak = "page_break".equals(field.getType());
 
-            if(reserved.contains(field.getName().toLowerCase())){
-                throw new ValidationException(field.getName() + " is a reserved field name. Please choose a different name.");
+            if (!isPageBreak) {
+                Set<String> reserved = Set.of(
+                        "select","from","where","join","table","order",
+                        "group","limit","offset","insert","update",
+                        "delete","index","primary","key","constraint",
+                        "id"
+                );
+
+                if(reserved.contains(field.getName().toLowerCase())){
+                    throw new ValidationException(field.getName() + " is a reserved field name. Please choose a different name.");
+                }
             }
 
             FormField formField = new FormField();
@@ -205,35 +210,30 @@ public class FormService {
             formField.setFieldName(field.getName());
             formField.setFieldType(field.getType());
 
-            formField.setRequired(field.getRequired());
-            formField.setMinLength(field.getMinLength());
-            formField.setMaxLength(field.getMaxLength());
-            formField.setMin(field.getMin());
-            formField.setMax(field.getMax());
-            formField.setPattern(field.getPattern());
-
-            formField.setDefaultValue(field.getDefaultValue());
-
-            formField.setMinTime(field.getMinTime());
-            formField.setMaxTime(field.getMaxTime());
-
-
-            formField.setBeforeDate(
-                    field.getBeforeDate() != null ?
-                            LocalDate.parse(field.getBeforeDate()) : null
-            );
-
-            formField.setAfterDate(
-                    field.getAfterDate() != null ?
-                            LocalDate.parse(field.getAfterDate()) : null
-            );
-
-            formField.setOptions(field.getOptions());
+            if (!isPageBreak) {
+                formField.setRequired(field.getRequired());
+                formField.setMinLength(field.getMinLength());
+                formField.setMaxLength(field.getMaxLength());
+                formField.setMin(field.getMin());
+                formField.setMax(field.getMax());
+                formField.setPattern(field.getPattern());
+                formField.setDefaultValue(field.getDefaultValue());
+                formField.setMinTime(field.getMinTime());
+                formField.setMaxTime(field.getMaxTime());
+                formField.setBeforeDate(
+                        field.getBeforeDate() != null ?
+                                LocalDate.parse(field.getBeforeDate()) : null
+                );
+                formField.setAfterDate(
+                        field.getAfterDate() != null ?
+                                LocalDate.parse(field.getAfterDate()) : null
+                );
+                formField.setOptions(field.getOptions());
+                formField.setSourceTable(field.getSourceTable());
+                formField.setSourceColumn(field.getSourceColumn());
+            }
 
             formField.setForm(form);
-            formField.setSourceTable(field.getSourceTable());
-            formField.setSourceColumn(field.getSourceColumn());
-
             fieldList.add(formField);
         }
 
@@ -266,12 +266,16 @@ public class FormService {
 
         if (form.getStatus() == PUBLISHED) {
             for (FormField deleted : toDelete) {
-                schemaManager.dropColumn(form.getTableName(), deleted.getFieldName());
+                // Don't try to drop a page_break from DB — it has no column
+                if (!"page_break".equals(deleted.getFieldType())) {
+                    schemaManager.dropColumn(form.getTableName(), deleted.getFieldName());
+                }
             }
         }
         fieldRepository.deleteAll(toDelete);
 
         for (UpdateFieldRequest fieldReq : incoming) {
+            boolean isPageBreak = "page_break".equals(fieldReq.getType());
 
             if (fieldReq.getId() != null) {
                 FormField existing = fieldRepository.findById(fieldReq.getId())
@@ -280,7 +284,7 @@ public class FormService {
                 String oldName = existing.getFieldName();
                 String newName = fieldReq.getName();
 
-                if (form.getStatus() == PUBLISHED
+                if (!isPageBreak && form.getStatus() == PUBLISHED
                         && !oldName.equals(newName)) {
                     schemaManager.renameColumn(form.getTableName(), oldName, newName);
                 }
@@ -292,7 +296,8 @@ public class FormService {
                 FormField newField = buildFormField(fieldReq, form);
                 fieldRepository.save(newField);
 
-                if (form.getStatus() == PUBLISHED) {
+                // Only add real data fields to the DB table schema
+                if (!isPageBreak && form.getStatus() == PUBLISHED) {
                     schemaManager.addColumn(form.getTableName(), newField);
                 }
             }
@@ -303,25 +308,29 @@ public class FormService {
     }
 
     private void applyFieldUpdates(FormField field, UpdateFieldRequest req) {
-        schemaManager.validateColumnName(req.getName());
+        boolean isPageBreak = "page_break".equals(req.getType());
+        // Page breaks don't need column-name validation since they're never DB columns
+        if (!isPageBreak) {
+            schemaManager.validateColumnName(req.getName());
+        }
         field.setFieldName(req.getName());
         field.setFieldType(req.getType());
-        field.setRequired(req.getRequired());
-        field.setMinLength(req.getMinLength());
-        field.setMaxLength(req.getMaxLength());
-        field.setMin(req.getMin());
-        field.setMax(req.getMax());
-        field.setPattern(req.getPattern());
-
-        field.setDefaultValue(req.getDefaultValue());
-
-        field.setBeforeDate(req.getBeforeDate() != null
-                ? LocalDate.parse(req.getBeforeDate()) : null);
-        field.setAfterDate(req.getAfterDate() != null
-                ? LocalDate.parse(req.getAfterDate()) : null);
-        field.setOptions(req.getOptions());
-        field.setSourceTable(req.getSourceTable());
-        field.setSourceColumn(req.getSourceColumn());
+        if (!isPageBreak) {
+            field.setRequired(req.getRequired());
+            field.setMinLength(req.getMinLength());
+            field.setMaxLength(req.getMaxLength());
+            field.setMin(req.getMin());
+            field.setMax(req.getMax());
+            field.setPattern(req.getPattern());
+            field.setDefaultValue(req.getDefaultValue());
+            field.setBeforeDate(req.getBeforeDate() != null
+                    ? LocalDate.parse(req.getBeforeDate()) : null);
+            field.setAfterDate(req.getAfterDate() != null
+                    ? LocalDate.parse(req.getAfterDate()) : null);
+            field.setOptions(req.getOptions());
+            field.setSourceTable(req.getSourceTable());
+            field.setSourceColumn(req.getSourceColumn());
+        }
     }
 
     private FormField buildFormField(UpdateFieldRequest req, Form form) {
