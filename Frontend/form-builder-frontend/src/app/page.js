@@ -22,7 +22,7 @@ import {
     Type, Hash, Mail, Calendar, Trash2, GripVertical, Rocket, X,
     AlertCircle, ShieldCheck, CheckCircle2, ListPlus, ArrowRight,
     AlignLeft, CircleDot, CheckSquare, Phone, Clock, Link, SlidersHorizontal,
-    GitBranch, AlertTriangle, ChevronRight
+    GitBranch, AlertTriangle, ChevronRight, Heading, Pilcrow, Minus, ToggleLeft, ToggleRight, ToggleRight as ToggleOn
 } from "lucide-react";
 import RuleBuilder from "../components/RuleBuilder";
 
@@ -126,12 +126,16 @@ function DefaultValuePanel({ activeField, updateField, accentColor = "blue" }) {
     );
 }
 
-// ─── Sortable Field Item ───────────────────────────────────────────────────────
+// ─── Helper ──────────────────────────────────────────────────────────────────
+const DISPLAY_ONLY_TYPES = new Set(["page_break", "heading", "paragraph", "divider"]);
+const isDisplayOnly = (type) => DISPLAY_ONLY_TYPES.has(type);
+
+// ─── Sortable Field Item ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 function SortableFieldItem({ field, idx, isActive, setActiveFieldId, removeField, updateField, fieldIcons }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
     const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : 1, opacity: isDragging ? 0.4 : 1 };
 
-    // ── Page Break special render ──────────────────────────────────────────────
+    // ── Page Break special render
     if (field.type === "page_break") {
         return (
             <div ref={setNodeRef} style={style}
@@ -154,6 +158,117 @@ function SortableFieldItem({ field, idx, isActive, setActiveFieldId, removeField
                 <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
                     className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 ${isDragging ? "hidden" : ""}`}>
                     <Trash2 size={14} />
+                </button>
+            </div>
+        );
+    }
+
+    // ── Heading static element
+    if (field.type === "heading") {
+        return (
+            <div ref={setNodeRef} style={style} className="relative flex items-start group">
+                <div {...attributes} {...listeners}
+                    className="absolute left-0 z-10 cursor-grab active:cursor-grabbing p-1 rounded-lg hover:bg-slate-100 transition-colors mt-3">
+                    <GripVertical size={14} className="text-slate-300 group-hover:text-slate-500" />
+                </div>
+                <div className="flex-1 ml-8 px-6 py-4 bg-white rounded-2xl border border-amber-200 shadow-sm">
+                    <input
+                        value={field.label}
+                        onChange={(e) => updateField(field.id, "label", e.target.value)}
+                        placeholder="Section heading text..."
+                        className="w-full text-xl font-black text-slate-900 bg-transparent outline-none placeholder:text-slate-300"
+                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 mt-1 block">Heading</span>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                    className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 mt-3 ${isDragging ? "hidden" : ""}`}>
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        );
+    }
+
+    // ── Paragraph static element
+    if (field.type === "paragraph") {
+        return (
+            <div ref={setNodeRef} style={style} className="relative flex items-start group">
+                <div {...attributes} {...listeners}
+                    className="absolute left-0 z-10 cursor-grab active:cursor-grabbing p-1 rounded-lg hover:bg-slate-100 transition-colors mt-3">
+                    <GripVertical size={14} className="text-slate-300 group-hover:text-slate-500" />
+                </div>
+                <div className="flex-1 ml-8 px-6 py-4 bg-white rounded-2xl border border-sky-200 shadow-sm">
+                    <textarea
+                        rows={2}
+                        value={field.label}
+                        onChange={(e) => updateField(field.id, "label", e.target.value)}
+                        placeholder="Paragraph / description text..."
+                        className="w-full text-sm text-slate-600 bg-transparent outline-none resize-none leading-relaxed placeholder:text-slate-300"
+                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-sky-500 mt-1 block">Paragraph</span>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                    className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 mt-3 ${isDragging ? "hidden" : ""}`}>
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        );
+    }
+
+    // ── Divider static element
+    if (field.type === "divider") {
+        return (
+            <div ref={setNodeRef} style={style} className="relative flex items-center group">
+                <div {...attributes} {...listeners}
+                    className="absolute left-0 z-10 cursor-grab active:cursor-grabbing px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <GripVertical size={14} className="text-slate-300 group-hover:text-slate-500" />
+                </div>
+                <div className="flex-1 ml-8 flex items-center gap-3 py-3">
+                    <div className="flex-1 border-t border-slate-300" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex-shrink-0">― Divider ―</span>
+                    <div className="flex-1 border-t border-slate-300" />
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                    className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 ${isDragging ? "hidden" : ""}`}>
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        );
+    }
+
+    // ── Toggle field — live switch preview in canvas
+    if (field.type === "toggle") {
+        const isOn = field.defaultValue === "true";
+        return (
+            <div ref={setNodeRef} style={style} onClick={() => setActiveFieldId(field.id)}
+                className={`group relative flex items-center p-5 gap-5 bg-white rounded-[1.5rem] border shadow-sm transition-all duration-300 cursor-pointer
+                    ${isActive ? "border-blue-400 shadow-[0_8px_30px_rgba(59,130,246,0.12)] ring-1 ring-blue-400"
+                    : "border-slate-200 hover:border-slate-300 hover:shadow-md"}`}>
+                <div {...attributes} {...listeners}
+                    className="flex flex-col items-center justify-center w-8 cursor-grab active:cursor-grabbing hover:bg-slate-50 p-1 rounded-lg transition-colors">
+                    <span className="text-[10px] font-black text-slate-400 mb-1 pointer-events-none">{idx + 1}</span>
+                    <GripVertical size={16} className="text-slate-300 group-hover:text-slate-500 transition-colors pointer-events-none" />
+                </div>
+                <div className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-500 rounded-xl border border-slate-100 shadow-inner">
+                    {isOn ? <ToggleRight size={22} className="text-emerald-500" /> : <ToggleLeft size={22} className="text-slate-400" />}
+                </div>
+                <div className="flex-1">
+                    <input placeholder="Toggle label..." value={field.label}
+                        onChange={(e) => updateField(field.id, "label", e.target.value)}
+                        className="w-full text-base font-bold text-slate-900 bg-transparent outline-none placeholder:font-medium placeholder:text-slate-400"
+                        onClick={(e) => e.stopPropagation()} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5 block"
+                        style={{ color: isOn ? "#10b981" : "#94a3b8" }}>
+                        Default: {isOn ? "ON" : "OFF"}
+                    </span>
+                </div>
+                {/* Live default toggle */}
+                <div onClick={(e) => { e.stopPropagation(); updateField(field.id, "defaultValue", isOn ? "false" : "true"); }}
+                    className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors flex-shrink-0 ${isOn ? "bg-emerald-500" : "bg-slate-200"}`}>
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${isOn ? "translate-x-7" : "translate-x-1"}`} />
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                    className={`opacity-0 group-hover:opacity-100 flex items-center justify-center w-10 h-10 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 ${isDragging ? "hidden" : ""}`}>
+                    <Trash2 size={16} />
                 </button>
             </div>
         );
@@ -211,11 +326,21 @@ export default function BuilderPage() {
         email: <Mail size={18} />, date: <Calendar size={18} />, phone: <Phone size={18} />,
         time: <Clock size={18} />, url: <Link size={18} />, radio: <CircleDot size={18} />,
         checkbox: <CheckSquare size={18} />, select: <ListPlus size={18} />,
+        toggle: <ToggleRight size={18} />,
         page_break: <ChevronRight size={18} />,
+        heading: <Heading size={18} />,
+        paragraph: <Pilcrow size={18} />,
+        divider: <Minus size={18} />,
     };
 
     // Component types shown in the left sidebar
-    const regularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select"];
+    const regularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select", "toggle"];
+    const staticElementTypes = [
+        { type: "heading",   label: "Heading",   desc: "Section title",       color: "amber",  icon: <Heading size={16} /> },
+        { type: "paragraph", label: "Paragraph",  desc: "Description text",    color: "sky",    icon: <Pilcrow size={16} /> },
+        { type: "divider",   label: "Divider",    desc: "Visual separator",    color: "slate",  icon: <Minus size={16} /> },
+        { type: "page_break",label: "Page Break", desc: "Split form into pages",color: "indigo", icon: <ChevronRight size={16} /> },
+    ];
 
     const activeField = useMemo(() => fields.find((f) => f.id === activeFieldId), [fields, activeFieldId]);
     const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
@@ -244,18 +369,23 @@ export default function BuilderPage() {
         const type = e.dataTransfer.getData("fieldType");
         if (!type) return;
 
-        if (type === "page_break") {
-            const breakCount = fields.filter(f => f.type === "page_break").length + 1;
-            const newBreak = {
-                id: Date.now(), label: `Page ${breakCount + 1}`, type: "page_break",
+        // Display-only types (page_break, heading, paragraph, divider)
+        if (isDisplayOnly(type) || type === "page_break") {
+            const newEl = {
+                id: Date.now(),
+                label: type === "page_break"
+                    ? `Page ${fields.filter(f => f.type === "page_break").length + 2}`
+                    : type === "heading" ? "New Section" : type === "paragraph" ? "Add description here..." : "",
+                type,
                 required: false, defaultValue: "", options: [],
             };
-            setFields([...fields, newBreak]);
+            setFields([...fields, newEl]);
             return;
         }
 
         const newField = {
-            id: Date.now(), label: "", type: type.toLowerCase(), required: false, defaultValue: "",
+            id: Date.now(), label: "", type: type.toLowerCase(), required: false,
+            defaultValue: type === "toggle" ? "false" : "",
             minLength: "", maxLength: "", min: "", max: "", pattern: "",
             beforeDate: "", afterDate: "", afterTime: "", beforeTime: "",
             options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
@@ -323,16 +453,23 @@ export default function BuilderPage() {
 
     const saveForm = async () => {
         if (!formName.trim()) return alert("Please name your form.");
-        const realFields = fields.filter(f => f.type !== "page_break");
-        if (realFields.length === 0) return alert("Add at least one field.");
+        const realFields = fields.filter(f => !isDisplayOnly(f.type));
+        if (realFields.length === 0) return alert("Add at least one input field.");
         setIsPublishing(true);
         try {
             const formattedFields = fields.map((field, idx) => {
-                if (field.type === "page_break") {
-                    return { name: `page_break_${idx}`, type: "page_break" };
+                // Display-only types — persist with placeholder name, no column in DB
+                // Store the admin-typed label text in defaultValue so the public form can render it
+                if (isDisplayOnly(field.type)) {
+                    return { name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
                 }
                 if (!field.label) throw new Error("Field label is required");
                 let fd = { name: generateColumnName(field.label), type: field.type, required: field.required };
+                if (field.type === "toggle") {
+                    // Store the boolean default ("true"/"false") exactly
+                    fd.defaultValue = field.defaultValue === "true" ? "true" : "false";
+                    return fd;
+                }
                 if (field.defaultValue) fd.defaultValue = field.defaultValue;
                 if (field.type === "radio" || field.type === "checkbox") fd.options = field.options;
                 if (field.type === "select") {
@@ -377,19 +514,36 @@ export default function BuilderPage() {
                     <p className="text-[11px] text-slate-500 font-medium tracking-wide">Drag & drop to build</p>
                 </div>
                 <div className="p-6 space-y-3 overflow-y-auto">
-                    {/* Page Break special button */}
-                    <div draggable onDragStart={(e) => handleDragStart(e, "page_break")}
-                        onClick={addPageBreak}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-sm cursor-pointer hover:bg-indigo-100 hover:border-indigo-300 hover:shadow-md transition-all group hover:-translate-y-0.5">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-100 border border-indigo-200 shadow-inner group-hover:bg-indigo-200 text-indigo-500 transition-all duration-300">
-                            <ChevronRight size={18} />
+                    {/* ── Static Elements group ── */}
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Static Elements</p>
+                    {staticElementTypes.map(({ type, label, desc, color, icon }) => (
+                        <div key={type} draggable onDragStart={(e) => handleDragStart(e, type)}
+                            onClick={() => {
+                                const newEl = {
+                                    id: Date.now(),
+                                    label: type === "page_break"
+                                        ? `Page ${fields.filter(f => f.type === "page_break").length + 2}`
+                                        : type === "heading" ? "New Section" : type === "paragraph" ? "Add description here..." : "",
+                                    type, required: false, defaultValue: "", options: [],
+                                };
+                                setFields(prev => [...prev, newEl]);
+                            }}
+                            className={`flex items-center gap-4 p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all group hover:-translate-y-0.5
+                                bg-${color}-50 border-${color}-200 hover:bg-${color}-100 hover:border-${color}-300`}>
+                            <div className={`w-9 h-9 flex items-center justify-center rounded-xl bg-${color}-100 border border-${color}-200 text-${color}-500 flex-shrink-0`}>
+                                {icon}
+                            </div>
+                            <div>
+                                <span className={`text-sm font-bold text-${color}-700 group-hover:text-${color}-900`}>{label}</span>
+                                <p className={`text-[10px] text-${color}-500 mt-0.5`}>{desc}</p>
+                            </div>
                         </div>
-                        <div>
-                            <span className="text-sm font-bold text-indigo-700 group-hover:text-indigo-900 transition-colors">Page Break</span>
-                            <p className="text-[10px] text-indigo-500 mt-0.5">Split form into pages</p>
-                        </div>
+                    ))}
+
+                    {/* ── Input Fields group ── */}
+                    <div className="border-t border-slate-100 pt-3">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Input Fields</p>
                     </div>
-                    <div className="border-t border-slate-100 pt-2" />
                     {regularFieldTypes.map((type) => (
                         <div key={type} draggable onDragStart={(e) => handleDragStart(e, type)}
                             className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm cursor-grab hover:bg-slate-50 hover:border-blue-200 hover:shadow-md transition-all group hover:-translate-y-0.5">
@@ -398,7 +552,7 @@ export default function BuilderPage() {
                             </div>
                             <div>
                                 <span className="text-sm font-bold capitalize text-slate-700 group-hover:text-slate-900 transition-colors">{type}</span>
-                                <p className="text-[10px] text-slate-500 mt-0.5">Custom input field</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">Input field</p>
                             </div>
                         </div>
                     ))}
@@ -459,7 +613,7 @@ export default function BuilderPage() {
             </main>
 
             {/* RIGHT SIDEBAR — Field Properties OR Rules Panel */}
-            <aside className={`w-[400px] bg-white border-l border-slate-200 shadow-[-20px_0_40px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId && activeField?.type !== "page_break" ? "translate-x-0" : "translate-x-full"}`}>
+            <aside className={`w-[400px] bg-white border-l border-slate-200 shadow-[-20px_0_40px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId && !isDisplayOnly(activeField?.type) ? "translate-x-0" : "translate-x-full"}`}>
                 {activeField && (
                     <>
                         {/* Sidebar header with field type + close */}
@@ -511,20 +665,55 @@ export default function BuilderPage() {
                         {sidebarTab === "properties" && (
                             <div className="p-6 space-y-8 overflow-y-auto flex-1">
 
-                                {/* Required Toggle */}
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Field Behavior</label>
-                                    <div onClick={() => updateField(activeField.id, "required", !activeField.required)}
-                                        className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer border transition-all ${activeField.required ? "bg-blue-50 border-blue-200 text-blue-900 shadow-sm" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"}`}>
-                                        <span className="text-sm font-bold">Required Field</span>
-                                        <div className={`w-10 h-5 rounded-full transition-colors relative shadow-inner ${activeField.required ? "bg-blue-600" : "bg-slate-300"}`}>
-                                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${activeField.required ? "translate-x-6" : "translate-x-1"}`} />
+                                {activeField.type === "toggle" ? (
+                                    <>
+                                        {/* Toggle default state */}
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                <ToggleRight size={14} /> Default State
+                                            </label>
+                                            <div onClick={() => updateField(activeField.id, "defaultValue", activeField.defaultValue === "true" ? "false" : "true")}
+                                                className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer border transition-all ${activeField.defaultValue === "true" ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"}`}>
+                                                <div>
+                                                    <span className="text-sm font-bold block">{activeField.defaultValue === "true" ? "Default ON" : "Default OFF"}</span>
+                                                    <span className="text-[11px] text-slate-500">Click to toggle default state</span>
+                                                </div>
+                                                <div className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${activeField.defaultValue === "true" ? "bg-emerald-500" : "bg-slate-300"}`}>
+                                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${activeField.defaultValue === "true" ? "translate-x-7" : "translate-x-1"}`} />
+                                                </div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                                                <p className="text-[11px] text-slate-500 font-medium">Stored as <code className="bg-slate-100 px-1 rounded">BOOLEAN</code>. Submits <code className="bg-slate-100 px-1 rounded">true</code> / <code className="bg-slate-100 px-1 rounded">false</code>.</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-
-                                {/* Default Value */}
-                                <DefaultValuePanel activeField={activeField} updateField={updateField} accentColor="blue" />
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Field Behavior</label>
+                                            <div onClick={() => updateField(activeField.id, "required", !activeField.required)}
+                                                className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer border transition-all ${activeField.required ? "bg-blue-50 border-blue-200 text-blue-900 shadow-sm" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"}`}>
+                                                <span className="text-sm font-bold">Required Field</span>
+                                                <div className={`w-10 h-5 rounded-full transition-colors relative shadow-inner ${activeField.required ? "bg-blue-600" : "bg-slate-300"}`}>
+                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${activeField.required ? "translate-x-6" : "translate-x-1"}`} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Required Toggle */}
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Field Behavior</label>
+                                            <div onClick={() => updateField(activeField.id, "required", !activeField.required)}
+                                                className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer border transition-all ${activeField.required ? "bg-blue-50 border-blue-200 text-blue-900 shadow-sm" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"}`}>
+                                                <span className="text-sm font-bold">Required Field</span>
+                                                <div className={`w-10 h-5 rounded-full transition-colors relative shadow-inner ${activeField.required ? "bg-blue-600" : "bg-slate-300"}`}>
+                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${activeField.required ? "translate-x-6" : "translate-x-1"}`} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Default Value */}
+                                        <DefaultValuePanel activeField={activeField} updateField={updateField} accentColor="blue" />
+                                    </>
+                                )}
 
                                 {/* Constraints */}
                                 <div className="space-y-6">

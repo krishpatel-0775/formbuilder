@@ -40,6 +40,7 @@ function splitIntoPages(fields) {
   const pages = [];
   let current = [];
   for (const field of fields) {
+    // Only page_break acts as a separator; heading/paragraph/divider stay on the current page
     if (field.fieldType === "page_break") {
       pages.push(current);
       current = [];
@@ -440,6 +441,25 @@ export default function PublicFormPage() {
 
     return (
       <div key={field.id} id={`field-${field.fieldName}`} className="space-y-3">
+
+        {/* ── Static elements: render and return early (no label/input/errors) ── */}
+        {field.fieldType === "heading" && (
+          <h2 className="text-2xl font-black text-slate-900 leading-snug">
+            {field.defaultValue || field.fieldName}
+          </h2>
+        )}
+        {field.fieldType === "paragraph" && (
+          <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap">
+            {field.defaultValue || field.fieldName}
+          </p>
+        )}
+        {field.fieldType === "divider" && (
+          <div className="border-t border-slate-200 my-2" />
+        )}
+
+        {/* Skip rest of rendering for static + display-only types */}
+        {["heading", "paragraph", "divider"].includes(field.fieldType) ? null : (
+          <>
         {/* Label */}
         <label className="block text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2 flex-wrap">
           <span>{field.fieldName}</span>
@@ -517,8 +537,35 @@ export default function PublicFormPage() {
           </div>
         )}
 
+        {/* TOGGLE */}
+        {field.fieldType === "toggle" && (() => {
+          const isOn = (formData[field.fieldName] ?? field.defaultValue) === "true";
+          return (
+            <div
+              onClick={() => handleInputChange(field.fieldName, isOn ? "false" : "true")}
+              className={`flex items-center justify-between p-5 rounded-2xl border-2 cursor-pointer transition-all select-none ${
+                isOn
+                  ? "bg-emerald-50 border-emerald-300"
+                  : hasError
+                  ? "bg-red-50/30 border-red-200"
+                  : "bg-slate-50 border-slate-200 hover:border-slate-300"
+              }`}>
+              <span className={`font-bold text-sm ${isOn ? "text-emerald-800" : "text-slate-600"}`}>
+                {isOn ? "Yes / On" : "No / Off"}
+              </span>
+              <div className={`relative w-14 h-7 rounded-full transition-colors ${
+                isOn ? "bg-emerald-500" : "bg-slate-300"
+              }`}>
+                <div className={`absolute top-1.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  isOn ? "translate-x-8" : "translate-x-1.5"
+                }`} />
+              </div>
+            </div>
+          );
+        })()}
+
         {/* TEXT / NUMBER / EMAIL / DATE / PHONE / TIME / URL */}
-        {!["textarea", "radio", "checkbox", "select"].includes(field.fieldType) && (
+        {!["textarea", "radio", "checkbox", "select", "toggle"].includes(field.fieldType) && (
           <input type={field.fieldType === "phone" ? "tel" : field.fieldType}
             value={formData[field.fieldName] || ""}
             onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
@@ -535,6 +582,8 @@ export default function PublicFormPage() {
               </div>
             ))}
           </div>
+        )}
+          </>
         )}
       </div>
     );

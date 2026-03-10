@@ -60,6 +60,12 @@ public class FormService {
     private static final Pattern VALID_NAME =
             Pattern.compile(AppConstants.VALID_NAME_REGEX);
 
+    /** Returns true for types that are purely visual and have no DB column. */
+    private static boolean isDisplayOnly(String type) {
+        return type != null && (type.equals("page_break") ||
+                type.equals("heading") || type.equals("paragraph") || type.equals("divider"));
+    }
+
     public Form getFormById(Long id) {
         return formRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
@@ -189,10 +195,10 @@ public class FormService {
 
         for (FieldRequest field : request.getFields()) {
 
-            // Page break fields are structural markers — persist them but never as DB columns
-            boolean isPageBreak = "page_break".equals(field.getType());
+            // Display-only fields (page_break, heading, paragraph, divider) — persist but never as DB columns
+            boolean isDisplayOnly = isDisplayOnly(field.getType());
 
-            if (!isPageBreak) {
+            if (!isDisplayOnly) {
                 Set<String> reserved = Set.of(
                         "select","from","where","join","table","order",
                         "group","limit","offset","insert","update",
@@ -210,7 +216,7 @@ public class FormService {
             formField.setFieldName(field.getName());
             formField.setFieldType(field.getType());
 
-            if (!isPageBreak) {
+            if (!isDisplayOnly) {
                 formField.setRequired(field.getRequired());
                 formField.setMinLength(field.getMinLength());
                 formField.setMaxLength(field.getMaxLength());
@@ -231,6 +237,10 @@ public class FormService {
                 formField.setOptions(field.getOptions());
                 formField.setSourceTable(field.getSourceTable());
                 formField.setSourceColumn(field.getSourceColumn());
+            } else {
+                // For display-only types, store the human-readable label text in defaultValue
+                // so the public form can render it without needing a separate column
+                formField.setDefaultValue(field.getDefaultValue());
             }
 
             formField.setForm(form);
@@ -266,8 +276,8 @@ public class FormService {
 
         if (form.getStatus() == PUBLISHED) {
             for (FormField deleted : toDelete) {
-                // Don't try to drop a page_break from DB — it has no column
-                if (!"page_break".equals(deleted.getFieldType())) {
+                // Don't try to drop a display-only field from DB — it has no column
+                if (!isDisplayOnly(deleted.getFieldType())) {
                     schemaManager.dropColumn(form.getTableName(), deleted.getFieldName());
                 }
             }
@@ -275,7 +285,7 @@ public class FormService {
         fieldRepository.deleteAll(toDelete);
 
         for (UpdateFieldRequest fieldReq : incoming) {
-            boolean isPageBreak = "page_break".equals(fieldReq.getType());
+            boolean isDisplayOnly = isDisplayOnly(fieldReq.getType());
 
             if (fieldReq.getId() != null) {
                 FormField existing = fieldRepository.findById(fieldReq.getId())
@@ -284,7 +294,7 @@ public class FormService {
                 String oldName = existing.getFieldName();
                 String newName = fieldReq.getName();
 
-                if (!isPageBreak && form.getStatus() == PUBLISHED
+                if (!isDisplayOnly && form.getStatus() == PUBLISHED
                         && !oldName.equals(newName)) {
                     schemaManager.renameColumn(form.getTableName(), oldName, newName);
                 }
@@ -297,7 +307,7 @@ public class FormService {
                 fieldRepository.save(newField);
 
                 // Only add real data fields to the DB table schema
-                if (!isPageBreak && form.getStatus() == PUBLISHED) {
+                if (!isDisplayOnly && form.getStatus() == PUBLISHED) {
                     schemaManager.addColumn(form.getTableName(), newField);
                 }
             }
@@ -308,14 +318,14 @@ public class FormService {
     }
 
     private void applyFieldUpdates(FormField field, UpdateFieldRequest req) {
-        boolean isPageBreak = "page_break".equals(req.getType());
-        // Page breaks don't need column-name validation since they're never DB columns
-        if (!isPageBreak) {
+        boolean isDisplayOnly = isDisplayOnly(req.getType());
+        // Display-only fields don't need column-name validation since they're never DB columns
+        if (!isDisplayOnly) {
             schemaManager.validateColumnName(req.getName());
         }
         field.setFieldName(req.getName());
         field.setFieldType(req.getType());
-        if (!isPageBreak) {
+        if (!isDisplayOnly) {
             field.setRequired(req.getRequired());
             field.setMinLength(req.getMinLength());
             field.setMaxLength(req.getMaxLength());
@@ -330,6 +340,9 @@ public class FormService {
             field.setOptions(req.getOptions());
             field.setSourceTable(req.getSourceTable());
             field.setSourceColumn(req.getSourceColumn());
+        } else {
+            // Persist label text for display-only elements (heading, paragraph, etc.)
+            field.setDefaultValue(req.getDefaultValue());
         }
     }
 

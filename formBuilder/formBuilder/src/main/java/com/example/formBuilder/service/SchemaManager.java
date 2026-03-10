@@ -19,6 +19,11 @@ public class SchemaManager {
 
     private static final Pattern VALID_NAME = Pattern.compile(AppConstants.VALID_NAME_REGEX);
 
+    /** Field types that are purely visual — they have no database column. */
+    private static final java.util.Set<String> DISPLAY_ONLY_TYPES = java.util.Set.of(
+            "page_break", "heading", "paragraph", "divider"
+    );
+
     /**
      * Generates and executes the CREATE TABLE SQL statement with constraints for a new form.
      */
@@ -32,8 +37,8 @@ public class SchemaManager {
                 .append(", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL");
 
         for (FormField field : fields) {
-            // Page breaks are display-only markers — they have no DB column
-            if ("page_break".equals(field.getFieldType())) continue;
+            // Display-only elements (page_break, heading, paragraph, divider) have no DB column
+            if (DISPLAY_ONLY_TYPES.contains(field.getFieldType())) continue;
 
             validateColumnName(field.getFieldName());
 
@@ -135,6 +140,8 @@ public class SchemaManager {
             case "date" -> "DATE";
             case "time" -> "TIME";
             case "textarea", "checkbox" -> "TEXT";
+            case "toggle" -> "BOOLEAN";
+            // Display-only types should never reach here, but default safely
             default -> "VARCHAR(255)";
         };
     }

@@ -25,6 +25,12 @@ public class SubmissionService {
     private final JdbcTemplate jdbcTemplate;
     private final RuleEngineService ruleEngineService;
 
+    /** Returns true for types that are purely visual and have no DB column. */
+    private static boolean isDisplayOnly(String type) {
+        return type != null && (type.equals("page_break") ||
+                type.equals("heading") || type.equals("paragraph") || type.equals("divider"));
+    }
+
     /**
      * Soft-deletes a specific response by marking its 'is_deleted' flag to true.
      */
@@ -90,8 +96,8 @@ public class SubmissionService {
 
         // STEP 3 — Validate constraints
         for (FormField field : formFields) {
-            // Page breaks are display-only; skip all validation for them
-            if ("page_break".equals(field.getFieldType())) continue;
+            // Display-only fields (heading, paragraph, divider, page_break) have no values
+            if (isDisplayOnly(field.getFieldType())) continue;
 
             Object value = values.get(field.getFieldName());
 
@@ -117,19 +123,19 @@ public class SubmissionService {
 
         // STEP 4 — Safe column building
         String columns = formFields.stream()
-                .filter(f -> !"page_break".equals(f.getFieldType()))
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
                 .filter(f -> values.containsKey(f.getFieldName()))
                 .map(FormField::getFieldName)
                 .collect(Collectors.joining(","));
 
         String placeholders = formFields.stream()
-                .filter(f -> !"page_break".equals(f.getFieldType()))
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
                 .filter(f -> values.containsKey(f.getFieldName()))
                 .map(f -> "?")
                 .collect(Collectors.joining(","));
 
         Object[] safeValues = formFields.stream()
-                .filter(f -> !"page_break".equals(f.getFieldType()))
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
                 .filter(f -> values.containsKey(f.getFieldName()))
                 .map(f -> {
                     Object value = values.get(f.getFieldName());
