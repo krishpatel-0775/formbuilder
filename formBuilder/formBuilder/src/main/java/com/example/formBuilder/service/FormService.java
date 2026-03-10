@@ -19,14 +19,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Slf4j
 @Service
@@ -65,8 +65,24 @@ public class FormService {
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
     }
 
-    public List<Map<String, Object>> getAllDataFromTable(Long id) {
-        // Ensure administration privileges over this form
+//    public List<Map<String, Object>> getAllDataFromTable(Long id) {
+//        // Ensure administration privileges over this form
+//        getFormForAdmin(id);
+//
+//        String tableName = "form_" + id;
+//
+//        if (!tableName.matches("^[a-zA-Z0-9_]+$")) {
+//            throw new IllegalArgumentException("Invalid table name");
+//        }
+//
+//        String sql = "SELECT * FROM " + tableName;
+//
+//        return jdbcTemplate.queryForList(sql);
+//    }
+
+    public Map<String, Object> getAllDataFromTable(Long id, int page, int size, String sortBy, String direction) {
+
+        // Ensure admin has access
         getFormForAdmin(id);
 
         String tableName = "form_" + id;
@@ -75,9 +91,31 @@ public class FormService {
             throw new IllegalArgumentException("Invalid table name");
         }
 
-        String sql = "SELECT * FROM " + tableName;
+        // Validate sorting direction
+        if (!direction.equalsIgnoreCase("asc") && !direction.equalsIgnoreCase("desc")) {
+            direction = "asc";
+        }
 
-        return jdbcTemplate.queryForList(sql);
+        int offset = page * size;
+
+        String dataQuery = "SELECT * FROM " + tableName +
+                " WHERE is_deleted = false" +
+                " ORDER BY " + sortBy + " " + direction +
+                " LIMIT ? OFFSET ?";
+
+        List<Map<String, Object>> data = jdbcTemplate.queryForList(dataQuery, size, offset);
+
+        String countQuery = "SELECT COUNT(*) FROM " + tableName + " WHERE is_deleted = false";
+        Integer total = jdbcTemplate.queryForObject(countQuery, Integer.class);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", data);
+        response.put("page", page);
+        response.put("size", size);
+        response.put("totalElements", total);
+        response.put("totalPages", (int) Math.ceil((double) total / size));
+
+        return response;
     }
 
     public List<FormListDto> getAllForms() {
@@ -91,6 +129,7 @@ public class FormService {
 
         return formListDtos;
     }
+
 
     public List<String> getLookupValues(Long formId, String columnName) {
         Form form = getFormById(formId);

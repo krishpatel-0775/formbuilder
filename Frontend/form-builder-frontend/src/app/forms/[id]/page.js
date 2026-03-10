@@ -63,6 +63,12 @@ export default function PublicFormPage() {
         }
         const data = res.data;
 
+        // Block access if not published
+        if (data.status !== "PUBLISHED") {
+          setLoading(false);
+          return;
+        }
+
         // Fetch dynamic dropdown options
         if (data?.fields) {
           await Promise.all(

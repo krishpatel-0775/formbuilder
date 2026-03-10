@@ -138,8 +138,8 @@ export default function FormsListPage() {
                       </span>
                     </div>
                     <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${form.status === "PUBLISHED"
-                        ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                        : "bg-amber-50 text-amber-600 border border-amber-100"
+                      ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                      : "bg-amber-50 text-amber-600 border border-amber-100"
                       }`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                       {form.status || "DRAFT"}
@@ -153,9 +153,11 @@ export default function FormsListPage() {
                   {/* Quick Utility Grid */}
                   <div className="grid grid-cols-3 gap-2 mb-6">
                     <button
-                      onClick={() => copyToClipboard(form.id)}
-                      title="Copy Share Link"
-                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${copiedId === form.id
+                      onClick={() => form.status === "PUBLISHED" && copyToClipboard(form.id)}
+                      title={form.status === "PUBLISHED" ? "Copy Share Link" : "Publish to enable sharing"}
+                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${form.status !== "PUBLISHED"
+                        ? "bg-slate-100/50 border-slate-100 text-slate-300 cursor-not-allowed"
+                        : copiedId === form.id
                           ? "bg-emerald-50 border-emerald-200 text-emerald-600"
                           : "bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-blue-200 hover:text-blue-600"
                         }`}
@@ -168,20 +170,30 @@ export default function FormsListPage() {
                       onClick={() => copyApiEndpoint(form.id)}
                       title="Copy API Endpoint"
                       className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${copiedApiId === form.id
-                          ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                          : "bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-indigo-200 hover:text-indigo-600"
+                        ? "bg-indigo-50 border-indigo-200 text-indigo-600"
+                        : "bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-indigo-200 hover:text-indigo-600"
                         }`}
                     >
                       {copiedApiId === form.id ? <Check size={18} /> : <Code2 size={18} />}
                       <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">API</span>
                     </button>
 
-                    <Link href={`/forms/data/${form.id}`}>
-                      <div className="flex flex-col items-center justify-center py-4 rounded-2xl border bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-blue-200 hover:text-blue-600 transition-all h-full">
+                    {form.status === "PUBLISHED" ? (
+                      <Link href={`/forms/data/${form.id}`}>
+                        <div className="flex flex-col items-center justify-center py-4 rounded-2xl border bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-blue-200 hover:text-blue-600 transition-all h-full">
+                          <Table size={18} />
+                          <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">Data</span>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div
+                        title="Publish to view data"
+                        className="flex flex-col items-center justify-center py-4 rounded-2xl border bg-slate-100/50 border-slate-100 text-slate-300 cursor-not-allowed h-full"
+                      >
                         <Table size={18} />
                         <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">Data</span>
                       </div>
-                    </Link>
+                    )}
                   </div>
                 </div>
 
@@ -202,8 +214,8 @@ export default function FormsListPage() {
                         onClick={() => publishForm(form.id)}
                         disabled={form.status === "PUBLISHED"}
                         className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-sm ${form.status === "PUBLISHED"
-                            ? "bg-emerald-100 text-emerald-700 cursor-default border border-emerald-200"
-                            : "bg-white border border-slate-200 text-amber-600 hover:border-amber-400 hover:bg-amber-50"
+                          ? "bg-emerald-100 text-emerald-700 cursor-default border border-emerald-200"
+                          : "bg-white border border-slate-200 text-amber-600 hover:border-amber-400 hover:bg-amber-50"
                           }`}
                       >
                         <CheckCircle size={16} />
@@ -211,12 +223,22 @@ export default function FormsListPage() {
                       </button>
                     </div>
 
-                    <Link href={`/forms/${form.id}`}>
-                      <div className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-slate-950 text-white font-bold text-xs hover:bg-blue-600 transition-all active:scale-95 shadow-lg">
+                    {form.status === "PUBLISHED" ? (
+                      <Link href={`/forms/${form.id}`}>
+                        <div className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-slate-950 text-white font-bold text-xs hover:bg-blue-600 transition-all active:scale-95 shadow-lg">
+                          <ExternalLink size={16} />
+                          <span className="tracking-widest uppercase">Launch Form</span>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div
+                        title="Publish to launch form"
+                        className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-slate-200 text-slate-400 font-bold text-xs cursor-not-allowed"
+                      >
                         <ExternalLink size={16} />
                         <span className="tracking-widest uppercase">Launch Form</span>
                       </div>
-                    </Link>
+                    )}
                   </div>
                 </div>
               </div>

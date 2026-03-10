@@ -41,6 +41,23 @@ public class SubmissionService {
     }
 
     /**
+     * Bulk soft-deletes responses by marking their 'is_deleted' flag to true.
+     */
+    public String deleteResponses(Long formId, List<Long> responseIds) {
+        if (responseIds == null || responseIds.isEmpty()) {
+            return "No responses selected";
+        }
+
+        String tableName = "form_" + formId;
+        String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id IN (" +
+                responseIds.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
+
+        jdbcTemplate.update(sql, responseIds.toArray());
+
+        return responseIds.size() + " responses deleted";
+    }
+
+    /**
      * Processes and stores a new form submission into the form's generated database table.
      */
     public String submitForm(SubmissionRequest request) {

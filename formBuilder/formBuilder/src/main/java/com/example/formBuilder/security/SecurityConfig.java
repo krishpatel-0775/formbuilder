@@ -33,9 +33,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.GET,
-                                "/api/forms/*",
-                                "/api/forms/*/lookup/*",
-                                "/api/forms/*/rules"
+                                "/api/forms/**"
                         ).permitAll()
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.POST,

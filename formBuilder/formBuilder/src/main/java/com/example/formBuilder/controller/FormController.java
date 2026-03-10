@@ -38,9 +38,20 @@ public class FormController {
         return ResponseEntity.ok(ApiResponse.success(formService.getFormById(id)));
     }
 
-    @GetMapping(AppConstants.API_FORM_DATA)
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getFormData(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(formService.getAllDataFromTable(id)));
+//    @GetMapping(AppConstants.API_FORM_DATA)
+//    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getFormData(@PathVariable Long id) {
+//        return ResponseEntity.ok(ApiResponse.success(formService.getAllDataFromTable(id)));
+//    }
+
+    @GetMapping("/{id}/data")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getFormData(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(formService.getAllDataFromTable(id, page, size, sortBy, direction)));
     }
 
     @PostMapping(AppConstants.API_FORM_PUBLISH)

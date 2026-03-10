@@ -16,6 +16,7 @@ public class AppConstants {
 
     // Submission API Sub-Endpoints
     public static final String API_SUBMISSION_DELETE = "/{formId}/response/{responseId}";
+    public static final String API_SUBMISSION_BULK_DELETE = "/{formId}/responses/bulk-delete";
     public static final String API_SUBMISSION_VISIBILITY = "/visibility";
 
     // Form Rules Sub-Endpoints

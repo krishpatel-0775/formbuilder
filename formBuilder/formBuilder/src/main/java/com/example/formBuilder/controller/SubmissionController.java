@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -29,11 +30,17 @@ public class SubmissionController {
     }
 
 
-
     // Soft-deletes a specific submission record from a form's dynamic table.
     @DeleteMapping(AppConstants.API_SUBMISSION_DELETE)
     public ResponseEntity<ApiResponse<String>> deleteResponse(@PathVariable Long formId, @PathVariable Long responseId) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponse(formId, responseId), null));
+    }
+
+
+    // Bulk soft-deletes submission records.
+    @PostMapping(AppConstants.API_SUBMISSION_BULK_DELETE)
+    public ResponseEntity<ApiResponse<String>> deleteBulkResponses(@PathVariable Long formId, @RequestBody List<Long> responseIds) {
+        return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponses(formId, responseIds), null));
     }
 
 
