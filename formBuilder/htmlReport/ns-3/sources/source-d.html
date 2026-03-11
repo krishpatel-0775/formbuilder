@@ -1,0 +1,131 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > FormRuleDTO</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.dto</a>
+</div>
+
+<h1>Coverage Summary for Class: FormRuleDTO (com.example.formBuilder.dto)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">FormRuleDTO</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.dto;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonInclude;
+&nbsp;import lombok.Getter;
+&nbsp;import lombok.NoArgsConstructor;
+&nbsp;import lombok.Setter;
+&nbsp;
+&nbsp;/**
+&nbsp; * Represents a complete conditional rule in the form&#39;s rule engine.
+&nbsp; * &lt;p&gt;
+&nbsp; * A rule encapsulates a single IF (condition) → THEN (action) pair.
+&nbsp; * Rules are stored as a JSON array on the {@code Form} entity and are
+&nbsp; * evaluated by {@code RuleEngineService} during form submission.
+&nbsp; * &lt;/p&gt;
+&nbsp; *
+&nbsp; * &lt;h3&gt;Example Rule JSON:&lt;/h3&gt;
+&nbsp; * &lt;pre&gt;
+&nbsp; * {
+&nbsp; *   &quot;condition&quot;: {
+&nbsp; *     &quot;field&quot;: &quot;age&quot;,
+&nbsp; *     &quot;operator&quot;: &quot;GREATER_THAN&quot;,
+&nbsp; *     &quot;value&quot;: 18
+&nbsp; *   },
+&nbsp; *   &quot;action&quot;: {
+&nbsp; *     &quot;type&quot;: &quot;SHOW&quot;,
+&nbsp; *     &quot;targetField&quot;: &quot;driving_license&quot;
+&nbsp; *   }
+&nbsp; * }
+&nbsp; * &lt;/pre&gt;
+&nbsp; *
+&nbsp; * &lt;h3&gt;Example Multi-condition Rule (future support):&lt;/h3&gt;
+&nbsp; * &lt;pre&gt;
+&nbsp; * {
+&nbsp; *   &quot;condition&quot;: {
+&nbsp; *     &quot;logicalOperator&quot;: &quot;AND&quot;,
+&nbsp; *     &quot;conditions&quot;: [
+&nbsp; *       { &quot;field&quot;: &quot;age&quot;, &quot;operator&quot;: &quot;GREATER_THAN&quot;, &quot;value&quot;: 18 },
+&nbsp; *       { &quot;field&quot;: &quot;country&quot;, &quot;operator&quot;: &quot;EQUALS&quot;, &quot;value&quot;: &quot;India&quot; }
+&nbsp; *     ]
+&nbsp; *   },
+&nbsp; *   &quot;action&quot;: {
+&nbsp; *     &quot;type&quot;: &quot;SHOW&quot;,
+&nbsp; *     &quot;targetField&quot;: &quot;driving_license&quot;
+&nbsp; *   }
+&nbsp; * }
+&nbsp; * &lt;/pre&gt;
+&nbsp; */
+&nbsp;@Getter
+&nbsp;@Setter
+&nbsp;@NoArgsConstructor
+&nbsp;@JsonInclude(JsonInclude.Include.NON_EMPTY)
+&nbsp;public class FormRuleDTO {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The condition that must evaluate to {@code true} for the action to be executed.
+&nbsp;     */
+&nbsp;    private RuleConditionDTO condition;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The action to execute when the condition is satisfied.
+&nbsp;     */
+&nbsp;    private RuleActionDTO action;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

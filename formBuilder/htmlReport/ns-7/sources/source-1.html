@@ -1,0 +1,199 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > AuthService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.service</a>
+</div>
+
+<h1>Coverage Summary for Class: AuthService (com.example.formBuilder.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AuthService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    12.5%
+  </span>
+  <span class="absValue">
+    (1/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    48.4%
+  </span>
+  <span class="absValue">
+    (15/31)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.service;
+&nbsp;
+&nbsp;import com.example.formBuilder.dto.LoginRequest;
+&nbsp;import com.example.formBuilder.dto.LoginResponse;
+&nbsp;import com.example.formBuilder.dto.RegisterRequest;
+&nbsp;import com.example.formBuilder.entity.Admin;
+&nbsp;import com.example.formBuilder.exception.ValidationException;
+&nbsp;import com.example.formBuilder.repository.AdminRepository;
+&nbsp;import com.example.formBuilder.security.SessionUtil;
+&nbsp;import jakarta.servlet.http.HttpServletRequest;
+&nbsp;import jakarta.servlet.http.HttpSession;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.springframework.security.authentication.AuthenticationManager;
+&nbsp;import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+&nbsp;import org.springframework.security.core.Authentication;
+&nbsp;import org.springframework.security.core.context.SecurityContext;
+&nbsp;import org.springframework.security.core.context.SecurityContextHolder;
+&nbsp;import org.springframework.security.core.userdetails.UserDetails;
+&nbsp;import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class AuthService {
+&nbsp;
+&nbsp;    private final AdminRepository adminRepository;
+&nbsp;    private final AuthenticationManager authenticationManager;
+&nbsp;
+&nbsp;    public String register(RegisterRequest request) {
+<b class="nc">&nbsp;        if (adminRepository.findByUsername(request.getUsername()).isPresent()) {</b>
+<b class="nc">&nbsp;            throw new ValidationException(&quot;Username is already taken.&quot;);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (adminRepository.findByEmail(request.getEmail()).isPresent()) {</b>
+<b class="nc">&nbsp;            throw new ValidationException(&quot;Email is already registered.&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Admin admin = new Admin();</b>
+<b class="nc">&nbsp;        admin.setUsername(request.getUsername());</b>
+<b class="nc">&nbsp;        admin.setEmail(request.getEmail());</b>
+&nbsp;        // Storing password as plain text since this is intentionally non-production-grade
+<b class="nc">&nbsp;        admin.setPassword(request.getPassword());</b>
+<b class="nc">&nbsp;        admin.setExtraDetails(request.getExtraDetails());</b>
+&nbsp;
+<b class="nc">&nbsp;        adminRepository.save(admin);</b>
+<b class="nc">&nbsp;        return &quot;Admin registered successfully&quot;;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+<b class="fc">&nbsp;        Authentication authentication = authenticationManager.authenticate(</b>
+<b class="fc">&nbsp;                new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword())</b>
+&nbsp;        );
+&nbsp;
+<b class="fc">&nbsp;        SecurityContext sc = SecurityContextHolder.getContext();</b>
+<b class="fc">&nbsp;        sc.setAuthentication(authentication);</b>
+&nbsp;
+<b class="fc">&nbsp;        HttpSession session = httpRequest.getSession(true);</b>
+<b class="fc">&nbsp;        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);</b>
+&nbsp;
+<b class="fc">&nbsp;        String authenticatedUsername = ((UserDetails) authentication.getPrincipal()).getUsername();</b>
+<b class="fc">&nbsp;        Admin admin = adminRepository.findByUsername(authenticatedUsername)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new ValidationException(&quot;User not found&quot;));</b>
+&nbsp;
+<b class="fc">&nbsp;        return new LoginResponse(admin.getId(), admin.getUsername(), admin.getEmail());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public void logout(HttpServletRequest request) {
+<b class="nc">&nbsp;        HttpSession session = request.getSession(false);</b>
+<b class="nc">&nbsp;        if (session != null) {</b>
+<b class="nc">&nbsp;            session.invalidate();</b>
+&nbsp;        }
+<b class="nc">&nbsp;        SecurityContextHolder.clearContext();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Long getCurrentAdminId() {
+<b class="fc">&nbsp;        String username = SessionUtil.getCurrentAdminUsername();</b>
+<b class="pc">&nbsp;        if (username != null) {</b>
+<b class="fc">&nbsp;            return adminRepository.findByUsername(username)</b>
+<b class="fc">&nbsp;                    .map(Admin::getId)</b>
+<b class="fc">&nbsp;                    .orElse(null);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return null;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

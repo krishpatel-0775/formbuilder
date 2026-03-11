@@ -1,0 +1,101 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > AppConstants</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.constants</a>
+</div>
+
+<h1>Coverage Summary for Class: AppConstants (com.example.formBuilder.constants)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">AppConstants</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.constants;
+&nbsp;
+&nbsp;public class AppConstants {
+&nbsp;    // Cross Origin
+&nbsp;    public static final String FRONTEND_URL = &quot;http://localhost:3000&quot;;
+&nbsp;
+&nbsp;    // Base API Endpoints
+&nbsp;    public static final String API_BASE_FORMS = &quot;/api/forms&quot;;
+&nbsp;    public static final String API_BASE_SUBMISSIONS = &quot;/api/submissions&quot;;
+&nbsp;
+&nbsp;    // Form API Sub-Endpoints
+&nbsp;    public static final String API_FORM_BY_ID = &quot;/{id}&quot;;
+&nbsp;    public static final String API_FORM_DATA = &quot;/data/{id}&quot;;
+&nbsp;    public static final String API_FORM_PUBLISH = &quot;/publish/{id}&quot;;
+&nbsp;    public static final String API_FORM_LOOKUP = &quot;/{id}/lookup/{columnName}&quot;;
+&nbsp;
+&nbsp;    // Submission API Sub-Endpoints
+&nbsp;    public static final String API_SUBMISSION_DELETE = &quot;/{formId}/response/{responseId}&quot;;
+&nbsp;    public static final String API_SUBMISSION_BULK_DELETE = &quot;/{formId}/responses/bulk-delete&quot;;
+&nbsp;    public static final String API_SUBMISSION_VISIBILITY = &quot;/visibility&quot;;
+&nbsp;
+&nbsp;    // Form Rules Sub-Endpoints
+&nbsp;    public static final String API_FORM_RULES = &quot;/{id}/rules&quot;;
+&nbsp;
+&nbsp;    // Regex Patterns
+&nbsp;    public static final String URL_REGEX = &quot;^(https?://)(localhost|[\\w\\-]+(\\.[\\w\\-]+)+)(:\\d+)?(/.*)?$&quot;;
+&nbsp;    public static final String PHONE_REGEX = &quot;^\\d{7,15}$&quot;;
+&nbsp;    public static final String VALID_NAME_REGEX = &quot;^[a-zA-Z][a-zA-Z0-9_]*$&quot;;
+&nbsp;    
+&nbsp;    private AppConstants() {
+&nbsp;        // Private constructor to prevent instantiation
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

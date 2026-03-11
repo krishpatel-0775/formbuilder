@@ -1,0 +1,199 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > GlobalExceptionHandler</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.exception</a>
+</div>
+
+<h1>Coverage Summary for Class: GlobalExceptionHandler (com.example.formBuilder.exception)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GlobalExceptionHandler</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    18.2%
+  </span>
+  <span class="absValue">
+    (2/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    11.8%
+  </span>
+  <span class="absValue">
+    (4/34)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.exception;
+&nbsp;
+&nbsp;import com.example.formBuilder.dto.ApiResponse;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.HttpMediaTypeNotSupportedException;
+&nbsp;import org.springframework.web.HttpRequestMethodNotSupportedException;
+&nbsp;import org.springframework.web.bind.MethodArgumentNotValidException;
+&nbsp;import org.springframework.web.bind.MissingServletRequestParameterException;
+&nbsp;import org.springframework.web.bind.annotation.ExceptionHandler;
+&nbsp;import org.springframework.web.bind.annotation.RestControllerAdvice;
+&nbsp;import org.springframework.web.servlet.NoHandlerFoundException;
+&nbsp;
+&nbsp;import java.util.stream.Collectors;
+&nbsp;
+&nbsp;@RestControllerAdvice
+<b class="fc">&nbsp;public class GlobalExceptionHandler {</b>
+&nbsp;
+&nbsp;    @ExceptionHandler(RuntimeException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleRuntimeException(RuntimeException ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.BAD_REQUEST)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(ValidationException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleValidationException(ValidationException ex) {
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.BAD_REQUEST)</b>
+<b class="fc">&nbsp;                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(MethodArgumentNotValidException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+<b class="nc">&nbsp;        String errorMessage = ex.getBindingResult().getFieldErrors().stream()</b>
+<b class="nc">&nbsp;                .map(error -&gt; error.getField() + &quot;: &quot; + error.getDefaultMessage())</b>
+<b class="nc">&nbsp;                .collect(Collectors.joining(&quot;, &quot;));</b>
+&nbsp;        
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.BAD_REQUEST)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), &quot;Validation failed: &quot; + errorMessage));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(NoHandlerFoundException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNoHandlerFoundException(NoHandlerFoundException ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.NOT_FOUND)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), &quot;Endpoint not found: &quot; + ex.getRequestURL()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.METHOD_NOT_ALLOWED)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.METHOD_NOT_ALLOWED.value(), &quot;Method not allowed: &quot; + ex.getMethod()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(ResourceNotFoundException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleResourceNotFoundException(ResourceNotFoundException ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.NOT_FOUND)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(IllegalArgumentException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleIllegalArgumentException(IllegalArgumentException ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.BAD_REQUEST)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(), &quot;Unsupported media type: &quot; + ex.getContentType()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @ExceptionHandler(MissingServletRequestParameterException.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.BAD_REQUEST)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), &quot;Missing request parameter: &quot; + ex.getParameterName()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Global Fallback for any other unhandled Exception not caught by specific handlers.
+&nbsp;     */
+&nbsp;    @ExceptionHandler(Exception.class)
+&nbsp;    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleGenericException(Exception ex) {
+<b class="nc">&nbsp;        return ResponseEntity</b>
+<b class="nc">&nbsp;                .status(HttpStatus.INTERNAL_SERVER_ERROR)</b>
+<b class="nc">&nbsp;                .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), &quot;An unexpected error occurred: &quot; + ex.getMessage()));</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

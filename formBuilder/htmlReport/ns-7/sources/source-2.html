@@ -1,0 +1,505 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > FormService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.service</a>
+</div>
+
+<h1>Coverage Summary for Class: FormService (com.example.formBuilder.service)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">FormService</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (9/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    35.5%
+  </span>
+  <span class="absValue">
+    (27/76)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    52.4%
+  </span>
+  <span class="absValue">
+    (88/168)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">FormService$$SpringCGLIB$$0</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (9/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    35.5%
+  </span>
+  <span class="absValue">
+    (27/76)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    52.4%
+  </span>
+  <span class="absValue">
+    (88/168)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.service;
+&nbsp;
+&nbsp;import com.example.formBuilder.constants.AppConstants;
+&nbsp;import com.example.formBuilder.dto.*;
+&nbsp;import com.example.formBuilder.entity.Form;
+&nbsp;import com.example.formBuilder.entity.Admin;
+&nbsp;import com.example.formBuilder.entity.FormField;
+&nbsp;import com.example.formBuilder.exception.ResourceNotFoundException;
+&nbsp;import com.example.formBuilder.exception.ValidationException;
+&nbsp;import com.example.formBuilder.repository.AdminRepository;
+&nbsp;import com.example.formBuilder.repository.FormFieldRepository;
+&nbsp;import com.example.formBuilder.repository.FormRepository;
+&nbsp;import com.example.formBuilder.security.SessionUtil;
+&nbsp;import com.fasterxml.jackson.databind.ObjectMapper;
+&nbsp;import jakarta.transaction.Transactional;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import lombok.extern.slf4j.Slf4j;
+&nbsp;import org.springframework.jdbc.core.JdbcTemplate;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;
+&nbsp;import java.time.LocalDate;
+&nbsp;import java.util.*;
+&nbsp;import java.util.regex.Pattern;
+&nbsp;import java.util.stream.Collectors;
+&nbsp;
+&nbsp;import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
+&nbsp;import org.springframework.data.domain.Page;
+&nbsp;import org.springframework.data.domain.Pageable;
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;@Slf4j</b>
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class FormService {
+&nbsp;
+&nbsp;    private final FormRepository formRepository;
+&nbsp;    private final FormFieldRepository fieldRepository;
+&nbsp;    private final JdbcTemplate jdbcTemplate;
+&nbsp;    private final SchemaManager schemaManager;
+&nbsp;    private final ObjectMapper objectMapper;
+&nbsp;    private final AdminRepository adminRepository;
+&nbsp;
+&nbsp;    private Admin getCurrentAdmin() {
+<b class="fc">&nbsp;        String username = SessionUtil.getCurrentAdminUsername();</b>
+<b class="fc">&nbsp;        if (username == null) throw new ValidationException(&quot;Unauthorized&quot;);</b>
+<b class="fc">&nbsp;        return adminRepository.findByUsername(username)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new ValidationException(&quot;Admin not found&quot;));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private Form getFormForAdmin(Long id) {
+<b class="fc">&nbsp;        Admin admin = getCurrentAdmin();</b>
+<b class="fc">&nbsp;        Form form = formRepository.findById(id)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Form with ID &quot; + id + &quot; not found&quot;));</b>
+<b class="pc">&nbsp;        if (!form.getAdmin().getId().equals(admin.getId())) {</b>
+<b class="nc">&nbsp;            throw new ValidationException(&quot;Unauthorized access to this form&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return form;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private static final Pattern VALID_NAME =</b>
+<b class="fc">&nbsp;            Pattern.compile(AppConstants.VALID_NAME_REGEX);</b>
+&nbsp;
+&nbsp;    /** Returns true for types that are purely visual and have no DB column. */
+&nbsp;    private static boolean isDisplayOnly(String type) {
+<b class="pc">&nbsp;        return type != null &amp;&amp; (type.equals(&quot;page_break&quot;) ||</b>
+<b class="fc">&nbsp;                type.equals(&quot;heading&quot;) || type.equals(&quot;paragraph&quot;) || type.equals(&quot;divider&quot;));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Form getFormById(Long id) {
+<b class="fc">&nbsp;        return formRepository.findById(id)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Form with ID &quot; + id + &quot; not found&quot;));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;//    public List&lt;Map&lt;String, Object&gt;&gt; getAllDataFromTable(Long id) {
+&nbsp;//        // Ensure administration privileges over this form
+&nbsp;//        getFormForAdmin(id);
+&nbsp;//
+&nbsp;//        String tableName = &quot;form_&quot; + id;
+&nbsp;//
+&nbsp;//        if (!tableName.matches(&quot;^[a-zA-Z0-9_]+$&quot;)) {
+&nbsp;//            throw new IllegalArgumentException(&quot;Invalid table name&quot;);
+&nbsp;//        }
+&nbsp;//
+&nbsp;//        String sql = &quot;SELECT * FROM &quot; + tableName;
+&nbsp;//
+&nbsp;//        return jdbcTemplate.queryForList(sql);
+&nbsp;//    }
+&nbsp;
+&nbsp;    public Map&lt;String, Object&gt; getAllDataFromTable(Long id, int page, int size, String sortBy, String direction) {
+&nbsp;
+&nbsp;        // Ensure admin has access
+<b class="fc">&nbsp;        getFormForAdmin(id);</b>
+&nbsp;
+<b class="fc">&nbsp;        String tableName = &quot;form_&quot; + id;</b>
+&nbsp;
+<b class="pc">&nbsp;        if (!tableName.matches(&quot;^[a-zA-Z0-9_]+$&quot;)) {</b>
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Invalid table name&quot;);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Validate sorting direction
+<b class="pc">&nbsp;        if (!direction.equalsIgnoreCase(&quot;asc&quot;) &amp;&amp; !direction.equalsIgnoreCase(&quot;desc&quot;)) {</b>
+<b class="nc">&nbsp;            direction = &quot;asc&quot;;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        int offset = page * size;</b>
+&nbsp;
+<b class="fc">&nbsp;        String dataQuery = &quot;SELECT * FROM &quot; + tableName +</b>
+&nbsp;                &quot; WHERE is_deleted = false&quot; +
+&nbsp;                &quot; ORDER BY &quot; + sortBy + &quot; &quot; + direction +
+&nbsp;                &quot; LIMIT ? OFFSET ?&quot;;
+&nbsp;
+<b class="fc">&nbsp;        List&lt;Map&lt;String, Object&gt;&gt; data = jdbcTemplate.queryForList(dataQuery, size, offset);</b>
+&nbsp;
+<b class="fc">&nbsp;        String countQuery = &quot;SELECT COUNT(*) FROM &quot; + tableName + &quot; WHERE is_deleted = false&quot;;</b>
+<b class="fc">&nbsp;        Integer total = jdbcTemplate.queryForObject(countQuery, Integer.class);</b>
+&nbsp;
+<b class="fc">&nbsp;        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;        response.put(&quot;content&quot;, data);</b>
+<b class="fc">&nbsp;        response.put(&quot;page&quot;, page);</b>
+<b class="fc">&nbsp;        response.put(&quot;size&quot;, size);</b>
+<b class="fc">&nbsp;        response.put(&quot;totalElements&quot;, total);</b>
+<b class="fc">&nbsp;        response.put(&quot;totalPages&quot;, (int) Math.ceil((double) total / size));</b>
+&nbsp;
+<b class="fc">&nbsp;        return response;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public List&lt;FormListDto&gt; getAllForms() {
+<b class="fc">&nbsp;        Admin admin = getCurrentAdmin();</b>
+<b class="fc">&nbsp;        List&lt;Form&gt; forms = formRepository.findByAdminId(admin.getId());</b>
+<b class="fc">&nbsp;        List&lt;FormListDto&gt; formListDtos = new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;        for (Form form : forms) {</b>
+<b class="fc">&nbsp;            formListDtos.add(new FormListDto(form.getId(), form.getFormName(), form.getStatus()));</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return formListDtos;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    public List&lt;String&gt; getLookupValues(Long formId, String columnName) {
+<b class="nc">&nbsp;        Form form = getFormById(formId);</b>
+<b class="nc">&nbsp;        String tableName = form.getTableName();</b>
+&nbsp;
+<b class="nc">&nbsp;        if (!columnName.matches(&quot;^[a-zA-Z][a-zA-Z0-9_]*$&quot;)) {</b>
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Invalid column name&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        String sql = &quot;SELECT DISTINCT &quot; + columnName + &quot; FROM &quot; + tableName + &quot; WHERE is_deleted = false AND &quot; + columnName + &quot; IS NOT NULL&quot;;</b>
+<b class="nc">&nbsp;        return jdbcTemplate.queryForList(sql, String.class);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public String publishForm(Long id) {
+<b class="fc">&nbsp;        Form form = getFormForAdmin(id);</b>
+&nbsp;
+<b class="fc">&nbsp;        String tableName = form.getTableName();</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;FormField&gt; fields = fieldRepository.findByFormId(id);</b>
+&nbsp;
+<b class="fc">&nbsp;        schemaManager.createDynamicTable(tableName, fields);</b>
+&nbsp;
+<b class="fc">&nbsp;        form.setStatus(PUBLISHED);</b>
+&nbsp;
+<b class="fc">&nbsp;        formRepository.save(form);</b>
+&nbsp;
+<b class="fc">&nbsp;        return &quot;Form Published Successfully&quot;;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public String createForm(FormRequest request) {
+<b class="fc">&nbsp;        Admin admin = getCurrentAdmin();</b>
+&nbsp;
+<b class="pc">&nbsp;        if (request.getFields() == null || request.getFields().isEmpty()) {</b>
+<b class="nc">&nbsp;            throw new ValidationException(&quot;Form must contain at least one field&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        Form form = new Form();</b>
+<b class="fc">&nbsp;        form.setFormName(request.getFormName());</b>
+<b class="fc">&nbsp;        form.setAdmin(admin);</b>
+<b class="fc">&nbsp;        form = formRepository.save(form);</b>
+&nbsp;
+<b class="fc">&nbsp;        String tableName = &quot;form_&quot; + form.getId();</b>
+<b class="fc">&nbsp;        form.setTableName(tableName);</b>
+&nbsp;
+&nbsp;        // Serialize rules if provided
+<b class="pc">&nbsp;        if (request.getRules() != null &amp;&amp; !request.getRules().isEmpty()) {</b>
+&nbsp;            try {
+<b class="nc">&nbsp;                form.setRules(objectMapper.writeValueAsString(request.getRules()));</b>
+&nbsp;            } catch (Exception e) {
+<b class="nc">&nbsp;                log.warn(&quot;Failed to serialize rules — rules will not be saved: {}&quot;, e.getMessage());</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        formRepository.save(form);</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;FormField&gt; fieldList = new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;        for (FieldRequest field : request.getFields()) {</b>
+&nbsp;
+&nbsp;            // Display-only fields (page_break, heading, paragraph, divider) — persist but never as DB columns
+<b class="fc">&nbsp;            boolean isDisplayOnly = isDisplayOnly(field.getType());</b>
+&nbsp;
+<b class="fc">&nbsp;            if (!isDisplayOnly) {</b>
+<b class="fc">&nbsp;                Set&lt;String&gt; reserved = Set.of(</b>
+&nbsp;                        &quot;select&quot;,&quot;from&quot;,&quot;where&quot;,&quot;join&quot;,&quot;table&quot;,&quot;order&quot;,
+&nbsp;                        &quot;group&quot;,&quot;limit&quot;,&quot;offset&quot;,&quot;insert&quot;,&quot;update&quot;,
+&nbsp;                        &quot;delete&quot;,&quot;index&quot;,&quot;primary&quot;,&quot;key&quot;,&quot;constraint&quot;,
+&nbsp;                        &quot;id&quot;
+&nbsp;                );
+&nbsp;
+<b class="pc">&nbsp;                if(reserved.contains(field.getName().toLowerCase())){</b>
+<b class="nc">&nbsp;                    throw new ValidationException(field.getName() + &quot; is a reserved field name. Please choose a different name.&quot;);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            FormField formField = new FormField();</b>
+&nbsp;
+<b class="fc">&nbsp;            formField.setFieldName(field.getName());</b>
+<b class="fc">&nbsp;            formField.setFieldType(field.getType());</b>
+&nbsp;
+<b class="fc">&nbsp;            if (!isDisplayOnly) {</b>
+<b class="fc">&nbsp;                formField.setRequired(field.getRequired());</b>
+<b class="fc">&nbsp;                formField.setMinLength(field.getMinLength());</b>
+<b class="fc">&nbsp;                formField.setMaxLength(field.getMaxLength());</b>
+<b class="fc">&nbsp;                formField.setMin(field.getMin());</b>
+<b class="fc">&nbsp;                formField.setMax(field.getMax());</b>
+<b class="fc">&nbsp;                formField.setPattern(field.getPattern());</b>
+<b class="fc">&nbsp;                formField.setDefaultValue(field.getDefaultValue());</b>
+<b class="fc">&nbsp;                formField.setMinTime(field.getMinTime());</b>
+<b class="fc">&nbsp;                formField.setMaxTime(field.getMaxTime());</b>
+<b class="fc">&nbsp;                formField.setBeforeDate(</b>
+<b class="pc">&nbsp;                        field.getBeforeDate() != null ?</b>
+<b class="fc">&nbsp;                                LocalDate.parse(field.getBeforeDate()) : null</b>
+&nbsp;                );
+<b class="fc">&nbsp;                formField.setAfterDate(</b>
+<b class="pc">&nbsp;                        field.getAfterDate() != null ?</b>
+<b class="fc">&nbsp;                                LocalDate.parse(field.getAfterDate()) : null</b>
+&nbsp;                );
+<b class="fc">&nbsp;                formField.setOptions(field.getOptions());</b>
+<b class="fc">&nbsp;                formField.setSourceTable(field.getSourceTable());</b>
+<b class="fc">&nbsp;                formField.setSourceColumn(field.getSourceColumn());</b>
+&nbsp;            } else {
+&nbsp;                // For display-only types, store the human-readable label text in defaultValue
+&nbsp;                // so the public form can render it without needing a separate column
+<b class="fc">&nbsp;                formField.setDefaultValue(field.getDefaultValue());</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            formField.setForm(form);</b>
+<b class="fc">&nbsp;            fieldList.add(formField);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        fieldRepository.saveAll(fieldList);</b>
+&nbsp;
+<b class="fc">&nbsp;        return &quot;Form Created Successfully&quot;;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Transactional
+&nbsp;    public String updateForm(Long formId, UpdateFormRequest request) {
+&nbsp;
+<b class="nc">&nbsp;        Form form = getFormForAdmin(formId);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (request.getFormName() != null &amp;&amp; !request.getFormName().isBlank()) {</b>
+<b class="nc">&nbsp;            form.setFormName(request.getFormName());</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        List&lt;UpdateFieldRequest&gt; incoming = request.getFields();</b>
+&nbsp;
+<b class="nc">&nbsp;        List&lt;FormField&gt; existingFields = fieldRepository.findByFormId(formId);</b>
+&nbsp;
+<b class="nc">&nbsp;        Set&lt;Long&gt; incomingIds = incoming.stream()</b>
+<b class="nc">&nbsp;                .filter(f -&gt; f.getId() != null)</b>
+<b class="nc">&nbsp;                .map(UpdateFieldRequest::getId)</b>
+<b class="nc">&nbsp;                .collect(Collectors.toSet());</b>
+&nbsp;
+<b class="nc">&nbsp;        List&lt;FormField&gt; toDelete = existingFields.stream()</b>
+<b class="nc">&nbsp;                .filter(f -&gt; !incomingIds.contains(f.getId()))</b>
+<b class="nc">&nbsp;                .toList();</b>
+&nbsp;
+<b class="nc">&nbsp;        if (form.getStatus() == PUBLISHED) {</b>
+<b class="nc">&nbsp;            for (FormField deleted : toDelete) {</b>
+&nbsp;                // Don&#39;t try to drop a display-only field from DB — it has no column
+<b class="nc">&nbsp;                if (!isDisplayOnly(deleted.getFieldType())) {</b>
+<b class="nc">&nbsp;                    schemaManager.dropColumn(form.getTableName(), deleted.getFieldName());</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        fieldRepository.deleteAll(toDelete);</b>
+&nbsp;
+<b class="nc">&nbsp;        for (UpdateFieldRequest fieldReq : incoming) {</b>
+<b class="nc">&nbsp;            boolean isDisplayOnly = isDisplayOnly(fieldReq.getType());</b>
+&nbsp;
+<b class="nc">&nbsp;            if (fieldReq.getId() != null) {</b>
+<b class="nc">&nbsp;                FormField existing = fieldRepository.findById(fieldReq.getId())</b>
+<b class="nc">&nbsp;                        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Field with ID &quot; + fieldReq.getId() + &quot; not found&quot;));</b>
+&nbsp;
+<b class="nc">&nbsp;                String oldName = existing.getFieldName();</b>
+<b class="nc">&nbsp;                String newName = fieldReq.getName();</b>
+&nbsp;
+<b class="nc">&nbsp;                if (!isDisplayOnly &amp;&amp; form.getStatus() == PUBLISHED</b>
+<b class="nc">&nbsp;                        &amp;&amp; !oldName.equals(newName)) {</b>
+<b class="nc">&nbsp;                    schemaManager.renameColumn(form.getTableName(), oldName, newName);</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                applyFieldUpdates(existing, fieldReq);</b>
+<b class="nc">&nbsp;                fieldRepository.save(existing);</b>
+&nbsp;
+&nbsp;            } else {
+<b class="nc">&nbsp;                FormField newField = buildFormField(fieldReq, form);</b>
+<b class="nc">&nbsp;                fieldRepository.save(newField);</b>
+&nbsp;
+&nbsp;                // Only add real data fields to the DB table schema
+<b class="nc">&nbsp;                if (!isDisplayOnly &amp;&amp; form.getStatus() == PUBLISHED) {</b>
+<b class="nc">&nbsp;                    schemaManager.addColumn(form.getTableName(), newField);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        formRepository.save(form);</b>
+<b class="nc">&nbsp;        return &quot;Form updated successfully&quot;;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private void applyFieldUpdates(FormField field, UpdateFieldRequest req) {
+<b class="nc">&nbsp;        boolean isDisplayOnly = isDisplayOnly(req.getType());</b>
+&nbsp;        // Display-only fields don&#39;t need column-name validation since they&#39;re never DB columns
+<b class="nc">&nbsp;        if (!isDisplayOnly) {</b>
+<b class="nc">&nbsp;            schemaManager.validateColumnName(req.getName());</b>
+&nbsp;        }
+<b class="nc">&nbsp;        field.setFieldName(req.getName());</b>
+<b class="nc">&nbsp;        field.setFieldType(req.getType());</b>
+<b class="nc">&nbsp;        if (!isDisplayOnly) {</b>
+<b class="nc">&nbsp;            field.setRequired(req.getRequired());</b>
+<b class="nc">&nbsp;            field.setMinLength(req.getMinLength());</b>
+<b class="nc">&nbsp;            field.setMaxLength(req.getMaxLength());</b>
+<b class="nc">&nbsp;            field.setMin(req.getMin());</b>
+<b class="nc">&nbsp;            field.setMax(req.getMax());</b>
+<b class="nc">&nbsp;            field.setPattern(req.getPattern());</b>
+<b class="nc">&nbsp;            field.setDefaultValue(req.getDefaultValue());</b>
+<b class="nc">&nbsp;            field.setBeforeDate(req.getBeforeDate() != null</b>
+<b class="nc">&nbsp;                    ? LocalDate.parse(req.getBeforeDate()) : null);</b>
+<b class="nc">&nbsp;            field.setAfterDate(req.getAfterDate() != null</b>
+<b class="nc">&nbsp;                    ? LocalDate.parse(req.getAfterDate()) : null);</b>
+<b class="nc">&nbsp;            field.setOptions(req.getOptions());</b>
+<b class="nc">&nbsp;            field.setSourceTable(req.getSourceTable());</b>
+<b class="nc">&nbsp;            field.setSourceColumn(req.getSourceColumn());</b>
+&nbsp;        } else {
+&nbsp;            // Persist label text for display-only elements (heading, paragraph, etc.)
+<b class="nc">&nbsp;            field.setDefaultValue(req.getDefaultValue());</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private FormField buildFormField(UpdateFieldRequest req, Form form) {
+<b class="nc">&nbsp;        FormField f = new FormField();</b>
+<b class="nc">&nbsp;        applyFieldUpdates(f, req);</b>
+<b class="nc">&nbsp;        f.setForm(form);</b>
+<b class="nc">&nbsp;        return f;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public String getFormRules(Long formId) {
+<b class="nc">&nbsp;        Form form = getFormForAdmin(formId);</b>
+<b class="nc">&nbsp;        return form.getRules();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public String saveFormRules(Long formId, List&lt;FormRuleDTO&gt; rules) {
+<b class="nc">&nbsp;        Form form = getFormForAdmin(formId);</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            form.setRules(objectMapper.writeValueAsString(rules));</b>
+<b class="nc">&nbsp;            formRepository.save(form);</b>
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            throw new ValidationException(&quot;Failed to save rules: &quot; + e.getMessage());</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return &quot;Rules saved successfully&quot;;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

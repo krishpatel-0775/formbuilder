@@ -1,0 +1,374 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > RuleEngineService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.service</a>
+</div>
+
+<h1>Coverage Summary for Class: RuleEngineService (com.example.formBuilder.service)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">RuleEngineService</td>
+<td class="coverageStat">
+  <span class="percent">
+    55.6%
+  </span>
+  <span class="absValue">
+    (5/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    4.5%
+  </span>
+  <span class="absValue">
+    (4/89)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    13.6%
+  </span>
+  <span class="absValue">
+    (11/81)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">RuleEngineService$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">RuleEngineService$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    45.5%
+  </span>
+  <span class="absValue">
+    (5/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    4.5%
+  </span>
+  <span class="absValue">
+    (4/89)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    13.1%
+  </span>
+  <span class="absValue">
+    (11/84)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.service;
+&nbsp;
+&nbsp;import com.example.formBuilder.dto.FormRuleDTO;
+&nbsp;import com.example.formBuilder.dto.RuleActionDTO;
+&nbsp;import com.example.formBuilder.dto.RuleConditionDTO;
+&nbsp;import com.example.formBuilder.entity.Form;
+&nbsp;import com.example.formBuilder.enums.ActionType;
+&nbsp;import com.example.formBuilder.exception.ValidationException;
+&nbsp;import com.fasterxml.jackson.core.type.TypeReference;
+&nbsp;import com.fasterxml.jackson.databind.ObjectMapper;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import lombok.extern.slf4j.Slf4j;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;
+&nbsp;import java.util.*;
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;@Slf4j</b>
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class RuleEngineService {
+&nbsp;
+&nbsp;    private final ObjectMapper objectMapper;
+&nbsp;
+&nbsp;    public void validateSubmission(Form form, Map&lt;String, Object&gt; values) {
+<b class="fc">&nbsp;        List&lt;FormRuleDTO&gt; rules = parseRules(form.getRules());</b>
+<b class="pc">&nbsp;        if (rules.isEmpty()) {</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        List&lt;String&gt; requireErrors = new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="nc">&nbsp;        for (FormRuleDTO rule : rules) {</b>
+<b class="nc">&nbsp;            if (rule.getCondition() == null || rule.getAction() == null) {</b>
+<b class="nc">&nbsp;                log.warn(&quot;Skipping malformed rule (null condition or action)&quot;);</b>
+&nbsp;                continue;
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            boolean conditionMet = evaluateCondition(rule.getCondition(), values);</b>
+&nbsp;
+<b class="nc">&nbsp;            if (!conditionMet) {</b>
+&nbsp;                continue;
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            RuleActionDTO action = rule.getAction();</b>
+&nbsp;
+<b class="nc">&nbsp;            switch (action.getType()) {</b>
+&nbsp;                case VALIDATION_ERROR -&gt; {
+<b class="nc">&nbsp;                    String message = (action.getMessage() != null &amp;&amp; !action.getMessage().isBlank())</b>
+<b class="nc">&nbsp;                            ? action.getMessage()</b>
+<b class="nc">&nbsp;                            : &quot;Form submission rejected by a validation rule.&quot;;</b>
+<b class="nc">&nbsp;                    throw new ValidationException(message);</b>
+&nbsp;                }
+&nbsp;                case REQUIRE -&gt; {
+<b class="nc">&nbsp;                    String targetField = action.getTargetField();</b>
+<b class="nc">&nbsp;                    if (targetField == null || targetField.isBlank()) {</b>
+<b class="nc">&nbsp;                        log.warn(&quot;REQUIRE action has no targetField — skipping&quot;);</b>
+&nbsp;                        break;
+&nbsp;                    }
+<b class="nc">&nbsp;                    Object fieldValue = values.get(targetField);</b>
+<b class="nc">&nbsp;                    if (fieldValue == null || fieldValue.toString().trim().isEmpty()) {</b>
+<b class="nc">&nbsp;                        requireErrors.add(targetField + &quot; is required based on the form rules&quot;);</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                // SHOW and HIDE are visibility-only; they do not affect submission validation
+<b class="nc">&nbsp;                default -&gt; log.debug(&quot;Rule action {} handled during visibility evaluation&quot;, action.getType());</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (!requireErrors.isEmpty()) {</b>
+<b class="nc">&nbsp;            throw new ValidationException(String.join(&quot;, &quot;, requireErrors));</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    public Map&lt;String, String&gt; evaluateVisibility(Form form, Map&lt;String, Object&gt; values) {
+<b class="fc">&nbsp;        List&lt;FormRuleDTO&gt; rules = parseRules(form.getRules());</b>
+<b class="fc">&nbsp;        Map&lt;String, String&gt; visibility = new LinkedHashMap&lt;&gt;();</b>
+&nbsp;
+<b class="pc">&nbsp;        for (FormRuleDTO rule : rules) {</b>
+<b class="nc">&nbsp;            if (rule.getCondition() == null || rule.getAction() == null) {</b>
+&nbsp;                continue;
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            RuleActionDTO action = rule.getAction();</b>
+<b class="nc">&nbsp;            if (action.getType() != ActionType.SHOW &amp;&amp; action.getType() != ActionType.HIDE) {</b>
+&nbsp;                continue;
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            String targetField = action.getTargetField();</b>
+<b class="nc">&nbsp;            if (targetField == null || targetField.isBlank()) {</b>
+&nbsp;                continue;
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            boolean conditionMet = evaluateCondition(rule.getCondition(), values);</b>
+<b class="nc">&nbsp;            if (conditionMet) {</b>
+<b class="nc">&nbsp;                visibility.put(targetField, action.getType().name());</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return visibility;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    public void executePostSubmissionWorkflows(Form form, Map&lt;String, Object&gt; values) {
+<b class="fc">&nbsp;        List&lt;FormRuleDTO&gt; rules = parseRules(form.getRules());</b>
+<b class="pc">&nbsp;        if (rules.isEmpty()) {</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        for (FormRuleDTO rule : rules) {</b>
+<b class="nc">&nbsp;            if (rule.getCondition() == null || rule.getAction() == null) {</b>
+&nbsp;                continue;
+&nbsp;            }
+<b class="nc">&nbsp;            boolean conditionMet = evaluateCondition(rule.getCondition(), values);</b>
+<b class="nc">&nbsp;            if (conditionMet) {</b>
+<b class="nc">&nbsp;                log.info(&quot;[PostSubmission] Rule triggered — action: {}, targetField: {}&quot;,</b>
+<b class="nc">&nbsp;                        rule.getAction().getType(), rule.getAction().getTargetField());</b>
+&nbsp;                // Future: emit events, send emails, trigger webhooks, etc.
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    public boolean evaluateCondition(RuleConditionDTO condition, Map&lt;String, Object&gt; values) {
+<b class="nc">&nbsp;        if (condition == null) {</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // ── Multi-condition block (AND / OR) ──
+<b class="nc">&nbsp;        if (condition.getConditions() != null &amp;&amp; !condition.getConditions().isEmpty()) {</b>
+<b class="nc">&nbsp;            return evaluateCompoundCondition(condition, values);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // ── Leaf-level condition ──
+<b class="nc">&nbsp;        return evaluateLeafCondition(condition, values);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private boolean evaluateCompoundCondition(RuleConditionDTO condition, Map&lt;String, Object&gt; values) {
+<b class="nc">&nbsp;        String logical = condition.getLogicalOperator();</b>
+<b class="nc">&nbsp;        List&lt;RuleConditionDTO&gt; nested = condition.getConditions();</b>
+&nbsp;
+<b class="nc">&nbsp;        if (&quot;OR&quot;.equalsIgnoreCase(logical)) {</b>
+<b class="nc">&nbsp;            return nested.stream().anyMatch(c -&gt; evaluateCondition(c, values));</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // Default: AND
+<b class="nc">&nbsp;        return nested.stream().allMatch(c -&gt; evaluateCondition(c, values));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private boolean evaluateLeafCondition(RuleConditionDTO condition, Map&lt;String, Object&gt; values) {
+<b class="nc">&nbsp;        if (condition.getField() == null || condition.getOperator() == null) {</b>
+<b class="nc">&nbsp;            log.warn(&quot;Leaf condition is missing field or operator — skipping&quot;);</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Object rawValue = values.get(condition.getField());</b>
+<b class="nc">&nbsp;        Object ruleValue = condition.getValue();</b>
+&nbsp;
+&nbsp;        // Null-safety: if the field doesn&#39;t exist, condition cannot be satisfied
+<b class="nc">&nbsp;        if (rawValue == null || rawValue.toString().trim().isEmpty()) {</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        String actualStr = rawValue.toString().trim();</b>
+<b class="nc">&nbsp;        String expectedStr = (ruleValue != null) ? ruleValue.toString().trim() : &quot;&quot;;</b>
+&nbsp;
+<b class="nc">&nbsp;        return switch (condition.getOperator()) {</b>
+<b class="nc">&nbsp;            case EQUALS -&gt; actualStr.equalsIgnoreCase(expectedStr);</b>
+<b class="nc">&nbsp;            case NOT_EQUALS -&gt; !actualStr.equalsIgnoreCase(expectedStr);</b>
+<b class="nc">&nbsp;            case CONTAINS -&gt; actualStr.toLowerCase().contains(expectedStr.toLowerCase());</b>
+&nbsp;            case GREATER_THAN -&gt; {
+&nbsp;                // Skip numeric comparison if either side is blank/non-numeric
+<b class="nc">&nbsp;                if (expectedStr.isBlank()) yield false;</b>
+<b class="nc">&nbsp;                yield compareNumeric(actualStr, expectedStr) &gt; 0;</b>
+&nbsp;            }
+&nbsp;            case LESS_THAN -&gt; {
+<b class="nc">&nbsp;                if (expectedStr.isBlank()) yield false;</b>
+<b class="nc">&nbsp;                yield compareNumeric(actualStr, expectedStr) &lt; 0;</b>
+&nbsp;            }
+&nbsp;        };
+&nbsp;    }
+&nbsp;
+&nbsp;    private List&lt;FormRuleDTO&gt; parseRules(String rulesJson) {
+<b class="pc">&nbsp;        if (rulesJson == null || rulesJson.isBlank()) {</b>
+<b class="fc">&nbsp;            return Collections.emptyList();</b>
+&nbsp;        }
+&nbsp;        try {
+<b class="nc">&nbsp;            return objectMapper.readValue(rulesJson, new TypeReference&lt;List&lt;FormRuleDTO&gt;&gt;() {});</b>
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            log.error(&quot;Failed to parse form rules JSON: {}&quot;, e.getMessage());</b>
+<b class="nc">&nbsp;            return Collections.emptyList();</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private int compareNumeric(String actual, String expected) {
+&nbsp;        try {
+<b class="nc">&nbsp;            double a = Double.parseDouble(actual);</b>
+<b class="nc">&nbsp;            double e = Double.parseDouble(expected);</b>
+<b class="nc">&nbsp;            return Double.compare(a, e);</b>
+&nbsp;        } catch (NumberFormatException ex) {
+&nbsp;            // Non-numeric values cannot satisfy a numeric comparison — treat as unmet condition
+<b class="nc">&nbsp;            log.warn(&quot;GREATER_THAN / LESS_THAN: non-numeric value encountered. actual=&#39;{}&#39; expected=&#39;{}&#39; — condition skipped&quot;, actual, expected);</b>
+<b class="nc">&nbsp;            return Integer.MIN_VALUE; // Will make &gt; 0 and &lt; 0 both false</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

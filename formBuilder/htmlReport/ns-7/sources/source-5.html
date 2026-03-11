@@ -1,0 +1,395 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > SubmissionService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.service</a>
+</div>
+
+<h1>Coverage Summary for Class: SubmissionService (com.example.formBuilder.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">SubmissionService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.2%
+  </span>
+  <span class="absValue">
+    (38/84)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.8%
+  </span>
+  <span class="absValue">
+    (71/113)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.service;
+&nbsp;
+&nbsp;import com.example.formBuilder.constants.AppConstants;
+&nbsp;import com.example.formBuilder.dto.SubmissionRequest;
+&nbsp;import com.example.formBuilder.entity.Form;
+&nbsp;import com.example.formBuilder.entity.FormField;
+&nbsp;import com.example.formBuilder.exception.ResourceNotFoundException;
+&nbsp;import com.example.formBuilder.exception.ValidationException;
+&nbsp;import com.example.formBuilder.repository.FormRepository;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import org.springframework.jdbc.core.JdbcTemplate;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Map;
+&nbsp;import java.util.stream.Collectors;
+&nbsp;
+&nbsp;
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class SubmissionService {
+&nbsp;
+&nbsp;    private final FormRepository formRepository;
+&nbsp;    private final JdbcTemplate jdbcTemplate;
+&nbsp;    private final RuleEngineService ruleEngineService;
+&nbsp;
+&nbsp;    /** Returns true for types that are purely visual and have no DB column. */
+&nbsp;    private static boolean isDisplayOnly(String type) {
+<b class="pc">&nbsp;        return type != null &amp;&amp; (type.equals(&quot;page_break&quot;) ||</b>
+<b class="fc">&nbsp;                type.equals(&quot;heading&quot;) || type.equals(&quot;paragraph&quot;) || type.equals(&quot;divider&quot;));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Soft-deletes a specific response by marking its &#39;is_deleted&#39; flag to true.
+&nbsp;     */
+&nbsp;    public String deleteResponse(Long formId, Long responseId) {
+<b class="fc">&nbsp;        String tableName = &quot;form_&quot; + formId;</b>
+&nbsp;
+<b class="fc">&nbsp;        String sql = &quot;UPDATE &quot; + tableName + &quot; SET is_deleted = true WHERE id = ?&quot;;</b>
+&nbsp;
+<b class="fc">&nbsp;        jdbcTemplate.update(sql, responseId);</b>
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;        return &quot;response deleted&quot;;</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Bulk soft-deletes responses by marking their &#39;is_deleted&#39; flag to true.
+&nbsp;     */
+&nbsp;    public String deleteResponses(Long formId, List&lt;Long&gt; responseIds) {
+<b class="nc">&nbsp;        if (responseIds == null || responseIds.isEmpty()) {</b>
+<b class="nc">&nbsp;            return &quot;No responses selected&quot;;</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        String tableName = &quot;form_&quot; + formId;</b>
+<b class="nc">&nbsp;        String sql = &quot;UPDATE &quot; + tableName + &quot; SET is_deleted = true WHERE id IN (&quot; +</b>
+<b class="nc">&nbsp;                responseIds.stream().map(id -&gt; &quot;?&quot;).collect(Collectors.joining(&quot;,&quot;)) + &quot;)&quot;;</b>
+&nbsp;
+<b class="nc">&nbsp;        jdbcTemplate.update(sql, responseIds.toArray());</b>
+&nbsp;
+<b class="nc">&nbsp;        return responseIds.size() + &quot; responses deleted&quot;;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Processes and stores a new form submission into the form&#39;s generated database table.
+&nbsp;     */
+&nbsp;    public String submitForm(SubmissionRequest request) {
+&nbsp;
+<b class="fc">&nbsp;        Form form = formRepository.findById(request.getFormId())</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Form with ID &quot; + request.getFormId() + &quot; not found&quot;));</b>
+&nbsp;
+<b class="fc">&nbsp;        String tableName = form.getTableName();</b>
+&nbsp;
+<b class="fc">&nbsp;        Map&lt;String, Object&gt; values = request.getValues();</b>
+&nbsp;
+&nbsp;        // STEP 1 — Fetch metadata fields
+<b class="fc">&nbsp;        List&lt;FormField&gt; formFields = form.getFields();</b>
+&nbsp;
+<b class="fc">&nbsp;        Map&lt;String, FormField&gt; fieldMap =</b>
+<b class="fc">&nbsp;                formFields.stream()</b>
+<b class="fc">&nbsp;                        .collect(Collectors.toMap(</b>
+&nbsp;                                FormField::getFieldName,
+<b class="fc">&nbsp;                                f -&gt; f</b>
+&nbsp;                        ));
+&nbsp;
+<b class="fc">&nbsp;        List&lt;String&gt; validationErrors = new ArrayList&lt;&gt;();</b>
+&nbsp;
+&nbsp;        // STEP 2 — Validate unknown fields
+<b class="fc">&nbsp;        for (String key : values.keySet()) {</b>
+<b class="pc">&nbsp;            if (!fieldMap.containsKey(key)) {</b>
+<b class="nc">&nbsp;                validationErrors.add(&quot;Invalid field: &quot; + key);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // STEP 3 — Validate constraints
+<b class="fc">&nbsp;        for (FormField field : formFields) {</b>
+&nbsp;            // Display-only fields (heading, paragraph, divider, page_break) have no values
+<b class="fc">&nbsp;            if (isDisplayOnly(field.getFieldType())) continue;</b>
+&nbsp;
+<b class="fc">&nbsp;            Object value = values.get(field.getFieldName());</b>
+&nbsp;
+&nbsp;            // Required validation
+<b class="fc">&nbsp;            if (Boolean.TRUE.equals(field.getRequired())) {</b>
+<b class="pc">&nbsp;                if (value == null || value.toString().trim().isEmpty()) {</b>
+<b class="nc">&nbsp;                    validationErrors.add(field.getFieldName() + &quot; is required&quot;);</b>
+&nbsp;                    continue; // Skip further validations if null
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            if (value != null &amp;&amp; !value.toString().trim().isEmpty()) {</b>
+<b class="fc">&nbsp;                validateValue(field, value, validationErrors);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (!validationErrors.isEmpty()) {</b>
+<b class="nc">&nbsp;            throw new ValidationException(String.join(&quot;, &quot;, validationErrors));</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // STEP 4 — Evaluate form rules (VALIDATION_ERROR + REQUIRE enforcement)
+<b class="fc">&nbsp;        ruleEngineService.validateSubmission(form, values);</b>
+&nbsp;
+&nbsp;        // STEP 4 — Safe column building
+<b class="fc">&nbsp;        String columns = formFields.stream()</b>
+<b class="fc">&nbsp;                .filter(f -&gt; !isDisplayOnly(f.getFieldType()))</b>
+<b class="fc">&nbsp;                .filter(f -&gt; values.containsKey(f.getFieldName()))</b>
+<b class="fc">&nbsp;                .map(FormField::getFieldName)</b>
+<b class="fc">&nbsp;                .collect(Collectors.joining(&quot;,&quot;));</b>
+&nbsp;
+<b class="fc">&nbsp;        String placeholders = formFields.stream()</b>
+<b class="fc">&nbsp;                .filter(f -&gt; !isDisplayOnly(f.getFieldType()))</b>
+<b class="fc">&nbsp;                .filter(f -&gt; values.containsKey(f.getFieldName()))</b>
+<b class="fc">&nbsp;                .map(f -&gt; &quot;?&quot;)</b>
+<b class="fc">&nbsp;                .collect(Collectors.joining(&quot;,&quot;));</b>
+&nbsp;
+<b class="fc">&nbsp;        Object[] safeValues = formFields.stream()</b>
+<b class="fc">&nbsp;                .filter(f -&gt; !isDisplayOnly(f.getFieldType()))</b>
+<b class="fc">&nbsp;                .filter(f -&gt; values.containsKey(f.getFieldName()))</b>
+<b class="fc">&nbsp;                .map(f -&gt; {</b>
+<b class="fc">&nbsp;                    Object value = values.get(f.getFieldName());</b>
+&nbsp;
+&nbsp;                    // Treat null or blank string as SQL NULL — safe for optional fields
+<b class="pc">&nbsp;                    if (value == null || value.toString().trim().isEmpty()) return null;</b>
+&nbsp;
+<b class="fc">&nbsp;                    String strVal = value.toString().trim();</b>
+<b class="pc">&nbsp;                    switch (f.getFieldType()) {</b>
+&nbsp;                        case &quot;number&quot;:
+&nbsp;                            try {
+<b class="fc">&nbsp;                                return Integer.parseInt(strVal);</b>
+&nbsp;                            } catch (NumberFormatException e) {
+<b class="nc">&nbsp;                                try { return Double.parseDouble(strVal); }</b>
+<b class="nc">&nbsp;                                catch (NumberFormatException e2) { return null; }</b>
+&nbsp;                            }
+&nbsp;                        case &quot;date&quot;:
+<b class="fc">&nbsp;                            try { return java.sql.Date.valueOf(strVal); }</b>
+<b class="nc">&nbsp;                            catch (Exception e) { return null; }</b>
+&nbsp;                        case &quot;time&quot;:
+&nbsp;                            try {
+<b class="nc">&nbsp;                                if (strVal.length() == 5) strVal = strVal + &quot;:00&quot;;</b>
+<b class="nc">&nbsp;                                return java.sql.Time.valueOf(strVal);</b>
+<b class="nc">&nbsp;                            } catch (Exception e) { return null; }</b>
+&nbsp;                        default:
+<b class="fc">&nbsp;                            return strVal;</b>
+&nbsp;                    }
+&nbsp;                })
+<b class="fc">&nbsp;                .toArray();</b>
+&nbsp;
+<b class="fc">&nbsp;        String sql = &quot;INSERT INTO &quot; + tableName +</b>
+&nbsp;                &quot; (&quot; + columns + &quot;) VALUES (&quot; + placeholders + &quot;)&quot;;
+&nbsp;
+<b class="fc">&nbsp;        jdbcTemplate.update(sql, safeValues);</b>
+&nbsp;
+&nbsp;        // STEP 6 — Trigger post-submission workflows (notifications, hooks, etc.)
+<b class="fc">&nbsp;        ruleEngineService.executePostSubmissionWorkflows(form, values);</b>
+&nbsp;
+<b class="fc">&nbsp;        return &quot;Form Submitted Successfully&quot;;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Validates a submitted value against the constraints defined in the form field metadata.
+&nbsp;     */
+&nbsp;    private void validateValue(FormField field, Object value, List&lt;String&gt; errors) {
+&nbsp;
+<b class="fc">&nbsp;        String stringValue = value.toString();</b>
+&nbsp;
+<b class="pc">&nbsp;        switch (field.getFieldType()) {</b>
+&nbsp;
+&nbsp;            case &quot;text&quot;, &quot;textarea&quot;, &quot;email&quot; -&gt; {
+&nbsp;
+<b class="pc">&nbsp;                if (field.getMinLength() != null &amp;&amp;</b>
+<b class="nc">&nbsp;                        stringValue.length() &lt; field.getMinLength()) {</b>
+<b class="nc">&nbsp;                    errors.add(field.getFieldName() + &quot; must be at least &quot;</b>
+<b class="nc">&nbsp;                                    + field.getMinLength() + &quot; characters&quot;);</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                if (field.getMaxLength() != null &amp;&amp;</b>
+<b class="nc">&nbsp;                        stringValue.length() &gt; field.getMaxLength()) {</b>
+<b class="nc">&nbsp;                    errors.add(field.getFieldName() + &quot; must be at most &quot;</b>
+<b class="nc">&nbsp;                                    + field.getMaxLength() + &quot; characters&quot;);</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                if (field.getPattern() != null &amp;&amp;</b>
+<b class="nc">&nbsp;                        !stringValue.matches(field.getPattern())) {</b>
+<b class="nc">&nbsp;                    errors.add(field.getFieldName() + &quot; format invalid&quot;);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            case &quot;date&quot; -&gt; {
+&nbsp;
+<b class="fc">&nbsp;                java.time.LocalDate inputDate = null;</b>
+&nbsp;
+&nbsp;                try {
+<b class="fc">&nbsp;                    inputDate = java.time.LocalDate.parse(stringValue);</b>
+&nbsp;                } catch (Exception e) {
+<b class="nc">&nbsp;                    errors.add(field.getFieldName() + &quot; must be a valid date (yyyy-MM-dd)&quot;);</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                if (inputDate != null) {</b>
+&nbsp;                    // AFTER validation (minimum date)
+<b class="pc">&nbsp;                    if (field.getAfterDate() != null &amp;&amp;</b>
+<b class="pc">&nbsp;                            inputDate.isBefore(field.getAfterDate())) {</b>
+<b class="nc">&nbsp;                        errors.add(field.getFieldName() + &quot; must be after &quot;</b>
+<b class="nc">&nbsp;                                        + field.getAfterDate());</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    // BEFORE validation (maximum date)
+<b class="pc">&nbsp;                    if (field.getBeforeDate() != null &amp;&amp;</b>
+<b class="pc">&nbsp;                            inputDate.isAfter(field.getBeforeDate())) {</b>
+<b class="nc">&nbsp;                        errors.add(field.getFieldName() + &quot; must be before &quot;</b>
+<b class="nc">&nbsp;                                        + field.getBeforeDate());</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            case &quot;url&quot; -&gt; {
+<b class="nc">&nbsp;                if (!stringValue.matches(AppConstants.URL_REGEX)) {</b>
+<b class="nc">&nbsp;                    errors.add(field.getFieldName() + &quot; must be a valid URL (starting with http:// or https://)&quot;);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            case &quot;phone&quot; -&gt; {
+&nbsp;                // strips spaces, dashes, brackets, plus sign then checks 7–15 digits
+<b class="nc">&nbsp;                String digitsOnly = stringValue.replaceAll(&quot;[\\s\\-().+]&quot;, &quot;&quot;);</b>
+<b class="nc">&nbsp;                if (!digitsOnly.matches(AppConstants.PHONE_REGEX)) {</b>
+<b class="nc">&nbsp;                    errors.add(field.getFieldName() + &quot; must be a valid phone number&quot;);</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            case &quot;number&quot; -&gt; {
+&nbsp;
+<b class="fc">&nbsp;                int number = 0;</b>
+<b class="fc">&nbsp;                boolean isNumber = true;</b>
+&nbsp;
+&nbsp;                try {
+<b class="fc">&nbsp;                    number = Integer.parseInt(stringValue);</b>
+&nbsp;                } catch (Exception e) {
+<b class="nc">&nbsp;                    errors.add(field.getFieldName() + &quot; must be a number&quot;);</b>
+<b class="nc">&nbsp;                    isNumber = false;</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                if (isNumber) {</b>
+<b class="pc">&nbsp;                    if (field.getMin() != null &amp;&amp;</b>
+<b class="nc">&nbsp;                            number &lt; field.getMin()) {</b>
+<b class="nc">&nbsp;                        errors.add(field.getFieldName() + &quot; must be &gt;= &quot;</b>
+<b class="nc">&nbsp;                                        + field.getMin());</b>
+&nbsp;                    }
+&nbsp;
+<b class="pc">&nbsp;                    if (field.getMax() != null &amp;&amp;</b>
+<b class="nc">&nbsp;                            number &gt; field.getMax()) {</b>
+<b class="nc">&nbsp;                        errors.add(field.getFieldName() + &quot; must be &lt;= &quot;</b>
+<b class="nc">&nbsp;                                        + field.getMax());</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

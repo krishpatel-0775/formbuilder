@@ -12,7 +12,8 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Type, Hash, Mail, Calendar, Trash2, GripVertical, X, AlertCircle, ShieldCheck,
   CheckCircle2, ListPlus, ArrowRight, AlignLeft, CircleDot, CheckSquare,
-  Save, ArrowLeft, Loader2, Phone, Clock, Link, SlidersHorizontal, GitBranch, AlertTriangle, ChevronRight
+  Save, ArrowLeft, Loader2, Phone, Clock, Link, SlidersHorizontal, GitBranch, AlertTriangle, ChevronRight,
+  Heading, Pilcrow, Minus
 } from "lucide-react";
 import NextLink from "next/link";
 import RuleBuilder from "../../../../components/RuleBuilder";
@@ -97,6 +98,10 @@ function DefaultValuePanel({ activeField, updateField }) {
   );
 }
 
+// ─── Display-only types helper ───────────────────────────────────────────────
+const DISPLAY_ONLY_TYPES = new Set(["page_break", "heading", "paragraph", "divider"]);
+const isDisplayOnly = (type) => DISPLAY_ONLY_TYPES.has(type);
+
 // ─── Sortable Field Item ───────────────────────────────────────────────────────
 function SortableFieldItem({ field, idx, isActive, setActiveFieldId, removeField, updateField, fieldIcons }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
@@ -120,6 +125,82 @@ function SortableFieldItem({ field, idx, isActive, setActiveFieldId, removeField
             <ChevronRight size={14} className="text-indigo-500" />
           </div>
           <div className="flex-1 border-t-2 border-dashed border-indigo-300" />
+        </div>
+        <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+          className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 ${isDragging ? "hidden" : ""}`}>
+          <Trash2 size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Heading static element ────────────────────────────────────────────────
+  if (field.type === "heading") {
+    return (
+      <div ref={setNodeRef} style={style} className="relative flex items-start group">
+        <div {...attributes} {...listeners}
+          className="absolute left-0 z-10 cursor-grab active:cursor-grabbing p-1 rounded-lg hover:bg-slate-100 transition-colors mt-3">
+          <GripVertical size={14} className="text-slate-300 group-hover:text-slate-500" />
+        </div>
+        <div className="flex-1 ml-8 px-6 py-4 bg-white rounded-2xl border border-amber-200 shadow-sm">
+          <input
+            value={field.label}
+            onChange={(e) => updateField(field.id, "label", e.target.value)}
+            placeholder="Section heading text..."
+            className="w-full text-xl font-black text-slate-900 bg-transparent outline-none placeholder:text-slate-300"
+          />
+          <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 mt-1 block">Heading</span>
+          {field._dbId && <span className="text-[10px] font-bold text-violet-400 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100 mt-1 inline-block">Existing</span>}
+          {!field._dbId && <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 mt-1 inline-block">New</span>}
+        </div>
+        <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+          className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 mt-3 ${isDragging ? "hidden" : ""}`}>
+          <Trash2 size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Paragraph static element ──────────────────────────────────────────────
+  if (field.type === "paragraph") {
+    return (
+      <div ref={setNodeRef} style={style} className="relative flex items-start group">
+        <div {...attributes} {...listeners}
+          className="absolute left-0 z-10 cursor-grab active:cursor-grabbing p-1 rounded-lg hover:bg-slate-100 transition-colors mt-3">
+          <GripVertical size={14} className="text-slate-300 group-hover:text-slate-500" />
+        </div>
+        <div className="flex-1 ml-8 px-6 py-4 bg-white rounded-2xl border border-sky-200 shadow-sm">
+          <textarea
+            rows={2}
+            value={field.label}
+            onChange={(e) => updateField(field.id, "label", e.target.value)}
+            placeholder="Paragraph / description text..."
+            className="w-full text-sm text-slate-600 bg-transparent outline-none resize-none leading-relaxed placeholder:text-slate-300"
+          />
+          <span className="text-[10px] font-black uppercase tracking-widest text-sky-500 mt-1 block">Paragraph</span>
+          {field._dbId && <span className="text-[10px] font-bold text-violet-400 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100 mt-1 inline-block">Existing</span>}
+          {!field._dbId && <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 mt-1 inline-block">New</span>}
+        </div>
+        <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+          className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 mt-3 ${isDragging ? "hidden" : ""}`}>
+          <Trash2 size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Divider static element ────────────────────────────────────────────────
+  if (field.type === "divider") {
+    return (
+      <div ref={setNodeRef} style={style} className="relative flex items-center group">
+        <div {...attributes} {...listeners}
+          className="absolute left-0 z-10 cursor-grab active:cursor-grabbing px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors">
+          <GripVertical size={14} className="text-slate-300 group-hover:text-slate-500" />
+        </div>
+        <div className="flex-1 ml-8 flex items-center gap-3 py-3">
+          <div className="flex-1 border-t border-slate-300" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex-shrink-0">― Divider ―</span>
+          <div className="flex-1 border-t border-slate-300" />
         </div>
         <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
           className={`opacity-0 group-hover:opacity-100 ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 flex-shrink-0 ${isDragging ? "hidden" : ""}`}>
@@ -185,7 +266,16 @@ export default function EditFormPage() {
     time: <Clock size={18} />, url: <Link size={18} />, radio: <CircleDot size={18} />,
     checkbox: <CheckSquare size={18} />, select: <ListPlus size={18} />,
     page_break: <ChevronRight size={18} />,
+    heading: <Heading size={18} />,
+    paragraph: <Pilcrow size={18} />,
+    divider: <Minus size={18} />,
   };
+
+  const staticElementTypes = [
+    { type: "heading", label: "Heading", desc: "Section title", color: "amber", icon: <Heading size={16} /> },
+    { type: "paragraph", label: "Paragraph", desc: "Description text", color: "sky", icon: <Pilcrow size={16} /> },
+    { type: "divider", label: "Divider", desc: "Visual separator", color: "slate", icon: <Minus size={16} /> },
+  ];
 
   const regularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select"];
 
@@ -199,22 +289,32 @@ export default function EditFormPage() {
         const data = res.data;
         setFormName(data.formName || "");
         setFormStatus(data.status || "DRAFT");
-        const noOpts = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "page_break"];
-        const loadedFields = (data.fields || []).map((f) => ({
-          id: f.id * 1000 + Math.floor(Math.random() * 100),
-          _dbId: f.id,
-          label: f.fieldName || "",
-          type: f.fieldType || "text",
-          required: f.required ?? false,
-          defaultValue: f.defaultValue ?? "",
-          minLength: f.minLength ?? "", maxLength: f.maxLength ?? "",
-          min: f.min ?? "", max: f.max ?? "",
-          pattern: f.pattern ?? "",
-          beforeDate: f.beforeDate ?? "", afterDate: f.afterDate ?? "",
-          afterTime: f.afterTime ?? "", beforeTime: f.beforeTime ?? "",
-          options: f.options?.length > 0 ? f.options : noOpts.includes(f.fieldType) ? [] : ["Option 1", "Option 2"],
-          sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
-        }));
+        const noOpts = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "page_break", "heading", "paragraph", "divider"];
+        const staticFieldTypes = new Set(["heading", "paragraph", "divider"]);
+        const loadedFields = (data.fields || []).map((f) => {
+          const isStatic = staticFieldTypes.has(f.fieldType);
+          // _orderKey is a stable unique ID used for field ordering in rules.
+          // Static fields use their DB fieldName (e.g. "heading_0", "divider_2") as the key.
+          // Regular fields use their column-name slug (same as the DB fieldName).
+          const orderKey = f.fieldName || "";
+          return {
+            id: f.id * 1000 + Math.floor(Math.random() * 100),
+            _dbId: f.id,
+            _orderKey: orderKey,
+            // For static fields: label holds the display text (stored in defaultValue in DB)
+            label: isStatic ? (f.defaultValue || f.fieldName || "") : (f.fieldName || ""),
+            type: f.fieldType || "text",
+            required: f.required ?? false,
+            defaultValue: isStatic ? "" : (f.defaultValue ?? ""),
+            minLength: f.minLength ?? "", maxLength: f.maxLength ?? "",
+            min: f.min ?? "", max: f.max ?? "",
+            pattern: f.pattern ?? "",
+            beforeDate: f.beforeDate ?? "", afterDate: f.afterDate ?? "",
+            afterTime: f.afterTime ?? "", beforeTime: f.beforeTime ?? "",
+            options: f.options?.length > 0 ? f.options : noOpts.includes(f.fieldType) ? [] : ["Option 1", "Option 2"],
+            sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
+          };
+        });
         let rulesArr = [];
         try {
           if (data.rules) {
@@ -222,11 +322,10 @@ export default function EditFormPage() {
             const orderRule = rulesArr.find(r => r.action?.targetField === "__FIELD_ORDER__");
             if (orderRule && orderRule.action?.message) {
               const orderArray = orderRule.action.message.split(",");
+              // Sort using _orderKey (stable DB fieldName) not the display label
               loadedFields.sort((a, b) => {
-                let aName = a.label ? a.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
-                let bName = b.label ? b.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
-                let aIdx = orderArray.indexOf(aName);
-                let bIdx = orderArray.indexOf(bName);
+                let aIdx = orderArray.indexOf(a._orderKey || "");
+                let bIdx = orderArray.indexOf(b._orderKey || "");
                 if (aIdx === -1) aIdx = 999;
                 if (bIdx === -1) bIdx = 999;
                 return aIdx - bIdx;
@@ -267,18 +366,23 @@ export default function EditFormPage() {
 
   const handleDragStart = (e, type) => e.dataTransfer.setData("fieldType", type);
 
+  const addStaticElement = (type) => {
+    const defaultLabel = type === "heading" ? "New Section" : type === "paragraph" ? "Add description here..." : "";
+    const newEl = {
+      id: Date.now(), _dbId: null,
+      label: type === "page_break" ? `Page ${fields.filter(f => f.type === "page_break").length + 2}` : defaultLabel,
+      type, required: false, defaultValue: "", options: [],
+    };
+    setFields([...fields, newEl]);
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     const type = e.dataTransfer.getData("fieldType");
     if (!type) return;
 
-    if (type === "page_break") {
-      const breakCount = fields.filter(f => f.type === "page_break").length + 1;
-      const newBreak = {
-        id: Date.now(), _dbId: null, label: `Page ${breakCount + 1}`, type: "page_break",
-        required: false, defaultValue: "", options: [],
-      };
-      setFields([...fields, newBreak]);
+    if (isDisplayOnly(type)) {
+      addStaticElement(type);
       return;
     }
 
@@ -347,14 +451,20 @@ export default function EditFormPage() {
 
   const saveForm = async () => {
     if (!formName.trim()) return alert("Please name your form.");
-    const realFields = fields.filter(f => f.type !== "page_break");
-    if (realFields.length === 0) return alert("Add at least one field.");
+    const realFields = fields.filter(f => !isDisplayOnly(f.type));
+    if (realFields.length === 0) return alert("Add at least one input field.");
     setIsSaving(true);
     try {
       const formattedFields = fields.map((field, idx) => {
-        if (field.type === "page_break") {
-          // Preserve existing DB id if this page_break was already saved
-          return { id: field._dbId ?? null, name: `page_break_${idx}`, type: "page_break" };
+        // Display-only types (heading, paragraph, divider, page_break)
+        if (isDisplayOnly(field.type)) {
+          return {
+            id: field._dbId ?? null,
+            name: `${field.type}_${idx}`,
+            type: field.type,
+            // Store the admin-typed label text in defaultValue so public form can render it
+            defaultValue: field.label || "",
+          };
         }
         if (!field.label) throw new Error("All fields must have a label.");
         let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required };
@@ -414,7 +524,17 @@ export default function EditFormPage() {
           return r;
         });
 
-        const currentOrderList = fields.map(f => f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "").filter(Boolean).join(",");
+        // Build the order list using CURRENT position for ALL static fields.
+        // The backend ALWAYS stores static field name as "${type}_${idx}" (current array index) on every save,
+        // so the order key must always reflect the current position — never the stale _orderKey.
+        // Regular fields use column-name slug (unchanged by position).
+        const currentOrderList = fields.map((f, idx) => {
+          if (isDisplayOnly(f.type)) {
+            // Always use current position key — matches what backend will store after this save
+            return `${f.type}_${idx}`;
+          }
+          return f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+        }).filter(Boolean).join(",");
         cleanRules.push({
           condition: { logicalOperator: "AND", conditions: [] },
           action: { type: "SHOW", targetField: "__FIELD_ORDER__", message: currentOrderList }
@@ -458,19 +578,46 @@ export default function EditFormPage() {
           <p className="text-[11px] text-slate-500 font-medium tracking-wide">Drag & drop to add fields</p>
         </div>
         <div className="p-6 space-y-3 overflow-y-auto flex-1">
-          {/* Page Break button */}
+          {/* ── Static Elements group ── */}
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Static Elements</p>
+          {staticElementTypes.map(({ type, label, desc, icon }) => {
+            const colorMap = {
+              heading: { bg: "bg-amber-50", border: "border-amber-200", hbg: "hover:bg-amber-100", hborder: "hover:border-amber-300", ibg: "bg-amber-100", iborder: "border-amber-200", itext: "text-amber-500", text: "text-amber-700", htext: "hover:text-amber-900", desc: "text-amber-500" },
+              paragraph: { bg: "bg-sky-50", border: "border-sky-200", hbg: "hover:bg-sky-100", hborder: "hover:border-sky-300", ibg: "bg-sky-100", iborder: "border-sky-200", itext: "text-sky-500", text: "text-sky-700", htext: "hover:text-sky-900", desc: "text-sky-500" },
+              divider: { bg: "bg-slate-50", border: "border-slate-200", hbg: "hover:bg-slate-100", hborder: "hover:border-slate-300", ibg: "bg-slate-100", iborder: "border-slate-200", itext: "text-slate-400", text: "text-slate-600", htext: "hover:text-slate-900", desc: "text-slate-400" },
+            };
+            const c = colorMap[type];
+            return (
+              <div key={type} draggable onDragStart={(e) => handleDragStart(e, type)}
+                onClick={() => addStaticElement(type)}
+                className={`flex items-center gap-4 p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all group hover:-translate-y-0.5 ${c.bg} ${c.border} ${c.hbg} ${c.hborder}`}>
+                <div className={`w-9 h-9 flex items-center justify-center rounded-xl ${c.ibg} border ${c.iborder} ${c.itext} flex-shrink-0`}>
+                  {icon}
+                </div>
+                <div>
+                  <span className={`text-sm font-bold ${c.text} ${c.htext}`}>{label}</span>
+                  <p className={`text-[10px] ${c.desc} mt-0.5`}>{desc}</p>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* ── Page Break ── */}
           <div draggable onDragStart={(e) => handleDragStart(e, "page_break")}
-            onClick={addPageBreak}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-sm cursor-pointer hover:bg-indigo-100 hover:border-indigo-300 hover:shadow-md transition-all group hover:-translate-y-0.5">
-            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-100 border border-indigo-200 shadow-inner group-hover:bg-indigo-200 text-indigo-500 transition-all duration-300">
-              <ChevronRight size={18} />
+            onClick={() => addStaticElement("page_break")}
+            className="flex items-center gap-4 p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-sm cursor-pointer hover:bg-indigo-100 hover:border-indigo-300 hover:shadow-md transition-all group hover:-translate-y-0.5">
+            <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-100 border border-indigo-200 text-indigo-500 flex-shrink-0">
+              <ChevronRight size={16} />
             </div>
             <div>
-              <span className="text-sm font-bold text-indigo-700 group-hover:text-indigo-900 transition-colors">Page Break</span>
+              <span className="text-sm font-bold text-indigo-700 group-hover:text-indigo-900">Page Break</span>
               <p className="text-[10px] text-indigo-500 mt-0.5">Split form into pages</p>
             </div>
           </div>
-          <div className="border-t border-slate-100 pt-2" />
+
+          <div className="border-t border-slate-100 pt-2">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Input Fields</p>
+          </div>
           {regularFieldTypes.map((type) => (
             <div key={type} draggable onDragStart={(e) => handleDragStart(e, type)}
               className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm cursor-grab hover:bg-slate-50 hover:border-violet-200 hover:shadow-md transition-all group hover:-translate-y-0.5">
@@ -570,7 +717,7 @@ export default function EditFormPage() {
       </main>
 
       {/* RIGHT SIDEBAR — Field Properties OR Rules Panel */}
-      <aside className={`w-[400px] bg-white border-l border-slate-200 shadow-[-20px_0_40px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId && activeField?.type !== "page_break" ? "translate-x-0" : "translate-x-full"}`}>
+      <aside className={`w-[400px] bg-white border-l border-slate-200 shadow-[-20px_0_40px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] absolute right-0 h-full z-30 flex flex-col ${activeFieldId && !isDisplayOnly(activeField?.type) ? "translate-x-0" : "translate-x-full"}`}>
         {activeField && (
           <>
             {/* Sidebar header with field type + close */}

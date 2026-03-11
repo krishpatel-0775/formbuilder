@@ -1,0 +1,123 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > RuleActionDTO</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.dto</a>
+</div>
+
+<h1>Coverage Summary for Class: RuleActionDTO (com.example.formBuilder.dto)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">RuleActionDTO</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.dto;
+&nbsp;
+&nbsp;import com.example.formBuilder.enums.ActionType;
+&nbsp;import com.fasterxml.jackson.annotation.JsonInclude;
+&nbsp;import lombok.Getter;
+&nbsp;import lombok.NoArgsConstructor;
+&nbsp;import lombok.Setter;
+&nbsp;
+&nbsp;/**
+&nbsp; * Represents the action to execute when a rule condition evaluates to true.
+&nbsp; * &lt;p&gt;
+&nbsp; * An action targets a specific form field and specifies what should happen to it.
+&nbsp; * For {@link ActionType#VALIDATION_ERROR}, the {@code targetField} may be omitted
+&nbsp; * and a custom {@code message} should be provided to describe the error.
+&nbsp; * &lt;/p&gt;
+&nbsp; *
+&nbsp; * &lt;h3&gt;Example (Show a field):&lt;/h3&gt;
+&nbsp; * &lt;pre&gt;
+&nbsp; * {
+&nbsp; *   &quot;type&quot;: &quot;SHOW&quot;,
+&nbsp; *   &quot;targetField&quot;: &quot;driving_license&quot;
+&nbsp; * }
+&nbsp; * &lt;/pre&gt;
+&nbsp; *
+&nbsp; * &lt;h3&gt;Example (Validation error):&lt;/h3&gt;
+&nbsp; * &lt;pre&gt;
+&nbsp; * {
+&nbsp; *   &quot;type&quot;: &quot;VALIDATION_ERROR&quot;,
+&nbsp; *   &quot;message&quot;: &quot;You must be 18+ to submit this form&quot;
+&nbsp; * }
+&nbsp; * &lt;/pre&gt;
+&nbsp; */
+&nbsp;@Getter
+&nbsp;@Setter
+&nbsp;@NoArgsConstructor
+&nbsp;@JsonInclude(JsonInclude.Include.NON_EMPTY)
+&nbsp;public class RuleActionDTO {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The type of action to perform. Required.
+&nbsp;     */
+&nbsp;    private ActionType type;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The name of the form field this action targets (e.g., &quot;driving_license&quot;, &quot;nickname&quot;).
+&nbsp;     * Not required for {@link ActionType#VALIDATION_ERROR}.
+&nbsp;     */
+&nbsp;    private String targetField;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The error message to display when action type is {@link ActionType#VALIDATION_ERROR}.
+&nbsp;     * Optional for other action types.
+&nbsp;     */
+&nbsp;    private String message;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>

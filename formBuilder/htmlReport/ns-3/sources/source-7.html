@@ -1,0 +1,144 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > RuleConditionDTO</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.example.formBuilder.dto</a>
+</div>
+
+<h1>Coverage Summary for Class: RuleConditionDTO (com.example.formBuilder.dto)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">RuleConditionDTO</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.example.formBuilder.dto;
+&nbsp;
+&nbsp;import com.example.formBuilder.enums.RuleOperator;
+&nbsp;import com.fasterxml.jackson.annotation.JsonInclude;
+&nbsp;import lombok.Getter;
+&nbsp;import lombok.NoArgsConstructor;
+&nbsp;import lombok.Setter;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;/**
+&nbsp; * Represents a single condition block in a form rule.
+&nbsp; * &lt;p&gt;
+&nbsp; * A condition specifies which field to evaluate, how to evaluate it (via operator),
+&nbsp; * and what value to compare against. Multiple conditions can be nested using
+&nbsp; * {@code logicalOperator} (AND / OR) for future multi-condition support.
+&nbsp; * &lt;/p&gt;
+&nbsp; *
+&nbsp; * &lt;h3&gt;Example (Single condition):&lt;/h3&gt;
+&nbsp; * &lt;pre&gt;
+&nbsp; * {
+&nbsp; *   &quot;field&quot;: &quot;age&quot;,
+&nbsp; *   &quot;operator&quot;: &quot;GREATER_THAN&quot;,
+&nbsp; *   &quot;value&quot;: 18
+&nbsp; * }
+&nbsp; * &lt;/pre&gt;
+&nbsp; *
+&nbsp; * &lt;h3&gt;Example (Multi-condition — future support):&lt;/h3&gt;
+&nbsp; * &lt;pre&gt;
+&nbsp; * {
+&nbsp; *   &quot;logicalOperator&quot;: &quot;AND&quot;,
+&nbsp; *   &quot;conditions&quot;: [
+&nbsp; *     { &quot;field&quot;: &quot;age&quot;, &quot;operator&quot;: &quot;GREATER_THAN&quot;, &quot;value&quot;: 18 },
+&nbsp; *     { &quot;field&quot;: &quot;country&quot;, &quot;operator&quot;: &quot;EQUALS&quot;, &quot;value&quot;: &quot;India&quot; }
+&nbsp; *   ]
+&nbsp; * }
+&nbsp; * &lt;/pre&gt;
+&nbsp; */
+&nbsp;@Getter
+&nbsp;@Setter
+&nbsp;@NoArgsConstructor
+&nbsp;@JsonInclude(JsonInclude.Include.NON_EMPTY)
+&nbsp;public class RuleConditionDTO {
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The name of the form field to evaluate (e.g., &quot;age&quot;, &quot;name&quot;).
+&nbsp;     * Required for a leaf-level condition (without nested conditions).
+&nbsp;     */
+&nbsp;    private String field;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The comparison operator to apply (e.g., EQUALS, GREATER_THAN).
+&nbsp;     * Required for a leaf-level condition.
+&nbsp;     */
+&nbsp;    private RuleOperator operator;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The expected value to compare against.
+&nbsp;     * Can be a String or a Number depending on the field type.
+&nbsp;     */
+&nbsp;    private Object value;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Logical combinator for multi-condition support.
+&nbsp;     * Accepted values: &quot;AND&quot;, &quot;OR&quot;
+&nbsp;     * If null or omitted, this is treated as a simple single-condition rule.
+&nbsp;     */
+&nbsp;    private String logicalOperator;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * A list of nested conditions to be combined using {@code logicalOperator}.
+&nbsp;     * Enables future support for complex rule expressions like:
+&nbsp;     * &lt;pre&gt;age &amp;gt; 18 AND country == &quot;India&quot;&lt;/pre&gt;
+&nbsp;     */
+&nbsp;    private List&lt;RuleConditionDTO&gt; conditions;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-03-11 12:00</div>
+</div>
+</body>
+</html>
