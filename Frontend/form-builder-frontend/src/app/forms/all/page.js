@@ -14,6 +14,7 @@ import {
   Check,
   PencilLine,
   LayoutDashboard,
+  Trash2,
 } from "lucide-react";
 
 export default function FormsListPage() {
@@ -69,6 +70,29 @@ export default function FormsListPage() {
     } catch (err) {
       console.error("Publish error:", err);
       alert("Error publishing form ❌");
+    }
+  };
+
+  const deleteForm = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this form? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const errorMsg = await res.text();
+        throw new Error(errorMsg || "Failed to delete form");
+      }
+
+      setForms((prevForms) => prevForms.filter((f) => f.id !== id));
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Error deleting form ❌");
     }
   };
 
@@ -201,6 +225,15 @@ export default function FormsListPage() {
                 <div className="p-2 pt-0 mt-auto">
                   <div className="bg-slate-50 rounded-[2rem] p-2 flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
+                      {/* DELETE BUTTON */}
+                      <button
+                        onClick={() => deleteForm(form.id)}
+                        className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-slate-200 text-red-500 font-bold text-xs hover:border-red-400 hover:bg-red-50 transition-all active:scale-95 shadow-sm col-span-2"
+                      >
+                        <Trash2 size={16} />
+                        <span>DELETE</span>
+                      </button>
+
                       {/* EDIT BUTTON */}
                       <Link href={`/forms/edit/${form.id}`} className="w-full">
                         <div className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:border-blue-400 hover:text-blue-600 transition-all active:scale-95 shadow-sm">

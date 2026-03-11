@@ -88,8 +88,7 @@ public class FormService {
 
     public Map<String, Object> getAllDataFromTable(Long id, int page, int size, String sortBy, String direction) {
 
-        // Ensure admin has access
-        getFormForAdmin(id);
+        Form form = getFormForAdmin(id);
 
         String tableName = "form_" + id;
 
@@ -109,13 +108,25 @@ public class FormService {
                 " ORDER BY " + sortBy + " " + direction +
                 " LIMIT ? OFFSET ?";
 
-        List<Map<String, Object>> data = jdbcTemplate.queryForList(dataQuery, size, offset);
+        List<Map<String, Object>> dataList = jdbcTemplate.queryForList(dataQuery, size, offset);
+
+        // Filter columns to only include active fields
+        Set<String> activeFieldNames = form.getFields().stream()
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
+                .map(FormField::getFieldName)
+                .collect(Collectors.toSet());
+        activeFieldNames.add("id");
+        activeFieldNames.add("created_at");
+
+        for (Map<String, Object> row : dataList) {
+            row.keySet().retainAll(activeFieldNames);
+        }
 
         String countQuery = "SELECT COUNT(*) FROM " + tableName + " WHERE is_deleted = false";
         Integer total = jdbcTemplate.queryForObject(countQuery, Integer.class);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("content", data);
+        response.put("content", dataList);
         response.put("page", page);
         response.put("size", size);
         response.put("totalElements", total);
@@ -140,6 +151,14 @@ public class FormService {
     public List<String> getLookupValues(Long formId, String columnName) {
         Form form = getFormById(formId);
         String tableName = form.getTableName();
+
+        // Check if the column belongs to an active field
+        boolean isActive = form.getFields().stream()
+                .anyMatch(f -> f.getFieldName().equals(columnName));
+
+        if (!isActive) {
+            throw new ValidationException("Cannot lookup values for inactive or non-existent field: " + columnName);
+        }
 
         if (!columnName.matches("^[a-zA-Z][a-zA-Z0-9_]*$")) {
             throw new IllegalArgumentException("Invalid column name");
@@ -274,15 +293,10 @@ public class FormService {
                 .filter(f -> !incomingIds.contains(f.getId()))
                 .toList();
 
-        if (form.getStatus() == PUBLISHED) {
-            for (FormField deleted : toDelete) {
-                // Don't try to drop a display-only field from DB — it has no column
-                if (!isDisplayOnly(deleted.getFieldType())) {
-                    schemaManager.dropColumn(form.getTableName(), deleted.getFieldName());
-                }
-            }
+        for (FormField deleted : toDelete) {
+            deleted.setIsDeleted(true);
         }
-        fieldRepository.deleteAll(toDelete);
+        fieldRepository.saveAll(toDelete);
 
         for (UpdateFieldRequest fieldReq : incoming) {
             boolean isDisplayOnly = isDisplayOnly(fieldReq.getType());
@@ -367,5 +381,13 @@ public class FormService {
             throw new ValidationException("Failed to save rules: " + e.getMessage());
         }
         return "Rules saved successfully";
+    }
+
+    @Transactional
+    public String deleteForm(Long id) {
+        Form form = getFormForAdmin(id);
+        form.setIsDeleted(true);
+        formRepository.save(form);
+        return "Form deleted successfully";
     }
 }

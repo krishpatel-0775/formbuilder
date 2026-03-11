@@ -18,13 +18,13 @@ const evaluateConditionNode = (node, values) => {
     return isAnd;
   }
 
-  const val1 = (values[node.field] || "").toString().toLowerCase();
-  const val2 = (node.value || "").toString().toLowerCase();
+  const val1 = (values[node.field] || "").toString().trim();
+  const val2 = (node.value || "").toString().trim();
 
   switch (node.operator) {
-    case "EQUALS": return val1 === val2;
-    case "NOT_EQUALS": return val1 !== val2;
-    case "CONTAINS": return val1.includes(val2);
+    case "EQUALS": return val1.toLowerCase() === val2.toLowerCase();
+    case "NOT_EQUALS": return val1.toLowerCase() !== val2.toLowerCase();
+    case "CONTAINS": return val1.toLowerCase().includes(val2.toLowerCase());
     case "GREATER_THAN": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) > Number(val2);
     case "LESS_THAN": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) < Number(val2);
     default: return false;
@@ -105,7 +105,7 @@ export default function PublicFormPage() {
         let parsedRules = [];
         try {
           if (data.rules) {
-            parsedRules = JSON.parse(data.rules);
+            parsedRules = typeof data.rules === "string" ? JSON.parse(data.rules) : data.rules;
             setFormRules(parsedRules);
 
             const targets = new Set(
@@ -169,20 +169,22 @@ export default function PublicFormPage() {
       });
   }, [id]);
 
-  const evaluateVisibility = useCallback(async (currentData) => {
-    if (!id) return;
-    try {
-      const res = await fetch(`${ENDPOINTS.VISIBILITY}?formId=${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentData),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        setFieldVisibility(json.data || {});
+  const evaluateVisibility = useCallback((currentData) => {
+    if (!formRules || formRules.length === 0) return;
+
+    const newVisibility = {};
+    formRules.forEach(rule => {
+      const action = rule.action;
+      if (!action || !action.targetField || action.targetField === "__FIELD_ORDER__") return;
+      if (action.type !== "SHOW" && action.type !== "HIDE") return;
+
+      if (evaluateConditionNode(rule.condition, currentData)) {
+        newVisibility[action.targetField] = action.type;
       }
-    } catch (e) { /* silently ignore */ }
-  }, [id]);
+    });
+
+    setFieldVisibility(newVisibility);
+  }, [formRules]);
 
   useEffect(() => {
     if (!formConfig) return;

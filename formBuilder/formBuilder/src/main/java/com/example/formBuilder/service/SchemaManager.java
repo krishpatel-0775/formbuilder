@@ -124,7 +124,7 @@ public class SchemaManager {
         validateColumnName(field.getFieldName());
         StringBuilder sql = new StringBuilder();
         sql.append("ALTER TABLE ").append(tableName)
-                .append(" ADD COLUMN ").append(field.getFieldName())
+                .append(" ADD COLUMN IF NOT EXISTS ").append(field.getFieldName())
                 .append(" ").append(mapType(field.getFieldType()));
 
         jdbcTemplate.execute(sql.toString());

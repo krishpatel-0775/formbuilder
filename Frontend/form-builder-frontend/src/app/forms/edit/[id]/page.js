@@ -318,7 +318,8 @@ export default function EditFormPage() {
         let rulesArr = [];
         try {
           if (data.rules) {
-            rulesArr = JSON.parse(data.rules) || [];
+            rulesArr = typeof data.rules === "string" ? JSON.parse(data.rules) : data.rules;
+            rulesArr = rulesArr || [];
             const orderRule = rulesArr.find(r => r.action?.targetField === "__FIELD_ORDER__");
             if (orderRule && orderRule.action?.message) {
               const orderArray = orderRule.action.message.split(",");
@@ -556,6 +557,35 @@ export default function EditFormPage() {
     finally { setIsSaving(false); }
   };
 
+  const deleteForm = async () => {
+    if (!window.confirm("Are you sure you want to delete this form? This action cannot be undone and will preserve the dynamic table data.")) {
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      
+      if (!res.ok) {
+        const errorMsg = await res.text();
+        throw new Error(errorMsg || "Failed to delete form.");
+      }
+      
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        router.push("/forms/all");
+      }, 1000);
+    } catch (err) {
+      alert(`❌ ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[#f8fafc]">
@@ -663,6 +693,10 @@ export default function EditFormPage() {
             <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${formStatus === "PUBLISHED" ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-amber-50 border-amber-200 text-amber-600"}`}>
               {formStatus}
             </span>
+            <button onClick={deleteForm} disabled={isSaving || showSuccess}
+              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-red-500 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-300 transition-all active:scale-95 shadow-sm">
+              <Trash2 size={16} /> Delete
+            </button>
             <button onClick={saveForm} disabled={isSaving || showSuccess}
               className={`flex items-center gap-2 px-8 py-3 rounded-full text-sm font-bold transition-all active:scale-95 shadow-md ${showSuccess ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-slate-900 text-white hover:bg-violet-600 hover:shadow-xl hover:shadow-violet-600/20"}`}>
               {showSuccess ? (<><CheckCircle2 size={16} /> Saved!</>) : isSaving

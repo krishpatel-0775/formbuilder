@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import org.hibernate.annotations.Where;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Where(clause = "is_deleted = false")
 public class FormField {
 
     @Id
@@ -51,6 +53,9 @@ public class FormField {
 
     @Column(name = "default_value")
     private String defaultValue;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
 
     @JsonBackReference
     @ManyToOne

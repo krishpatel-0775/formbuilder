@@ -84,4 +84,9 @@ public class FormController {
             @RequestBody java.util.List<FormRuleDTO> rules) {
         return ResponseEntity.ok(ApiResponse.success(formService.saveFormRules(id, rules), null));
     }
+
+    @DeleteMapping(AppConstants.API_FORM_BY_ID)
+    public ResponseEntity<ApiResponse<String>> deleteForm(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(formService.deleteForm(id), null));
+    }
 }

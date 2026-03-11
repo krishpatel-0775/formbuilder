@@ -4,8 +4,11 @@ package com.example.formBuilder.entity;
 import com.example.formBuilder.enums.FormStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,6 +18,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Where(clause = "is_deleted = false")
 public class Form {
 
     @Id
@@ -31,11 +35,17 @@ public class Form {
     private FormStatus status = FormStatus.DRAFT;
 
 
+    @JsonRawValue
+    @JsonProperty("rules")
     @Column(columnDefinition = "TEXT")
     private String rules;
+    
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
 
     @JsonManagedReference
     @OneToMany(mappedBy = "form", cascade = CascadeType.ALL)
+    @Where(clause = "is_deleted = false")
     private List<FormField> fields;
 
     @JsonIgnore
