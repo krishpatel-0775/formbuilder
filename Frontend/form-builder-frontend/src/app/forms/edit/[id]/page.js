@@ -13,7 +13,7 @@ import {
   Type, Hash, Mail, Calendar, Trash2, GripVertical, X, AlertCircle, ShieldCheck,
   CheckCircle2, ListPlus, ArrowRight, AlignLeft, CircleDot, CheckSquare,
   Save, ArrowLeft, Loader2, Phone, Clock, Link, SlidersHorizontal, GitBranch, AlertTriangle, ChevronRight,
-  Heading, Pilcrow, Minus
+  Heading, Pilcrow, Minus, ToggleLeft
 } from "lucide-react";
 import NextLink from "next/link";
 import RuleBuilder from "../../../../components/RuleBuilder";
@@ -265,6 +265,7 @@ export default function EditFormPage() {
     email: <Mail size={18} />, date: <Calendar size={18} />, phone: <Phone size={18} />,
     time: <Clock size={18} />, url: <Link size={18} />, radio: <CircleDot size={18} />,
     checkbox: <CheckSquare size={18} />, select: <ListPlus size={18} />,
+    toggle: <ToggleLeft size={18} />,
     page_break: <ChevronRight size={18} />,
     heading: <Heading size={18} />,
     paragraph: <Pilcrow size={18} />,
@@ -277,7 +278,7 @@ export default function EditFormPage() {
     { type: "divider", label: "Divider", desc: "Visual separator", color: "slate", icon: <Minus size={16} /> },
   ];
 
-  const regularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select"];
+  const regularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select", "toggle"];
 
   // Load form
   useEffect(() => {
@@ -537,7 +538,6 @@ export default function EditFormPage() {
           return f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
         }).filter(Boolean).join(",");
         cleanRules.push({
-          condition: { logicalOperator: "AND", conditions: [] },
           action: { type: "SHOW", targetField: "__FIELD_ORDER__", message: currentOrderList }
         });
 

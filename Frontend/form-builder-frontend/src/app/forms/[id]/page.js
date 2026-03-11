@@ -529,7 +529,12 @@ export default function PublicFormPage() {
               onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
               className={`${inputCls} font-bold appearance-none cursor-pointer`}>
               <option value="" disabled>Select an option</option>
-              {field.options?.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
+              {field.options?.map((opt, idx) => {
+                const isObj = typeof opt === "object" && opt !== null;
+                const val = isObj ? opt.id : opt;
+                const label = isObj ? opt.value : opt;
+                return <option key={idx} value={val}>{label}</option>;
+              })}
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

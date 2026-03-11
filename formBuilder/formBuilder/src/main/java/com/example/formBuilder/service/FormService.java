@@ -295,6 +295,10 @@ public class FormService {
 
         for (FormField deleted : toDelete) {
             deleted.setIsDeleted(true);
+            // Relax database constraint if field was required
+            if (!isDisplayOnly(deleted.getFieldType()) && form.getStatus() == PUBLISHED) {
+                schemaManager.makeColumnNullable(form.getTableName(), deleted.getFieldName());
+            }
         }
         fieldRepository.saveAll(toDelete);
 
@@ -313,7 +317,7 @@ public class FormService {
                     schemaManager.renameColumn(form.getTableName(), oldName, newName);
                 }
 
-                applyFieldUpdates(existing, fieldReq);
+                applyFieldUpdates(existing, fieldReq, form);
                 fieldRepository.save(existing);
 
             } else {
@@ -331,7 +335,7 @@ public class FormService {
         return "Form updated successfully";
     }
 
-    private void applyFieldUpdates(FormField field, UpdateFieldRequest req) {
+    private void applyFieldUpdates(FormField field, UpdateFieldRequest req, Form form) {
         boolean isDisplayOnly = isDisplayOnly(req.getType());
         // Display-only fields don't need column-name validation since they're never DB columns
         if (!isDisplayOnly) {
@@ -340,6 +344,9 @@ public class FormService {
         field.setFieldName(req.getName());
         field.setFieldType(req.getType());
         if (!isDisplayOnly) {
+            if (form.getStatus() == PUBLISHED && Boolean.TRUE.equals(field.getRequired()) && !Boolean.TRUE.equals(req.getRequired())) {
+                schemaManager.makeColumnNullable(form.getTableName(), field.getFieldName());
+            }
             field.setRequired(req.getRequired());
             field.setMinLength(req.getMinLength());
             field.setMaxLength(req.getMaxLength());
@@ -362,7 +369,7 @@ public class FormService {
 
     private FormField buildFormField(UpdateFieldRequest req, Form form) {
         FormField f = new FormField();
-        applyFieldUpdates(f, req);
+        applyFieldUpdates(f, req, form);
         f.setForm(form);
         return f;
     }
