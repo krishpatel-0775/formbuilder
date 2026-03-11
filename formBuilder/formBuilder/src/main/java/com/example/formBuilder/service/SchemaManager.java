@@ -45,7 +45,7 @@ public class SchemaManager {
             sql.append(", ")
                     .append(field.getFieldName())
                     .append(" ")
-                    .append(mapType(field.getFieldType()));
+                    .append(mapType(field));
 
             if (TRUE.equals(field.getRequired())) {
                 sql.append(" NOT NULL");
@@ -134,8 +134,8 @@ public class SchemaManager {
         validateColumnName(field.getFieldName());
         StringBuilder sql = new StringBuilder();
         sql.append("ALTER TABLE ").append(tableName)
-                .append(" ADD COLUMN IF NOT EXISTS ").append(field.getFieldName())
-                .append(" ").append(mapType(field.getFieldType()));
+                .append(" ADD COLUMN ").append(field.getFieldName())
+                .append(" ").append(mapType(field));
 
         jdbcTemplate.execute(sql.toString());
     }
@@ -143,8 +143,13 @@ public class SchemaManager {
     /**
      * Maps an application field type (e.g., text, number, date) to its corresponding PostgreSQL data type.
      */
-    private String mapType(String type) {
-        return switch (type) {
+    private String mapType(FormField field) {
+        // If it's a lookup, store as record ID
+        if (field.getSourceTable() != null && !field.getSourceTable().isBlank()) {
+            return "BIGINT";
+        }
+
+        return switch (field.getFieldType()) {
             case "text", "email", "radio", "select", "url", "phone" -> "VARCHAR(255)";
             case "number" -> "INT";
             case "date" -> "DATE";

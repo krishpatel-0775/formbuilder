@@ -160,7 +160,17 @@ public class SubmissionService {
                                 if (strVal.length() == 5) strVal = strVal + ":00";
                                 return java.sql.Time.valueOf(strVal);
                             } catch (Exception e) { return null; }
+                        case "toggle":
+                            return "true".equalsIgnoreCase(strVal);
                         default:
+                            // Handle lookup IDs
+                            if (f.getSourceTable() != null && !f.getSourceTable().isBlank()) {
+                                try {
+                                    return Long.parseLong(strVal);
+                                } catch (Exception e) {
+                                    return null;
+                                }
+                            }
                             return strVal;
                     }
                 })

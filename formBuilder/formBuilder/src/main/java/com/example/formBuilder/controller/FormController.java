@@ -60,7 +60,7 @@ public class FormController {
     }
 
     @GetMapping(AppConstants.API_FORM_LOOKUP)
-    public ResponseEntity<ApiResponse<List<String>>> getLookupValues(@PathVariable Long id, @PathVariable String columnName) {
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getLookupValues(@PathVariable Long id, @PathVariable String columnName) {
         return ResponseEntity.ok(ApiResponse.success(formService.getLookupValues(id, columnName)));
     }
 

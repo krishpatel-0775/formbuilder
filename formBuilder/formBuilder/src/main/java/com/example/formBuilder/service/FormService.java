@@ -122,6 +122,64 @@ public class FormService {
             row.keySet().retainAll(activeFieldNames);
         }
 
+        // STEP: Resolve Lookup IDs to Labels for Display
+        List<FormField> lookupFields = form.getFields().stream()
+                .filter(f -> f.getSourceTable() != null && !f.getSourceTable().isBlank())
+                .collect(Collectors.toList());
+
+        for (FormField field : lookupFields) {
+            String col = field.getFieldName();
+            String sourceFormId = field.getSourceTable();
+            String sourceTable = "form_" + sourceFormId; // Convert Form ID to Table Name
+            String sourceCol = field.getSourceColumn();
+
+            // Collect unique IDs from this column in the current page
+            Set<Long> idsToResolve = new java.util.HashSet<>();
+            for (Map<String, Object> row : dataList) {
+                Object val = row.get(col);
+                if (val != null) {
+                    try {
+                        idsToResolve.add(Long.valueOf(val.toString()));
+                    } catch (NumberFormatException e) {
+                        // Skip legacy string data
+                    }
+                }
+            }
+
+            if (idsToResolve.isEmpty()) continue;
+
+            // Batch fetch labels: Map<ID, Label>
+            String inClause = idsToResolve.stream().map(String::valueOf).collect(Collectors.joining(","));
+            String labelSql = "SELECT id, " + sourceCol + " as label FROM " + sourceTable + " WHERE id IN (" + inClause + ")";
+            
+            try {
+                Map<Long, String> labelMap = jdbcTemplate.query(labelSql, rs -> {
+                    Map<Long, String> map = new HashMap<>();
+                    while (rs.next()) {
+                        map.put(rs.getLong("id"), rs.getString("label"));
+                    }
+                    return map;
+                });
+
+                // Replace IDs with Labels in the data list
+                for (Map<String, Object> row : dataList) {
+                    Object idVal = row.get(col);
+                    if (idVal != null) {
+                        try {
+                            String label = labelMap.get(Long.valueOf(idVal.toString()));
+                            if (label != null) {
+                                row.put(col, label);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Leave legacy string as is
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to resolve lookup labels for column {} using table {}: {}", col, sourceTable, e.getMessage());
+            }
+        }
+
         String countQuery = "SELECT COUNT(*) FROM " + tableName + " WHERE is_deleted = false";
         Integer total = jdbcTemplate.queryForObject(countQuery, Integer.class);
 
@@ -148,7 +206,7 @@ public class FormService {
     }
 
 
-    public List<String> getLookupValues(Long formId, String columnName) {
+    public List<Map<String, Object>> getLookupValues(Long formId, String columnName) {
         Form form = getFormById(formId);
         String tableName = form.getTableName();
 
@@ -164,8 +222,10 @@ public class FormService {
             throw new IllegalArgumentException("Invalid column name");
         }
 
-        String sql = "SELECT DISTINCT " + columnName + " FROM " + tableName + " WHERE is_deleted = false AND " + columnName + " IS NOT NULL";
-        return jdbcTemplate.queryForList(sql, String.class);
+        String sql = "SELECT MIN(id) as id, " + columnName + " as value FROM " + tableName +
+                " WHERE is_deleted = false AND " + columnName + " IS NOT NULL" +
+                " GROUP BY " + columnName;
+        return jdbcTemplate.queryForList(sql);
     }
 
     public String publishForm(Long id) {
