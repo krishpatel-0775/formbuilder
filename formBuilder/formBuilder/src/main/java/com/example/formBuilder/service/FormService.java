@@ -71,21 +71,6 @@ public class FormService {
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
     }
 
-//    public List<Map<String, Object>> getAllDataFromTable(Long id) {
-//        // Ensure administration privileges over this form
-//        getFormForAdmin(id);
-//
-//        String tableName = "form_" + id;
-//
-//        if (!tableName.matches("^[a-zA-Z0-9_]+$")) {
-//            throw new IllegalArgumentException("Invalid table name");
-//        }
-//
-//        String sql = "SELECT * FROM " + tableName;
-//
-//        return jdbcTemplate.queryForList(sql);
-//    }
-
     public Map<String, Object> getAllDataFromTable(Long id, int page, int size, String sortBy, String direction) {
 
         Form form = getFormForAdmin(id);
