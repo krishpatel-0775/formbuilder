@@ -17,6 +17,7 @@ import { SortableFieldItem } from "../../../../components/builder/SortableFieldI
 import { Sidebar } from "../../../../components/builder/Sidebar";
 import { Toolbar } from "../../../../components/builder/Toolbar";
 import { FormHeader } from "../../../../components/builder/FormHeader";
+import { useTeam } from "../../../../context/TeamContext";
 
 // ─── Display-only types helper ───────────────────────────────────────────────
 const DISPLAY_ONLY_TYPES = new Set(["page_break", "heading", "paragraph", "divider"]);
@@ -26,6 +27,7 @@ const isDisplayOnly = (type) => DISPLAY_ONLY_TYPES.has(type);
 export default function EditFormPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { activeTeam, userRole } = useTeam();
 
   const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
@@ -42,8 +44,8 @@ export default function EditFormPage() {
 
   // Load form
   useEffect(() => {
-    if (!id) return;
-    fetch(`http://localhost:9090/api/forms/${id}`, { credentials: "include" })
+    if (!id || !activeTeam) return;
+    fetch(`http://localhost:9090/api/forms/${id}?teamId=${activeTeam.id}`, { credentials: "include" })
       .then((res) => { if (!res.ok) { alert("Failed to load form. Redirecting..."); router.push("/forms/all"); return null; } return res.json(); })
       .then((res) => {
         if (!res) return;
@@ -97,14 +99,14 @@ export default function EditFormPage() {
         setIsLoading(false);
       })
       .catch((err) => { console.error(err); alert("Failed to load form. Redirecting..."); router.push("/forms/all"); });
-  }, [id]);
+  }, [id, activeTeam]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
-    if (af?.type === "select") {
-      fetch("http://localhost:9090/api/forms", { credentials: "include" }).then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
+    if (af?.type === "select" && activeTeam) {
+      fetch(`http://localhost:9090/api/forms?teamId=${activeTeam.id}`, { credentials: "include" }).then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
     }
-  }, [activeFieldId, fields]);
+  }, [activeFieldId, fields, activeTeam]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
@@ -227,7 +229,8 @@ export default function EditFormPage() {
         if (field.type === "phone" && field.pattern) fd.pattern = field.pattern;
         return fd;
       });
-      const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
+      if (!activeTeam) return alert("Please select a team before saving.");
+      const res = await fetch(`http://localhost:9090/api/forms/${id}?teamId=${activeTeam.id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ formName: formName.trim(), fields: formattedFields }),
         credentials: "include"
@@ -306,11 +309,12 @@ export default function EditFormPage() {
           setFormName={setFormName}
           formStatus={formStatus}
           saveForm={saveForm}
-          deleteForm={() => {}}
+          deleteForm={deleteForm}
           isSaving={isSaving}
           showSuccess={showSuccess}
           saveLabel="Save Changes"
           saveIcon={<Save size={16} />}
+          userRole={userRole}
         />
         <div onDrop={handleDrop} onDragOver={handleDragOver}
           className="flex-1 p-10 overflow-auto bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] relative z-0">

@@ -1,40 +1,33 @@
 package com.example.formBuilder.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
-import com.example.formBuilder.enums.SystemRole;
+import java.util.UUID;
 
 @Entity
-@Table(name = "admins")
+@Table(name = "teams")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Admin {
+public class Team {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String username;
-
-    @Column(unique = true, nullable = false)
-    private String email;
-
-    @JsonIgnore
     @Column(nullable = false)
-    private String password;
+    private String name;
 
-    @Enumerated(EnumType.STRING)
-    private SystemRole systemRole = SystemRole.USER;
-
-    private String extraDetails;
+    @Column(unique = true, nullable = false)
+    private String inviteCode = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public Team(String name) {
+        this.name = name;
+    }
 }

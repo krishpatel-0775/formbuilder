@@ -10,7 +10,8 @@ export function FormHeader({
   isSaving, 
   showSuccess,
   saveLabel = "Save Changes",
-  saveIcon = <Save size={16} />
+  saveIcon = <Save size={16} />,
+  userRole
 }) {
   return (
     <header className="h-20 border-b border-slate-200 px-8 flex items-center justify-between z-10 backdrop-blur-xl bg-white/80 gap-4">
@@ -22,6 +23,13 @@ export function FormHeader({
           className="text-2xl font-black bg-transparent border-none outline-none focus:ring-0 flex-1 max-w-lg placeholder:text-slate-400 text-slate-900 tracking-tight" />
       </div>
       <div className="flex items-center gap-3">
+        {userRole === "TEAM_ADMIN" && deleteForm && (
+          <button onClick={deleteForm}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors border border-red-100 shadow-sm"
+            title="Delete Form">
+            <Trash2 size={18} />
+          </button>
+        )}
         <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${formStatus === "PUBLISHED" ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-amber-50 border-amber-200 text-amber-600"}`}>
           {formStatus}
         </span>

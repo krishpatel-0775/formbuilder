@@ -434,7 +434,7 @@ export default function PublicFormPage() {
         onChange={handleInputChange}
         onCheckboxChange={handleCheckboxChange}
         errors={errors[field.fieldName]}
-        visibility={fieldVisibility[field.fieldName] || "SHOW"}
+        visibility={fieldVisibility[field.fieldName] || (showTargetFields.has(field.fieldName) ? "HIDE" : "SHOW")}
         isShowControlled={showTargetFields.has(field.fieldName)}
         isRuleRequired={dynamicRequiredFields.has(field.fieldName)}
       />

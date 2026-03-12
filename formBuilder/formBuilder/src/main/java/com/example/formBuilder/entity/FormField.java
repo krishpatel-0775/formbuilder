@@ -2,6 +2,7 @@ package com.example.formBuilder.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Where(clause = "is_deleted = false")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class FormField {
 
     @Id
@@ -40,7 +42,7 @@ public class FormField {
     private String minTime;
     private String maxTime;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "form_field_options", joinColumns = @JoinColumn(name = "field_id"))
     @Column(name = "option_value")
     private List<String> options;

@@ -5,11 +5,16 @@ import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.Admin;
 import com.example.formBuilder.entity.FormField;
+import com.example.formBuilder.entity.Team;
+import com.example.formBuilder.entity.TeamMember;
+import com.example.formBuilder.enums.TeamRole;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.AdminRepository;
 import com.example.formBuilder.repository.FormFieldRepository;
 import com.example.formBuilder.repository.FormRepository;
+import com.example.formBuilder.repository.TeamMemberRepository;
+import com.example.formBuilder.repository.TeamRepository;
 import com.example.formBuilder.security.SessionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -39,21 +44,47 @@ public class FormService {
     private final SchemaManager schemaManager;
     private final ObjectMapper objectMapper;
     private final AdminRepository adminRepository;
+    private final TeamMemberRepository teamMemberRepository;
+    private final TeamRepository teamRepository;
 
-    private Admin getCurrentAdmin() {
+    private Admin getCurrentUser() {
         String username = SessionUtil.getCurrentAdminUsername();
         if (username == null) throw new ValidationException("Unauthorized");
         return adminRepository.findByUsername(username)
-                .orElseThrow(() -> new ValidationException("Admin not found"));
+                .orElseThrow(() -> new ValidationException("User not found"));
     }
 
-    private Form getFormForAdmin(Long id) {
-        Admin admin = getCurrentAdmin();
+    private void checkPermission(Long teamId, TeamRole minimumRole) {
+        Admin user = getCurrentUser();
+        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, user.getId())
+                .orElseThrow(() -> new ValidationException("Access denied: You are not a member of this team"));
+        
+        if (member.getRole() == TeamRole.TEAM_ADMIN) return; // Admin can do everything
+        
+        if (minimumRole == TeamRole.TEAM_ADMIN && member.getRole() != TeamRole.TEAM_ADMIN) {
+            throw new ValidationException("Only TEAM_ADMIN can perform this action");
+        }
+        
+        if (minimumRole == TeamRole.DEVELOPER && member.getRole() == TeamRole.FORM_EDITOR) {
+            throw new ValidationException("DEVELOPER role required for this action");
+        }
+    }
+
+    private Form getFormWithPermission(Long id, TeamRole requiredRole) {
         Form form = formRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
-        if (!form.getAdmin().getId().equals(admin.getId())) {
-            throw new ValidationException("Unauthorized access to this form");
+        
+        checkPermission(form.getTeam().getId(), requiredRole);
+        
+        // FORM_EDITOR can only edit their own forms
+        if (requiredRole == TeamRole.FORM_EDITOR) {
+            Admin user = getCurrentUser();
+            TeamMember member = teamMemberRepository.findByTeamIdAndUserId(form.getTeam().getId(), user.getId()).get();
+            if (member.getRole() == TeamRole.FORM_EDITOR && !form.getAdmin().getId().equals(user.getId())) {
+                throw new ValidationException("FORM_EDITOR can only edit their own forms");
+            }
         }
+        
         return form;
     }
 
@@ -71,9 +102,55 @@ public class FormService {
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
     }
 
+    public FormResponseDto getFormResponseById(Long id) {
+        Form form = getFormById(id);
+        FormResponseDto dto = mapToResponseDto(form);
+        try {
+            String json = objectMapper.writeValueAsString(dto);
+            log.info("Successfully serialized form DTO: {}", json.substring(0, Math.min(json.length(), 100)));
+        } catch (Exception e) {
+            log.error("Failed to serialize form DTO manually: {}", e.getMessage(), e);
+            throw new RuntimeException("Serialization failed for form " + id + ": " + e.getMessage());
+        }
+        return dto;
+    }
+
+    private FormResponseDto mapToResponseDto(Form form) {
+        return FormResponseDto.builder()
+                .id(form.getId())
+                .formName(form.getFormName())
+                .tableName(form.getTableName())
+                .createdAt(form.getCreatedAt())
+                .status(form.getStatus())
+                .rules(form.getRules())
+                .teamId(form.getTeam() != null ? form.getTeam().getId() : null)
+                .fields(form.getFields().stream()
+                        .map(f -> FormFieldResponseDto.builder()
+                                .id(f.getId())
+                                .fieldName(f.getFieldName())
+                                .fieldType(f.getFieldType())
+                                .required(f.getRequired())
+                                .minLength(f.getMinLength())
+                                .maxLength(f.getMaxLength())
+                                .min(f.getMin())
+                                .max(f.getMax())
+                                .pattern(f.getPattern())
+                                .beforeDate(f.getBeforeDate())
+                                .afterDate(f.getAfterDate())
+                                .minTime(f.getMinTime())
+                                .maxTime(f.getMaxTime())
+                                .options(f.getOptions() != null ? new ArrayList<>(f.getOptions()) : null)
+                                .sourceTable(f.getSourceTable())
+                                .sourceColumn(f.getSourceColumn())
+                                .defaultValue(f.getDefaultValue())
+                                .build())
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
     public Map<String, Object> getAllDataFromTable(Long id, int page, int size, String sortBy, String direction) {
 
-        Form form = getFormForAdmin(id);
+        Form form = getFormWithPermission(id, TeamRole.TEAM_ADMIN);
 
         String tableName = "form_" + id;
 
@@ -178,16 +255,23 @@ public class FormService {
         return response;
     }
 
-    public List<FormListDto> getAllForms() {
-        Admin admin = getCurrentAdmin();
-        List<Form> forms = formRepository.findByAdminId(admin.getId());
-        List<FormListDto> formListDtos = new ArrayList<>();
-
-        for (Form form : forms) {
-            formListDtos.add(new FormListDto(form.getId(), form.getFormName(), form.getStatus()));
+    public List<FormListDto> getAllForms(Long teamId) {
+        Admin user = getCurrentUser();
+        List<Form> forms;
+        
+        if (teamId != null) {
+            checkPermission(teamId, TeamRole.FORM_EDITOR); // Any member can see form list
+            forms = formRepository.findByTeamId(teamId);
+        } else {
+            List<Long> teamIds = teamMemberRepository.findByUserId(user.getId()).stream()
+                    .map(TeamMember::getTeamId)
+                    .collect(Collectors.toList());
+            forms = formRepository.findByTeamIdIn(teamIds);
         }
-
-        return formListDtos;
+        
+        return forms.stream()
+                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus()))
+                .collect(Collectors.toList());
     }
 
 
@@ -214,7 +298,7 @@ public class FormService {
     }
 
     public String publishForm(Long id) {
-        Form form = getFormForAdmin(id);
+        Form form = getFormWithPermission(id, TeamRole.DEVELOPER);
 
         String tableName = form.getTableName();
 
@@ -230,7 +314,12 @@ public class FormService {
     }
 
     public String createForm(FormRequest request) {
-        Admin admin = getCurrentAdmin();
+        Admin admin = getCurrentUser();
+        
+        Team team = teamRepository.findById(request.getTeamId())
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+        
+        checkPermission(team.getId(), TeamRole.FORM_EDITOR);
 
         if (request.getFields() == null || request.getFields().isEmpty()) {
             throw new ValidationException("Form must contain at least one field");
@@ -239,6 +328,7 @@ public class FormService {
         Form form = new Form();
         form.setFormName(request.getFormName());
         form.setAdmin(admin);
+        form.setTeam(team);
         form = formRepository.save(form);
 
         String tableName = "form_" + form.getId();
@@ -319,7 +409,7 @@ public class FormService {
     @Transactional
     public String updateForm(Long formId, UpdateFormRequest request) {
 
-        Form form = getFormForAdmin(formId);
+        Form form = getFormWithPermission(formId, TeamRole.FORM_EDITOR);
 
         if (request.getFormName() != null && !request.getFormName().isBlank()) {
             form.setFormName(request.getFormName());
@@ -420,12 +510,12 @@ public class FormService {
     }
 
     public String getFormRules(Long formId) {
-        Form form = getFormForAdmin(formId);
+        Form form = getFormWithPermission(formId, TeamRole.FORM_EDITOR);
         return form.getRules();
     }
 
     public String saveFormRules(Long formId, List<FormRuleDTO> rules) {
-        Form form = getFormForAdmin(formId);
+        Form form = getFormWithPermission(formId, TeamRole.FORM_EDITOR);
         try {
             form.setRules(objectMapper.writeValueAsString(rules));
             formRepository.save(form);
@@ -437,7 +527,7 @@ public class FormService {
 
     @Transactional
     public String deleteForm(Long id) {
-        Form form = getFormForAdmin(id);
+        Form form = getFormWithPermission(id, TeamRole.TEAM_ADMIN);
         form.setIsDeleted(true);
         formRepository.save(form);
         return "Form deleted successfully";

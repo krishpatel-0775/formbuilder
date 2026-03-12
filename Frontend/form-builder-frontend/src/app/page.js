@@ -26,9 +26,11 @@ import { SortableFieldItem } from "../components/builder/SortableFieldItem";
 import { Toolbar } from "../components/builder/Toolbar";
 import { FormHeader } from "../components/builder/FormHeader";
 import { Sidebar } from "../components/builder/Sidebar";
+import { useTeam } from "../context/TeamContext";
 import { ENDPOINTS } from "../config/apiConfig";
 
 export default function BuilderPage() {
+    const { activeTeam, userRole } = useTeam();
     const [formName, setFormName] = useState("");
     const [fields, setFields] = useState([]);
     const [activeFieldId, setActiveFieldId] = useState(null);
@@ -46,13 +48,13 @@ export default function BuilderPage() {
     const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
 
     useEffect(() => {
-        if (activeField?.type === "select") {
-            fetch(ENDPOINTS.FORMS, { credentials: "include" })
+        if (activeField?.type === "select" && activeTeam) {
+            fetch(`${ENDPOINTS.FORMS}?teamId=${activeTeam.id}`, { credentials: "include" })
                 .then(r => r.json())
                 .then(r => setAvailableForms(r.data || []))
                 .catch(console.error);
         }
-    }, [activeField?.id, activeField?.type]);
+    }, [activeField?.id, activeField?.type, activeTeam]);
 
     useEffect(() => {
         if (activeField?.type === "select" && activeField?.sourceTable) {
@@ -202,10 +204,17 @@ export default function BuilderPage() {
                 return fd;
             });
 
-            const res = await fetch(ENDPOINTS.FORMS, {
+            if (!activeTeam) return alert("Please select a team before saving.");
+
+            const res = await fetch(ENDPOINTS.FORMS + `?teamId=${activeTeam.id}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ formName: formName.trim(), fields: formattedFields, rules }),
+                body: JSON.stringify({ 
+                    formName: formName.trim(), 
+                    fields: formattedFields, 
+                    rules,
+                    teamId: activeTeam.id 
+                }),
                 credentials: "include"
             });
             if (!res.ok) {
@@ -265,6 +274,7 @@ export default function BuilderPage() {
                     showSuccess={showSuccess}
                     saveLabel="Draft Form"
                     saveIcon={<Rocket size={16} />}
+                    userRole={userRole}
                 />
 
                 <div onDrop={handleDrop} onDragOver={handleDragOver}

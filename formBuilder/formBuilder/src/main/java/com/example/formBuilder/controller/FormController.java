@@ -5,6 +5,7 @@ import com.example.formBuilder.dto.ApiResponse;
 import com.example.formBuilder.dto.FormListDto;
 import com.example.formBuilder.dto.FormRequest;
 import com.example.formBuilder.dto.FormRuleDTO;
+import com.example.formBuilder.dto.FormResponseDto;
 import com.example.formBuilder.dto.UpdateFormRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.service.FormService;
@@ -24,18 +25,21 @@ public class FormController {
     private final FormService formService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FormListDto>>> getAllForms() {
-        return ResponseEntity.ok(ApiResponse.success(formService.getAllForms()));
+    public ResponseEntity<ApiResponse<List<FormListDto>>> getAllForms(@RequestParam(required = false) Long teamId) {
+        return ResponseEntity.ok(ApiResponse.success(formService.getAllForms(teamId)));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createForm(@RequestBody FormRequest req) {
+    public ResponseEntity<ApiResponse<String>> createForm(
+            @RequestBody FormRequest req,
+            @RequestParam(required = false) Long teamId) {
+        if (teamId != null) req.setTeamId(teamId);
         return ResponseEntity.ok(ApiResponse.success(formService.createForm(req), null));
     }
 
     @GetMapping(AppConstants.API_FORM_BY_ID)
-    public ResponseEntity<ApiResponse<Form>> getForm(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(formService.getFormById(id)));
+    public ResponseEntity<ApiResponse<FormResponseDto>> getForm(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(formService.getFormResponseById(id)));
     }
 
 //    @GetMapping(AppConstants.API_FORM_DATA)

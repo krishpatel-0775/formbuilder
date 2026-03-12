@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTeam } from "../../../context/TeamContext";
 import {
   Clipboard,
   Table,
@@ -15,16 +16,33 @@ import {
   PencilLine,
   LayoutDashboard,
   Trash2,
+  Users,
+  Key,
+  ArrowRight,
+  ShieldPlus,
 } from "lucide-react";
 
 export default function FormsListPage() {
+  const { teams, activeTeam, userRole, createTeam, joinTeam } = useTeam();
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
   const [copiedApiId, setCopiedApiId] = useState(null);
 
+  // No-Team State
+  const [newTeamName, setNewTeamName] = useState("");
+  const [joinInviteCode, setJoinInviteCode] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
-    fetch("http://localhost:9090/api/forms", { credentials: "include" })
+    if (!activeTeam) {
+        setForms([]);
+        setLoading(false);
+        return;
+    }
+
+    setLoading(true);
+    fetch(`http://localhost:9090/api/forms?teamId=${activeTeam.id}`, { credentials: "include" })
       .then((res) => res.json())
       .then((res) => {
         setForms(res.data || []);
@@ -34,7 +52,7 @@ export default function FormsListPage() {
         console.error("Error fetching forms:", err);
         setLoading(false);
       });
-  }, []);
+  }, [activeTeam]);
 
   const copyToClipboard = (id) => {
     const url = `${window.location.origin}/forms/${id}`;
@@ -96,6 +114,29 @@ export default function FormsListPage() {
     }
   };
 
+  const handleCreateTeam = async (e) => {
+    e.preventDefault();
+    if (!newTeamName.trim()) return;
+    setIsProcessing(true);
+    const success = await createTeam(newTeamName);
+    if (!success) alert("Failed to create team ❌");
+    setIsProcessing(false);
+  };
+
+  const handleJoinTeam = async (e) => {
+    e.preventDefault();
+    if (!joinInviteCode.trim()) return;
+    setIsProcessing(true);
+    const result = await joinTeam(joinInviteCode);
+    if (result.success) {
+      alert("Join request sent! 🚀 Please wait for approval.");
+      setJoinInviteCode("");
+    } else {
+      alert(result.message || "Failed to join team ❌");
+    }
+    setIsProcessing(false);
+  };
+
   if (loading) {
     return (
       <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[#f8fafc]">
@@ -107,6 +148,114 @@ export default function FormsListPage() {
         <p className="text-slate-400 mt-8 font-black tracking-[0.2em] uppercase text-[10px]">
           Synchronizing Workspace
         </p>
+      </div>
+    );
+  }
+
+  if (teams.length === 0) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] flex items-center justify-center p-8 relative selection:bg-blue-200 overflow-hidden">
+        {/* Decorative Background */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-400/5 blur-[120px] rounded-full pointer-events-none -mr-40 -mt-40" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-400/5 blur-[120px] rounded-full pointer-events-none -ml-40 -mb-40" />
+
+        <div className="max-w-4xl w-full relative z-10">
+          <div className="text-center mb-16 space-y-6">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-blue-600 text-xs font-black uppercase tracking-[0.2em]">
+              <Sparkles size={16} className="animate-pulse" /> Onboarding Phase
+            </div>
+            <h1 className="text-7xl font-black text-slate-950 tracking-tighter leading-none">
+              Initialize Your <span className="text-blue-600">Workspace</span>
+            </h1>
+            <p className="text-slate-500 text-xl font-medium max-w-2xl mx-auto leading-relaxed">
+              You are not yet in any team. Please <span className="text-slate-900 font-bold">join an existing team</span> with an invite code or <span className="text-blue-600 font-bold">create your own</span> to start building.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-10">
+            {/* Join Team Card */}
+            <div className="group bg-white border border-slate-200 rounded-[3rem] p-10 hover:border-indigo-200 transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(79,70,229,0.1)] relative overflow-hidden flex flex-col">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-indigo-100/50 transition-colors" />
+              
+              <div className="mb-10 relative">
+                <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Key size={32} />
+                </div>
+              </div>
+
+              <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Join a Team</h2>
+              <p className="text-slate-500 font-medium mb-10 leading-relaxed">Enter an invite code provided by your administrator to request access.</p>
+
+              <form onSubmit={handleJoinTeam} className="mt-auto space-y-4">
+                <div className="relative group/input">
+                  <input
+                    type="text"
+                    placeholder="Enter invite code..."
+                    value={joinInviteCode}
+                    onChange={(e) => setJoinInviteCode(e.target.value)}
+                    required
+                    className="w-full h-16 bg-slate-50 border border-slate-200 rounded-2xl px-6 font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-300"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full h-16 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all active:scale-[0.98] shadow-xl shadow-indigo-200 disabled:opacity-50 flex items-center justify-center gap-3"
+                >
+                  {isProcessing ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>Request Access</span>
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* Create Team Card */}
+            <div className="group bg-white border border-slate-200 rounded-[3rem] p-10 hover:border-blue-200 transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(37,99,235,0.1)] relative overflow-hidden flex flex-col">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-blue-100/50 transition-colors" />
+
+              <div className="mb-10 relative">
+                <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <ShieldPlus size={32} />
+                </div>
+              </div>
+
+              <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Create Team</h2>
+              <p className="text-slate-500 font-medium mb-10 leading-relaxed">Establish a new private workspace and invite others to collaborate.</p>
+
+              <form onSubmit={handleCreateTeam} className="mt-auto space-y-4">
+                <div className="relative group/input">
+                  <input
+                    type="text"
+                    placeholder="Workspace name..."
+                    value={newTeamName}
+                    onChange={(e) => setNewTeamName(e.target.value)}
+                    required
+                    className="w-full h-16 bg-slate-50 border border-slate-200 rounded-2xl px-6 font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-300"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full h-16 bg-slate-950 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-600 transition-all active:scale-[0.98] shadow-xl shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-3"
+                >
+                  {isProcessing ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>Initialize Workspace</span>
+                      <Plus size={18} />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -202,7 +351,7 @@ export default function FormsListPage() {
                       <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">API</span>
                     </button>
 
-                    {form.status === "PUBLISHED" ? (
+                    {form.status === "PUBLISHED" && userRole === 'TEAM_ADMIN' ? (
                       <Link href={`/forms/data/${form.id}`}>
                         <div className="flex flex-col items-center justify-center py-4 rounded-2xl border bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-blue-200 hover:text-blue-600 transition-all h-full">
                           <Table size={18} />
@@ -211,7 +360,7 @@ export default function FormsListPage() {
                       </Link>
                     ) : (
                       <div
-                        title="Publish to view data"
+                        title={userRole !== 'TEAM_ADMIN' ? "Only Admin can view data" : "Publish to view data"}
                         className="flex flex-col items-center justify-center py-4 rounded-2xl border bg-slate-100/50 border-slate-100 text-slate-300 cursor-not-allowed h-full"
                       >
                         <Table size={18} />
@@ -226,13 +375,15 @@ export default function FormsListPage() {
                   <div className="bg-slate-50 rounded-[2rem] p-2 flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
                       {/* DELETE BUTTON */}
-                      <button
-                        onClick={() => deleteForm(form.id)}
-                        className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-slate-200 text-red-500 font-bold text-xs hover:border-red-400 hover:bg-red-50 transition-all active:scale-95 shadow-sm col-span-2"
-                      >
-                        <Trash2 size={16} />
-                        <span>DELETE</span>
-                      </button>
+                      {userRole === 'TEAM_ADMIN' && (
+                        <button
+                          onClick={() => deleteForm(form.id)}
+                          className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-slate-200 text-red-500 font-bold text-xs hover:border-red-400 hover:bg-red-50 transition-all active:scale-95 shadow-sm col-span-2"
+                        >
+                          <Trash2 size={16} />
+                          <span>DELETE</span>
+                        </button>
+                      )}
 
                       {/* EDIT BUTTON */}
                       <Link href={`/forms/edit/${form.id}`} className="w-full">
@@ -243,17 +394,19 @@ export default function FormsListPage() {
                       </Link>
 
                       {/* PUBLISH BUTTON */}
-                      <button
-                        onClick={() => publishForm(form.id)}
-                        disabled={form.status === "PUBLISHED"}
-                        className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-sm ${form.status === "PUBLISHED"
-                          ? "bg-emerald-100 text-emerald-700 cursor-default border border-emerald-200"
-                          : "bg-white border border-slate-200 text-amber-600 hover:border-amber-400 hover:bg-amber-50"
-                          }`}
-                      >
-                        <CheckCircle size={16} />
-                        <span>{form.status === "PUBLISHED" ? "LIVE" : "PUBLISH"}</span>
-                      </button>
+                      {userRole !== 'FORM_EDITOR' && (
+                        <button
+                          onClick={() => publishForm(form.id)}
+                          disabled={form.status === "PUBLISHED"}
+                          className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-sm ${form.status === "PUBLISHED"
+                            ? "bg-emerald-100 text-emerald-700 cursor-default border border-emerald-200"
+                            : "bg-white border border-slate-200 text-amber-600 hover:border-amber-400 hover:bg-amber-50"
+                            }`}
+                        >
+                          <CheckCircle size={16} />
+                          <span>{form.status === "PUBLISHED" ? "LIVE" : "PUBLISH"}</span>
+                        </button>
+                      )}
                     </div>
 
                     {form.status === "PUBLISHED" ? (

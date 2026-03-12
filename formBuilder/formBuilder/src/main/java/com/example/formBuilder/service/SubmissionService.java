@@ -2,11 +2,17 @@ package com.example.formBuilder.service;
 
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.SubmissionRequest;
+import com.example.formBuilder.entity.Admin;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormField;
+import com.example.formBuilder.entity.TeamMember;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
+import com.example.formBuilder.enums.TeamRole;
+import com.example.formBuilder.repository.AdminRepository;
 import com.example.formBuilder.repository.FormRepository;
+import com.example.formBuilder.repository.TeamMemberRepository;
+import com.example.formBuilder.security.SessionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -24,6 +30,27 @@ public class SubmissionService {
     private final FormRepository formRepository;
     private final JdbcTemplate jdbcTemplate;
     private final RuleEngineService ruleEngineService;
+    private final AdminRepository adminRepository;
+    private final TeamMemberRepository teamMemberRepository;
+
+    private Admin getCurrentUser() {
+        String username = SessionUtil.getCurrentAdminUsername();
+        if (username == null) throw new ValidationException("Unauthorized");
+        return adminRepository.findByUsername(username)
+                .orElseThrow(() -> new ValidationException("User not found"));
+    }
+
+    private void checkTeamAdminPermission(Long formId) {
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+        Admin user = getCurrentUser();
+        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(form.getTeam().getId(), user.getId())
+                .orElseThrow(() -> new ValidationException("Access denied: You are not a member of this team"));
+        
+        if (member.getRole() != TeamRole.TEAM_ADMIN) {
+            throw new ValidationException("Only TEAM_ADMIN can perform this action");
+        }
+    }
 
     /** Returns true for types that are purely visual and have no DB column. */
     private static boolean isDisplayOnly(String type) {
@@ -35,15 +62,11 @@ public class SubmissionService {
      * Soft-deletes a specific response by marking its 'is_deleted' flag to true.
      */
     public String deleteResponse(Long formId, Long responseId) {
+        checkTeamAdminPermission(formId);
         String tableName = "form_" + formId;
-
         String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id = ?";
-
         jdbcTemplate.update(sql, responseId);
-
-
         return "response deleted";
-
     }
 
     /**
@@ -53,13 +76,11 @@ public class SubmissionService {
         if (responseIds == null || responseIds.isEmpty()) {
             return "No responses selected";
         }
-
+        checkTeamAdminPermission(formId);
         String tableName = "form_" + formId;
         String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id IN (" +
                 responseIds.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
-
         jdbcTemplate.update(sql, responseIds.toArray());
-
         return responseIds.size() + " responses deleted";
     }
 

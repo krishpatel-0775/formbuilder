@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
+import { useTeam } from "../../../../context/TeamContext";
 import * as XLSX from "xlsx";
 import { ENDPOINTS } from "../../../../config/apiConfig";
 
@@ -14,8 +15,10 @@ import { ENDPOINTS } from "../../../../config/apiConfig";
  */
 export default function FormDataPage() {
   const { id } = useParams();
+  const { activeTeam, userRole } = useTeam();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [formStatus, setFormStatus] = useState("DRAFT");
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
@@ -28,15 +31,16 @@ export default function FormDataPage() {
   const [direction, setDirection] = useState("desc");
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [formStatus, setFormStatus] = useState(null);
-
   const fetchData = async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
+      if (!activeTeam) throw new Error("Please select a team.");
+      if (userRole !== "TEAM_ADMIN") throw new Error("Access denied: Only TEAM_ADMIN can view submission data.");
+
       // Step 1: Check form status
-      const formRes = await fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" });
+      const formRes = await fetch(`${ENDPOINTS.FORMS}/${id}?teamId=${activeTeam.id}`, { credentials: "include" });
       if (!formRes.ok) throw new Error("Form not found or access denied.");
       const formJson = await formRes.json();
       const status = formJson.data?.status || "DRAFT";
@@ -46,13 +50,13 @@ export default function FormDataPage() {
         throw new Error("Form is either not published or access is restricted.");
       }
 
-      const url = `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+      const url = `${ENDPOINTS.FORMS}/${id}/data?teamId=${activeTeam.id}&page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
 
       const res = await fetch(url, { credentials: "include" });
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => null);
-        const errText = errJson ? JSON.stringify(errJson) : await res.text();
+        const errText = errJson ? (errJson.message || JSON.stringify(errJson)) : await res.text();
         throw new Error(errText || `Server returned ${res.status}`);
       }
 
@@ -76,10 +80,10 @@ export default function FormDataPage() {
   }, [id, page, size, sortBy, direction]);
 
   const handleExport = async () => {
-    if (!id || data.length === 0) return;
+    if (!id || data.length === 0 || !activeTeam) return;
     setExporting(true);
     try {
-      const url = `${ENDPOINTS.FORMS}/${id}/data?page=0&size=${totalElements || 1000}&sortBy=${sortBy}&direction=${direction}`;
+      const url = `${ENDPOINTS.FORMS}/${id}/data?teamId=${activeTeam.id}&page=0&size=${totalElements || 1000}&sortBy=${sortBy}&direction=${direction}`;
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json();
       const allData = json.data?.content || [];
@@ -141,8 +145,9 @@ export default function FormDataPage() {
   const deleteResponse = async (responseId) => {
     if (!confirm("Are you sure you want to delete this response?")) return;
 
+    if (!activeTeam) return;
     try {
-      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/response/${responseId}`, {
+      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/response/${responseId}?teamId=${activeTeam.id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -163,9 +168,10 @@ export default function FormDataPage() {
     if (selectedIds.length === 0) return;
     if (!confirm(`Are you sure you want to delete ${selectedIds.length} selected responses?`)) return;
 
+    if (!activeTeam) return;
     setDeleting(true);
     try {
-      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/responses/bulk-delete`, {
+      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/responses/bulk-delete?teamId=${activeTeam.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(selectedIds),
@@ -253,7 +259,7 @@ export default function FormDataPage() {
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8 flex items-start gap-4">
             <AlertCircle className="text-red-500 shrink-0" size={24} />
             <div className="flex-1">
-              <h3 className="text-red-800 font-black uppercase text-[11px] tracking-widest mb-2">Backend Connection Error</h3>
+              <h3 className="text-red-800 font-black uppercase text-[11px] tracking-widest mb-2">Submission Fetch Error</h3>
               <div className="bg-white/50 border border-red-100 rounded-xl p-3 mb-4">
                 <code className="text-red-600 text-xs font-bold leading-relaxed whitespace-pre-wrap">{error}</code>
               </div>
