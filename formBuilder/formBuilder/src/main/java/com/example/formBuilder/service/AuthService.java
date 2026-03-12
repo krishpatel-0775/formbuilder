@@ -5,6 +5,10 @@ import com.example.formBuilder.dto.LoginResponse;
 import com.example.formBuilder.dto.RegisterRequest;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.exception.ValidationException;
+import com.example.formBuilder.entity.Role;
+import com.example.formBuilder.entity.UserRole;
+import com.example.formBuilder.repository.RoleRepository;
+import com.example.formBuilder.repository.UserRoleRepository;
 import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.security.SessionUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,14 +22,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
     private final AuthenticationManager authenticationManager;
 
+    @Transactional
     public String register(RegisterRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new ValidationException("Username is already taken.");
@@ -42,7 +50,16 @@ public class AuthService {
         user.setPassword(request.getPassword());
         user.setExtraDetails(request.getExtraDetails());
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // Assign default role: FORMS_MANAGER
+        roleRepository.findByRoleName("FORMS_MANAGER").ifPresent(role -> {
+            userRoleRepository.save(UserRole.builder()
+                    .userId(savedUser.getId())
+                    .roleId(role.getId())
+                    .build());
+        });
+
         return "User registered successfully";
     }
 

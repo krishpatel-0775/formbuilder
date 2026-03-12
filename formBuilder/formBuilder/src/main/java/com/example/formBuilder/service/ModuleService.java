@@ -155,6 +155,12 @@ public class ModuleService {
                         .roleDescription("Full access to all system modules")
                         .build()));
 
+        Role formsManagerRole = roleRepository.findByRoleName("FORMS_MANAGER")
+                .orElseGet(() -> roleRepository.save(Role.builder()
+                        .roleName("FORMS_MANAGER")
+                        .roleDescription("Access to forms management modules")
+                        .build()));
+
         List<Module> existing = moduleRepository.findAll();
 
         // Ensure Parents
@@ -162,8 +168,9 @@ public class ModuleService {
         Module adminParent = findOrCreate(existing, "System Admin", null, "shield", true);
 
         // Ensure Main Links
-        findOrCreate(existing, "Form Vault", "/forms/all", "list", formsParent.getId());
-        findOrCreate(existing, "Create New Form", "/", "plus-circle", formsParent.getId());
+        Module vaultModule = findOrCreate(existing, "Form Vault", "/forms/all", "list", formsParent.getId());
+        Module createModule = findOrCreate(existing, "Create New Form", "/", "plus-circle", formsParent.getId());
+        
         findOrCreate(existing, "Module Management", "/admin/modules", "layout", adminParent.getId());
         findOrCreate(existing, "Role Management", "/admin/roles", "shield", adminParent.getId());
         findOrCreate(existing, "User Management", "/admin/users", "users", adminParent.getId());
@@ -171,22 +178,34 @@ public class ModuleService {
         // Refresh existing list to get new IDs
         existing = moduleRepository.findAll();
         final Long adminRoleId = adminRole.getId();
+        final Long formsManagerRoleId = formsManagerRole.getId();
 
-        // Map all modules to SYSTEM_ADMIN
-        existing.forEach(m -> {
-            boolean exists = roleModuleRepository.findByRoleId(adminRoleId).stream()
-                    .anyMatch(rm -> rm.getModuleId().equals(m.getId()));
-            if (!exists) {
+        // Map modules to roles
+        for (Module m : existing) {
+            // Admin gets everything
+            if (roleModuleRepository.findByRoleId(adminRoleId).stream()
+                    .noneMatch(rm -> rm.getModuleId().equals(m.getId()))) {
                 roleModuleRepository.save(RoleModule.builder().roleId(adminRoleId).moduleId(m.getId()).build());
             }
-        });
 
-        // Ensure current user is admin if they have no roles
+            // Forms Manager only gets forms related modules
+            if (m.getId().equals(formsParent.getId()) || m.getId().equals(vaultModule.getId()) || m.getId().equals(createModule.getId())) {
+                if (roleModuleRepository.findByRoleId(formsManagerRoleId).stream()
+                        .noneMatch(rm -> rm.getModuleId().equals(m.getId()))) {
+                    roleModuleRepository.save(RoleModule.builder().roleId(formsManagerRoleId).moduleId(m.getId()).build());
+                }
+            }
+        }
+
+        // Ensure current user has a role if they have none
         String currentUsername = SessionUtil.getCurrentUsername();
         if (currentUsername != null) {
             userRepository.findByUsername(currentUsername).ifPresent(user -> {
                 if (userRoleRepository.findByUserId(user.getId()).isEmpty()) {
-                    userRoleRepository.save(UserRole.builder().userId(user.getId()).roleId(adminRoleId).build());
+                    // If no one is an admin yet, make this user the first admin
+                    boolean anyAdminExists = !userRoleRepository.findByRoleId(adminRoleId).isEmpty();
+                    Long roleToAssign = anyAdminExists ? formsManagerRoleId : adminRoleId;
+                    userRoleRepository.save(UserRole.builder().userId(user.getId()).roleId(roleToAssign).build());
                 }
             });
         }

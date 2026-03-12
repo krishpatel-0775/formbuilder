@@ -17,7 +17,7 @@ import { SortableFieldItem } from "../../../../components/builder/SortableFieldI
 import { Sidebar } from "../../../../components/builder/Sidebar";
 import { Toolbar } from "../../../../components/builder/Toolbar";
 import { FormHeader } from "../../../../components/builder/FormHeader";
-import { useTeam } from "../../../../context/TeamContext";
+import { useAuth } from "../../../../context/AuthContext";
 
 // ─── Display-only types helper ───────────────────────────────────────────────
 const DISPLAY_ONLY_TYPES = new Set(["page_break", "heading", "paragraph", "divider"]);
@@ -27,7 +27,8 @@ const isDisplayOnly = (type) => DISPLAY_ONLY_TYPES.has(type);
 export default function EditFormPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { activeTeam, userRole } = useTeam();
+  const { user } = useAuth();
+  const userRole = "TEAM_ADMIN"; // Default for now as backend doesn't provide roles yet
 
   const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
@@ -44,8 +45,8 @@ export default function EditFormPage() {
 
   // Load form
   useEffect(() => {
-    if (!id || !activeTeam) return;
-    fetch(`http://localhost:9090/api/forms/${id}?teamId=${activeTeam.id}`, { credentials: "include" })
+    if (!id || !user) return;
+    fetch(`http://localhost:9090/api/forms/${id}`, { credentials: "include" })
       .then((res) => { if (!res.ok) { alert("Failed to load form. Redirecting..."); router.push("/forms/all"); return null; } return res.json(); })
       .then((res) => {
         if (!res) return;
@@ -99,14 +100,14 @@ export default function EditFormPage() {
         setIsLoading(false);
       })
       .catch((err) => { console.error(err); alert("Failed to load form. Redirecting..."); router.push("/forms/all"); });
-  }, [id, activeTeam]);
+  }, [id, user]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
-    if (af?.type === "select" && activeTeam) {
-      fetch(`http://localhost:9090/api/forms?teamId=${activeTeam.id}`, { credentials: "include" }).then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
+    if (af?.type === "select" && user) {
+      fetch(`http://localhost:9090/api/forms`, { credentials: "include" }).then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
     }
-  }, [activeFieldId, fields, activeTeam]);
+  }, [activeFieldId, fields, user]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
@@ -229,8 +230,7 @@ export default function EditFormPage() {
         if (field.type === "phone" && field.pattern) fd.pattern = field.pattern;
         return fd;
       });
-      if (!activeTeam) return alert("Please select a team before saving.");
-      const res = await fetch(`http://localhost:9090/api/forms/${id}?teamId=${activeTeam.id}`, {
+      const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ formName: formName.trim(), fields: formattedFields }),
         credentials: "include"

@@ -227,7 +227,7 @@ public class FormService {
 
     public List<FormListDto> getAllForms() {
         User user = getCurrentUser();
-        List<Form> forms = formRepository.findAll(); // Simplified: see all forms for now
+        List<Form> forms = formRepository.findByUserId(user.getId());
         
         return forms.stream()
                 .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus()))

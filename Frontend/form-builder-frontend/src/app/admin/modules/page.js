@@ -91,7 +91,7 @@ export default function ModulesPage() {
         setEditingModule(mod);
         setFormData({
             moduleName: mod.moduleName,
-            moduleDescription: mod.moduleDescription,
+            moduleDescription: mod.moduleDescription || "",
             prefix: mod.prefix || "",
             plugin: mod.plugin || "",
             controller: mod.controller || "",
@@ -193,7 +193,7 @@ export default function ModulesPage() {
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">URL Prefix</label>
                                 <input 
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
-                                    value={formData.prefix}
+                                    value={formData.prefix || ""}
                                     onChange={e => setFormData({...formData, prefix: e.target.value})}
                                 />
                             </div>
@@ -201,7 +201,7 @@ export default function ModulesPage() {
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Description</label>
                                 <textarea 
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-24"
-                                    value={formData.moduleDescription}
+                                    value={formData.moduleDescription || ""}
                                     onChange={e => setFormData({...formData, moduleDescription: e.target.value})}
                                 />
                             </div>
