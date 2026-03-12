@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import { 
     LayoutDashboard, 
     ChevronDown, 
@@ -16,10 +17,10 @@ import {
     MessageSquare,
     UserPlus,
     UserMinus,
-    LucideIcon
+    LucideIcon,
+    Flame
 } from "lucide-react";
 
-// Helper to map icon names to Lucide icons
 const iconMap = {
     "layout": LayoutDashboard,
     "file-text": FileText,
@@ -33,8 +34,9 @@ const iconMap = {
     "user-minus": UserMinus
 };
 
-export default function Sidebar() {
+export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
     const { user } = useAuth();
+    const pathname = usePathname();
     const [menuItems, setMenuItems] = useState([]);
     const [expandedGroups, setExpandedGroups] = useState({});
     const [loading, setLoading] = useState(true);
@@ -53,6 +55,12 @@ export default function Sidebar() {
             const data = await res.json();
             if (data.success) {
                 setMenuItems(data.data);
+                // Expand all parents by default
+                const initialExpanded = {};
+                data.data.forEach(item => {
+                    initialExpanded[item.id] = true;
+                });
+                setExpandedGroups(initialExpanded);
             }
         } catch (err) {
             console.error("Error fetching menu:", err);
@@ -62,6 +70,10 @@ export default function Sidebar() {
     };
 
     const toggleGroup = (id) => {
+        if (isCollapsed) {
+            onTypeSelect(); // Expand the sidebar if it's collapsed
+            return;
+        }
         setExpandedGroups(prev => ({
             ...prev,
             [id]: !prev[id]
@@ -71,226 +83,118 @@ export default function Sidebar() {
     if (!user) return null;
 
     return (
-        <aside style={sidebarStyle}>
-            <div style={sidebarHeaderStyle}>
-                <p style={headerLabelStyle}>Navigational Core</p>
-            </div>
-            
-            <div style={menuContainerStyle}>
-                {loading ? (
-                    <div className="flex flex-col gap-4 p-4 animate-pulse">
-                        <div className="h-10 bg-slate-100 rounded-xl w-full"></div>
-                        <div className="h-10 bg-slate-100 rounded-xl w-3/4"></div>
-                    </div>
-                ) : menuItems.length === 0 ? (
-                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed text-center">
-                            Welcome to the Core
-                        </p>
-                        <button 
-                            disabled={loading}
-                            onClick={async (e) => {
-                                const btn = e.currentTarget;
-                                const originalText = btn.innerText;
-                                btn.innerText = "Initializing...";
-                                btn.disabled = true;
-                                try {
-                                    const res = await fetch("http://localhost:9090/api/modules/seed", { 
-                                        method: "POST",
-                                        credentials: "include"
-                                    });
-                                    if (res.ok) {
-                                        btn.innerText = "Success!";
-                                        setTimeout(() => fetchMenu(), 500);
-                                    } else {
-                                        btn.innerText = "Error!";
-                                        setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
-                                    }
-                                } catch (err) { 
-                                    console.error("Seed error:", err); 
-                                    btn.innerText = "Failed!";
-                                    setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
-                                }
-                            }}
-                            className="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
-                        >
-                            Setup System
-                        </button>
-                    </div>
-                ) : (
-                    menuItems.map(item => {
-                        const IconComponent = item.icon && iconMap[item.icon] ? iconMap[item.icon] : ChevronRight;
-                        return (
-                            <div key={item.id} style={menuGroupStyle}>
-                                <div 
-                                    style={groupHeaderStyle(expandedGroups[item.id])}
-                                    onClick={() => toggleGroup(item.id)}
-                                >
-                                    <div style={iconWrapperStyle}>
-                                        <IconComponent size={16} />
-                                    </div>
-                                    <span style={groupTextStyle}>{item.name}</span>
-                                    <div style={chevronWrapperStyle(expandedGroups[item.id])}>
-                                        <ChevronDown size={14} />
-                                    </div>
-                                </div>
+        <aside className={`h-full flex flex-col bg-white overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "items-center" : ""}`}>
+            <div className={`p-6 w-full flex-1 overflow-y-auto custom-scrollbar transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "px-2" : ""}`}>
+                
+                <nav className="space-y-4">
+                    {loading ? (
+                        <div className="space-y-4 animate-pulse">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className={`h-11 bg-slate-100 rounded-2xl transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "w-11" : "w-full"}`}></div>
+                            ))}
+                        </div>
+                    ) : (
+                        menuItems.map(item => {
+                            const IconComponent = item.icon && iconMap[item.icon] ? iconMap[item.icon] : ChevronRight;
+                            const isExpanded = expandedGroups[item.id] && !isCollapsed;
+                            
+                            return (
+                                <div key={item.id} className="flex flex-col gap-1 w-full">
+                                    <button 
+                                        onClick={() => toggleGroup(item.id)}
+                                        title={isCollapsed ? item.name : ""}
+                                        className={`flex items-center rounded-2xl transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group overflow-hidden ${isCollapsed ? "justify-center p-3.5" : "gap-3 px-4 py-3"} ${
+                                            isExpanded ? "bg-slate-50 text-slate-900 border border-slate-100 shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-primary"
+                                        }`}
+                                    >
+                                        <div className={`flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] flex-shrink-0 ${
+                                            isExpanded || isCollapsed ? "text-primary scale-110" : "group-hover:text-primary group-hover:scale-110"
+                                        }`}>
+                                            <IconComponent size={22} strokeWidth={2.5} />
+                                        </div>
+                                        {!isCollapsed && (
+                                            <>
+                                                <span className="text-sm font-bold flex-1 text-left truncate tracking-tight animate-in fade-in duration-500">{item.name}</span>
+                                                <ChevronDown 
+                                                    size={14} 
+                                                    className={`transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-40 ${isExpanded ? "rotate-180" : ""}`}
+                                                />
+                                            </>
+                                        )}
+                                    </button>
 
-                                {expandedGroups[item.id] && item.children && (
-                                    <div style={subMenuContainerStyle}>
-                                        {item.children.map(child => (
-                                            <div key={child.id}>
-                                                {child.isSubParent ? (
-                                                    <div style={subGroupStyle}>
-                                                        <p style={subGroupHeaderStyle}>{child.name}</p>
-                                                        {child.children && child.children.map(subChild => (
-                                                            <NextLink 
-                                                                key={subChild.id}
-                                                                href={subChild.prefix || "#"}
-                                                                style={subNavLinkStyle}
-                                                            >
-                                                                {subChild.name}
-                                                            </NextLink>
-                                                        ))}
-                                                    </div>
-                                                ) : (
+                                    {isExpanded && !isCollapsed && item.children && (
+                                        <div className="ml-6 pl-4 border-l-2 border-slate-100/50 flex flex-col gap-1 mt-1 mb-2 animate-in slide-in-from-left duration-500">
+                                            {item.children.map(child => {
+                                                const isActive = pathname === child.prefix;
+                                                
+                                                if (child.isSubParent) {
+                                                    return (
+                                                        <div key={child.id} className="mt-3 mb-1">
+                                                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.15em] mb-2 ml-3 truncate transition-all duration-500">
+                                                                {child.name}
+                                                            </p>
+                                                            <div className="flex flex-col gap-1">
+                                                                {child.children && child.children.map(subChild => {
+                                                                    const isSubActive = pathname === subChild.prefix;
+                                                                    return (
+                                                                        <NextLink 
+                                                                            key={subChild.id}
+                                                                            href={subChild.prefix || "#"}
+                                                                            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${
+                                                                                isSubActive 
+                                                                                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
+                                                                                : "text-slate-400 hover:text-primary hover:bg-slate-50"
+                                                                            }`}
+                                                                        >
+                                                                            {subChild.name}
+                                                                        </NextLink>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                
+                                                return (
                                                     <NextLink 
+                                                        key={child.id}
                                                         href={child.prefix || "#"}
-                                                        style={navLinkStyle}
+                                                        className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${
+                                                            isActive 
+                                                            ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
+                                                            : "text-slate-500 hover:text-primary hover:bg-slate-50"
+                                                        }`}
                                                     >
                                                         {child.name}
                                                     </NextLink>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    })
-                )}
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    )}
+                </nav>
+            </div>
+
+            {/* Premium Collapse Mechanic */}
+            <div className={`p-4 mt-auto border-t border-slate-50 w-full transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "px-2" : ""}`}>
+                <button 
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className={`flex items-center gap-3 w-full p-3 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-primary transition-all duration-500 group ${isCollapsed ? "justify-center" : ""}`}
+                >
+                    <div className={`transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "rotate-180" : ""}`}>
+                        <ChevronRight size={20} strokeWidth={2.5} />
+                    </div>
+                    {!isCollapsed && (
+                        <span className="text-[10px] font-black uppercase tracking-widest animate-in fade-in duration-500">Collapse Core</span>
+                    )}
+                </button>
             </div>
         </aside>
     );
 }
 
-// --- Styles ---
-
-const sidebarStyle = {
-    width: "280px",
-    height: "calc(100vh - 64px)",
-    backgroundColor: "#ffffff",
-    borderRight: "1px solid rgba(0, 0, 0, 0.05)",
-    overflowY: "auto",
-    position: "fixed",
-    left: 0,
-    top: "64px",
-    padding: "24px",
-    zIndex: 900,
-};
-
-const sidebarHeaderStyle = {
-    marginBottom: "32px",
-    padding: "0 8px",
-};
-
-const headerLabelStyle = {
-    fontSize: "0.65rem",
-    fontWeight: "900",
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: "0.15em",
-    margin: 0,
-};
-
-const menuContainerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-};
-
-const menuGroupStyle = {
-    display: "flex",
-    flexDirection: "column",
-};
-
-const groupHeaderStyle = (expanded) => ({
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "12px 16px",
-    borderRadius: "12px",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    backgroundColor: expanded ? "#f8fafc" : "transparent",
-    color: expanded ? "#2563eb" : "#64748b",
-});
-
-const groupTextStyle = {
-    fontSize: "0.85rem",
-    fontWeight: "700",
-    flex: 1,
-};
-
-const iconWrapperStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-};
-
-const chevronWrapperStyle = (expanded) => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "transform 0.3s",
-    transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-    opacity: 0.5,
-});
-
-const subMenuContainerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    paddingLeft: "44px",
-    marginTop: "4px",
-    borderLeft: "1px solid #f1f5f9",
-    marginLeft: "24px",
-};
-
-const navLinkStyle = {
-    display: "block",
-    padding: "8px 12px",
-    fontSize: "0.8rem",
-    fontWeight: "600",
-    color: "#64748b",
-    textDecoration: "none",
-    borderRadius: "8px",
-    transition: "all 0.2s",
-};
-
-const subGroupStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    paddingTop: "8px",
-    paddingBottom: "8px",
-};
-
-const subGroupHeaderStyle = {
-    fontSize: "0.7rem",
-    fontWeight: "900",
-    color: "#cbd5e1",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    margin: "0 0 8px 12px",
-};
-
-const subNavLinkStyle = {
-    display: "block",
-    padding: "6px 12px",
-    fontSize: "0.75rem",
-    fontWeight: "600",
-    color: "#94a3b8",
-    textDecoration: "none",
-    borderRadius: "8px",
-    transition: "all 0.2s",
-};
+// Custom styles for scrollbar if needed (already handled in globals.css)

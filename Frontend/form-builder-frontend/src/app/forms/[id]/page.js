@@ -442,124 +442,169 @@ export default function PublicFormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-16 px-6">
-      <div className="max-w-2xl mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-8 font-bold text-sm uppercase tracking-widest">
-          <ArrowLeft size={16} /> Back
+    <div className="min-h-screen bg-[#f8fafc] py-20 px-6 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/5 rounded-full blur-[120px]" />
+      </div>
+
+      <div className="max-w-2xl mx-auto relative z-10">
+        <Link href="/" className="group inline-flex items-center gap-3 text-slate-400 hover:text-primary mb-12 font-black text-[10px] uppercase tracking-[0.2em] transition-all">
+          <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:border-primary/20 group-hover:shadow-lg transition-all">
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          </div>
+          Return to Hub
         </Link>
 
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_40px_100px_rgba(0,0,0,0.03)] overflow-hidden">
 
-          {/* Form header */}
-          <div className="p-8 md:p-12 border-b border-slate-100 bg-slate-50/50">
-            <h1 className="text-4xl font-black text-slate-900 capitalize mb-2">{formConfig.formName}</h1>
-            {isMultiPage ? (
-              <div className="space-y-3 mt-4">
-                {/* Page counter */}
-                <div className="flex items-center justify-between">
-                  <p className="text-slate-500 font-medium text-sm">
-                    Step <span className="font-black text-slate-800">{currentPage + 1}</span> of <span className="font-black text-slate-800">{totalPages}</span>
-                  </p>
-                  <span className="text-xs font-black text-blue-600 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
-                    {progressPct}% complete
-                  </span>
+          {/* Form Header Section */}
+          <div className="p-10 md:p-16 border-b border-slate-50 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+                <Send size={120} strokeWidth={1} />
+            </div>
+
+            <div className="relative space-y-2">
+                <div className="flex items-center gap-2 mb-4">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Secure Data Protocol</span>
                 </div>
-                {/* Progress bar */}
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                </div>
-                {/* Step dots */}
-                <div className="flex items-center justify-center gap-2 pt-1">
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <div key={i} className={`rounded-full transition-all duration-300 ${i === currentPage
-                      ? "w-6 h-2 bg-blue-500"
-                      : i < currentPage
-                        ? "w-2 h-2 bg-blue-300"
-                        : "w-2 h-2 bg-slate-200"
-                      }`} />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="text-slate-500 font-medium mt-1">Please fill the details below.</p>
-            )}
+                <h1 className="text-5xl font-black text-slate-900 leading-none tracking-tight">{formConfig.formName}</h1>
+                
+                {isMultiPage ? (
+                  <div className="space-y-6 pt-8">
+                    {/* Phase Tracker */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Operational Phase</span>
+                        <p className="text-xl font-black text-slate-800">
+                          {currentPage + 1} <span className="text-slate-300 mx-1 font-medium">/</span> {totalPages}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 block">Completion Integrity</span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xl font-black text-primary">{progressPct}%</span>
+                            <div className="w-12 h-12 rounded-full border-4 border-slate-100 relative flex items-center justify-center">
+                                <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                    <circle
+                                        cx="24" cy="24" r="20"
+                                        stroke="currentColor" strokeWidth="4" fill="transparent"
+                                        className="text-primary transition-all duration-1000 ease-out"
+                                        strokeDasharray={126}
+                                        strokeDashoffset={126 - (126 * progressPct) / 100}
+                                    />
+                                </svg>
+                                <CheckCircle2 size={16} className={`transition-all duration-500 ${progressPct === 100 ? "text-primary" : "text-slate-200"}`} />
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Linear Progress */}
+                    <div className="relative h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[15px] text-slate-500 font-medium pt-4 max-w-md leading-relaxed">System ready for data ingestion. Please provide the required parameters below.</p>
+                )}
+            </div>
           </div>
 
-          {/* Global error banner (only when errors on current page) */}
+          {/* Global Error Console */}
           {totalErrors > 0 && (
-            <div className="mx-8 md:mx-12 mt-8 rounded-2xl border border-red-200 bg-red-50 overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-4 bg-red-100/60 border-b border-red-200">
-                <AlertCircle size={18} className="text-red-600 flex-shrink-0" />
-                <p className="text-sm font-black text-red-700 uppercase tracking-wide">
-                  {totalErrors} error{totalErrors > 1 ? "s" : ""} — please fix before continuing
-                </p>
+            <div className="m-10 md:mx-16 mb-0 rounded-[2rem] border-2 border-red-100 bg-red-50/50 overflow-hidden animate-in slide-in-from-top-4 duration-500">
+              <div className="flex items-center justify-between px-8 py-5 bg-red-100/50 border-b border-red-200">
+                <div className="flex items-center gap-3">
+                    <AlertCircle size={20} className="text-red-600 animate-pulse" />
+                    <span className="text-xs font-black text-red-700 uppercase tracking-[0.2em]">Validation Protocol Failure</span>
+                </div>
+                <span className="bg-red-200/50 text-red-700 px-3 py-1 rounded-full text-[10px] font-black">
+                    {totalErrors} CRITICAL POINT{totalErrors > 1 ? "S" : ""}
+                </span>
               </div>
-              <ul className="px-5 py-4 space-y-1.5">
+              <div className="p-8 grid gap-4">
                 {Object.entries(errors).filter(([k]) => k !== "_ruleError").map(([fieldName, msgs]) =>
                   msgs.map((msg, i) => (
-                    <li key={`${fieldName}-${i}`} className="flex items-start gap-2">
-                      <span className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                      <button type="button"
+                    <button key={`${fieldName}-${i}`} type="button"
                         onClick={() => {
                           const el = document.getElementById(`field-${fieldName}`);
                           if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
                         }}
-                        className="text-xs font-bold text-red-600 hover:text-red-800 hover:underline text-left">
-                        <span className="text-red-400 uppercase">{fieldName}:</span> {msg}
-                      </button>
-                    </li>
+                        className="group flex items-start gap-4 p-4 rounded-2xl bg-white border border-red-100 hover:border-red-300 transition-all text-left">
+                      <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-500 font-black text-[10px] group-hover:scale-110 transition-transform">
+                        {i + 1}
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-[10px] font-black text-red-300 uppercase tracking-widest block mb-1">{fieldName} Identifier</span>
+                        <p className="text-sm font-black text-red-900 leading-tight">{msg}</p>
+                      </div>
+                      <ChevronRight size={16} className="text-red-200 group-hover:text-red-500 transition-colors mt-2" />
+                    </button>
                   ))
                 )}
-              </ul>
+              </div>
             </div>
           )}
 
-          {/* Form fields for current page */}
+          {/* Form Content Area */}
           <form onSubmit={isLastPage ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }} noValidate
-            className="p-8 md:p-12 space-y-10">
+            className="p-10 md:p-16 space-y-16">
 
-            {/* Rule engine validation error banner */}
+            {/* Rule Engine Violation */}
             {errors._ruleError && (
-              <div className="rounded-2xl border border-red-300 bg-red-50 px-5 py-4 flex items-start gap-3">
-                <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-black text-red-700">Submission Rejected</p>
-                  <p className="text-xs text-red-600 mt-0.5 font-medium">{errors._ruleError[0]}</p>
+              <div className="rounded-[2.5rem] border-2 border-red-200 bg-white p-8 flex items-start gap-6 shadow-xl shadow-red-500/5">
+                <div className="w-14 h-14 rounded-[1.5rem] bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0 animate-bounce">
+                    <AlertCircle size={28} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">System Rejection</h3>
+                  <p className="text-[15px] text-red-600/80 font-inter leading-relaxed">{errors._ruleError[0]}</p>
                 </div>
               </div>
             )}
 
-            {currentPageFields.map(renderField)}
+            <div className="space-y-12">
+                {currentPageFields.map(renderField)}
+            </div>
 
-            {/* Navigation buttons */}
-            <div className={`flex gap-4 mt-6 ${currentPage > 0 ? "justify-between" : "justify-end"}`}>
+            {/* Orchestration Controls */}
+            <div className={`flex items-center gap-6 pt-12 ${currentPage > 0 ? "justify-between" : "justify-end"}`}>
               {currentPage > 0 && (
                 <button type="button" onClick={handleBack}
-                  className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-base border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all active:scale-[0.99]">
-                  <ChevronLeft size={20} /> Back
+                  className="group flex items-center gap-4 px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:border-primary/20 hover:text-primary hover:bg-primary/5 transition-all active:scale-95">
+                  <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> 
+                  Phase Return
                 </button>
               )}
 
               {isLastPage ? (
                 <button type="submit" disabled={isSubmitting}
-                  className={`flex-1 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 ${isSubmitting
-                    ? "bg-slate-300 cursor-not-allowed text-slate-500"
-                    : "bg-slate-900 text-white hover:bg-blue-600 shadow-xl hover:shadow-blue-600/20 active:scale-[0.99]"
+                  className={`flex-1 h-20 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 shadow-2xl ${isSubmitting
+                    ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                    : "bg-slate-900 text-white hover:bg-primary shadow-primary/20 hover:scale-[1.02] active:scale-95"
                     }`}>
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
-                  {isSubmitting ? "Processing..." : "Submit Response"}
+                  {isSubmitting ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />}
+                  {isSubmitting ? "Orchestrating..." : "Finalize Protocol"}
                 </button>
               ) : (
                 <button type="submit"
-                  className="flex-1 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 bg-slate-900 text-white hover:bg-blue-600 shadow-xl hover:shadow-blue-600/20 active:scale-[0.99]">
-                  Next <ChevronRight size={20} />
+                  className="flex-1 h-20 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 bg-slate-900 text-white hover:bg-primary shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95">
+                  Next Interface <ChevronRight size={24} className="animate-bounce-x" />
                 </button>
               )}
             </div>
           </form>
+        </div>
+
+        {/* Support footer */}
+        <div className="mt-12 text-center">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Powered by Antigravity Design System</p>
         </div>
       </div>
     </div>

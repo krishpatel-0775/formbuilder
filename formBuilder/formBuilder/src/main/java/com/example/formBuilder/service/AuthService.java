@@ -48,7 +48,6 @@ public class AuthService {
         user.setEmail(request.getEmail());
         // Storing password as plain text since this is intentionally non-production-grade
         user.setPassword(request.getPassword());
-        user.setExtraDetails(request.getExtraDetails());
 
         User savedUser = userRepository.save(user);
 

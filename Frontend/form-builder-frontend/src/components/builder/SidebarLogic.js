@@ -1,4 +1,4 @@
-import { AlertTriangle, GitBranch } from "lucide-react";
+import { AlertTriangle, GitBranch, Sparkles } from "lucide-react";
 import RuleBuilder from "../RuleBuilder";
 
 export function SidebarLogic({ 
@@ -14,13 +14,15 @@ export function SidebarLogic({
   if (!fieldName) {
     return (
       <div className="flex-1 flex flex-col justify-center items-center text-center p-8 text-slate-500">
-        <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4">
-          <AlertTriangle size={24} />
-        </div>
-        <p className="text-sm font-bold text-slate-700">Question Title Required</p>
-        <p className="text-xs mt-2 text-slate-500 max-w-[200px]">
-          Please enter a question title for this field in the Properties tab before adding logic rules.
-        </p>
+          <div className="w-24 h-24 rounded-[2rem] bg-orange-50 border border-orange-100 flex items-center justify-center mb-8 shadow-2xl shadow-orange-500/10">
+              <div className="p-4 bg-orange-100/50 rounded-2xl text-orange-500">
+                <AlertTriangle size={32} strokeWidth={2.5} />
+              </div>
+          </div>
+          <h3 className="text-lg font-black text-slate-800 tracking-tight">Identity Required</h3>
+          <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-[0.15em] max-w-[240px] leading-relaxed">
+              Define a component name in the properties tab before establishing architectural logic.
+          </p>
       </div>
     );
   }
@@ -48,15 +50,29 @@ export function SidebarLogic({
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Logic tab info banner */}
-      <div className="mx-4 mt-4 mb-2 px-4 py-3 bg-orange-50 border border-orange-100 rounded-2xl flex items-start gap-3 flex-shrink-0">
-        <GitBranch size={14} className="text-orange-500 flex-shrink-0 mt-0.5" />
-        <p className="text-[11px] text-orange-700 font-medium leading-relaxed">
-          Rules here control when <strong className="font-black">{activeField.label || "this field"}</strong> is shown, hidden, or required.
+    <div className="flex-1 flex flex-col pb-10">
+      {/* Logic info banner */}
+      <div className="premium-card bg-primary/5 border-primary/10 !rounded-[2rem] p-6 mb-8 group hover:border-primary/20 transition-all">
+        <div className="flex items-center gap-3 mb-3">
+            <div className={`w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20`}>
+                <GitBranch size={16} strokeWidth={2.5} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Logic Protocol</span>
+        </div>
+        <p className="text-[11px] font-bold text-slate-500 leading-relaxed italic transition-colors group-hover:text-slate-700">
+           Establish conditional visibility and operational constraints for <span className="text-primary font-black">"{activeField.label}"</span> based on architectural dependencies.
         </p>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+
+      <div className="space-y-6">
+        <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-primary" />
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Defined Rules</label>
+            </div>
+            <span className="text-[10px] font-black text-primary bg-primary/5 px-2.5 py-1 rounded-full">{fieldRules.length} Active</span>
+        </div>
+        
         <RuleBuilder
           rules={fieldRules}
           onChange={handleFieldRulesChange}

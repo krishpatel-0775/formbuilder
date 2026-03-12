@@ -19,7 +19,10 @@ import {
 import {
     ArrowRight,
     GripVertical,
-    Rocket
+    Rocket,
+    MousePointer2,
+    Sparkles,
+    Loader2
 } from "lucide-react";
 import { FieldIcons } from "../components/builder/FieldConstants";
 import { SortableFieldItem } from "../components/builder/SortableFieldItem";
@@ -29,7 +32,7 @@ import { Sidebar } from "../components/builder/Sidebar";
 import { ENDPOINTS } from "../config/apiConfig";
 
 export default function BuilderPage() {
-    const userRole = "ADMIN"; // Simplified or derived from AuthContext
+    const userRole = "SYSTEM_ADMIN";
     const [formName, setFormName] = useState("");
     const [fields, setFields] = useState([]);
     const [activeFieldId, setActiveFieldId] = useState(null);
@@ -230,37 +233,11 @@ export default function BuilderPage() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-64px)] bg-[#f8fafc] text-slate-900 font-sans overflow-hidden">
-            <Toolbar
-                handleDragStart={handleDragStart}
-                addField={(type) => {
-                    const id = Date.now();
-                    if (isDisplayOnly(type) || type === "page_break") {
-                        const newEl = {
-                            id,
-                            label: type === "page_break"
-                                ? `Page ${fields.filter(f => f.type === "page_break").length + 2}`
-                                : type === "heading" ? "New Section" : type === "paragraph" ? "Add description here..." : "",
-                            type, required: false, defaultValue: "", options: [],
-                        };
-                        setFields(prev => [...prev, newEl]);
-                    } else {
-                        const newField = {
-                            id, label: "", type: type.toLowerCase(), required: false,
-                            defaultValue: type === "toggle" ? "false" : "",
-                            minLength: "", maxLength: "", min: "", max: "", pattern: "",
-                            beforeDate: "", afterDate: "", afterTime: "", beforeTime: "",
-                            options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
-                            sourceTable: "", sourceColumn: "",
-                        };
-                        setFields(p => [...p, newField]);
-                        setActiveFieldId(id);
-                    }
-                }}
-            />
+        <div className="flex h-full bg-background text-slate-900 font-sans overflow-hidden">
+            <Toolbar handleDragStart={handleDragStart} />
 
-            <main className="flex-1 flex flex-col min-w-0 bg-[#f1f5f9] relative overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+            <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-40 pointer-events-none" />
                 
                 <FormHeader
                     formName={formName}
@@ -268,46 +245,57 @@ export default function BuilderPage() {
                     saveForm={saveForm}
                     isSaving={isPublishing}
                     showSuccess={showSuccess}
-                    saveLabel="Draft Form"
-                    saveIcon={<Rocket size={16} />}
+                    saveLabel="Deploy Architecture"
+                    saveIcon={<Rocket size={18} strokeWidth={2.5} />}
                     userRole={userRole}
                 />
 
                 <div onDrop={handleDrop} onDragOver={handleDragOver}
-                    className="flex-1 p-10 overflow-auto bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] relative z-0">
-                    <div className="max-w-3xl mx-auto space-y-4">
+                    className="flex-1 p-10 overflow-auto custom-scrollbar relative z-0">
+                    <div className="max-w-3xl mx-auto space-y-6 pb-20">
                         {fields.length === 0 && (
-                            <div className="h-[40vh] border-2 border-slate-200 border-dashed rounded-[2rem] flex flex-col items-center justify-center bg-white/50 backdrop-blur-md">
-                                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-6 shadow-inner border border-slate-200">
-                                    <ArrowRight className="text-slate-400 -rotate-90" size={32} />
+                            <div className="h-[40vh] border-2 border-slate-200 border-dashed rounded-[3rem] flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm group hover:border-primary/30 transition-colors">
+                                <div className="w-24 h-24 rounded-[2rem] bg-white flex items-center justify-center mb-8 shadow-2xl shadow-slate-200/50 group-hover:scale-110 transition-transform duration-500">
+                                    <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+                                        <MousePointer2 size={32} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform" />
+                                    </div>
                                 </div>
-                                <p className="text-lg font-bold text-slate-700 tracking-wide">Canvas is empty</p>
-                                <p className="text-sm tracking-wide text-slate-500 mt-2">Drop components from the left sidebar to start building.</p>
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Empty Workspace</h3>
+                                <p className="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest">Drag components here to start</p>
+                                <div className="mt-8 flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
+                                    <Sparkles size={14} className="text-primary" />
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Build something premium</span>
+                                </div>
                             </div>
                         )}
                         {fields.length > 0 && (
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleSortStart} onDragEnd={handleSortEnd} onDragCancel={handleSortCancel}>
                                 <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-                                    {fields.map((field, idx) => (
-                                        <SortableFieldItem
-                                            key={field.id}
-                                            field={field}
-                                            idx={idx}
-                                            isActive={activeFieldId === field.id}
-                                            setActiveFieldId={setActiveFieldId}
-                                            removeField={removeField}
-                                            updateField={updateField}
-                                        />
-                                    ))}
+                                    <div className="space-y-4">
+                                        {fields.map((field, idx) => (
+                                            <SortableFieldItem
+                                                key={field.id}
+                                                field={field}
+                                                idx={idx}
+                                                isActive={activeFieldId === field.id}
+                                                setActiveFieldId={setActiveFieldId}
+                                                removeField={removeField}
+                                                updateField={updateField}
+                                            />
+                                        ))}
+                                    </div>
                                 </SortableContext>
                                 <DragOverlay>
-                                    {activeSortField ? (
-                                        <div className="flex items-center p-5 gap-5 bg-white/80 backdrop-blur-md rounded-[1.5rem] border border-blue-400 shadow-[0_15px_40px_rgba(59,130,246,0.2)] ring-2 ring-blue-400/50 cursor-grabbing rotate-2 scale-[1.02]">
-                                            <GripVertical size={16} className="text-blue-500" />
-                                            <div className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-500 rounded-xl border border-slate-100 shadow-inner">
-                                                {FieldIcons[activeSortField.type]}
+                                    {activeSortId ? (
+                                        <div className="flex items-center scale-[1.05] p-6 gap-6 bg-white/90 backdrop-blur-xl rounded-[2rem] border-2 border-primary shadow-[0_20px_50px_rgba(59,130,246,0.2)] cursor-grabbing rotate-1 transition-all">
+                                            <GripVertical size={20} className="text-primary" />
+                                            <div className="w-14 h-14 flex items-center justify-center bg-primary/5 text-primary rounded-2xl border border-primary/10 shadow-inner">
+                                                {FieldIcons[activeSortField?.type]}
                                             </div>
-                                            <span className="text-base font-bold text-slate-900">{activeSortField.label || "Enter question title..."}</span>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Architectural Component</p>
+                                                <span className="text-lg font-black text-slate-900 tracking-tight">{activeSortField?.label || "Untitled Component"}</span>
+                                            </div>
                                         </div>
                                     ) : null}
                                 </DragOverlay>
@@ -318,18 +306,18 @@ export default function BuilderPage() {
             </main>
 
             <Sidebar
-                activeFieldId={activeFieldId}
-                setActiveFieldId={setActiveFieldId}
                 activeField={activeField}
-                updateField={updateField}
-                rules={rules}
-                setRules={setRules}
-                availableForms={availableForms}
-                selectedFormFields={selectedFormFields}
+                setActiveFieldId={setActiveFieldId}
                 sidebarTab={sidebarTab}
                 setSidebarTab={setSidebarTab}
-                isDisplayOnly={isDisplayOnly}
+                updateField={updateField}
+                availableForms={availableForms}
+                selectedFormFields={selectedFormFields}
                 fields={fields}
+                rules={rules}
+                setRules={setRules}
+                isDisplayOnly={isDisplayOnly}
+                activeFieldId={activeFieldId}
             />
         </div>
     );

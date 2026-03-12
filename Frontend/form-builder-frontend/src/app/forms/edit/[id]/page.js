@@ -8,7 +8,7 @@ import {
 import { 
   arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, 
 } from "@dnd-kit/sortable";
-import { GripVertical, AlertCircle, ArrowRight, Loader2, Save } from "lucide-react";
+import { GripVertical, AlertCircle, ArrowRight, Loader2, Save, MousePointer2, Sparkles } from "lucide-react";
 import { ENDPOINTS } from "../../../../config/apiConfig";
 
 // Components
@@ -28,13 +28,14 @@ export default function EditFormPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const userRole = "TEAM_ADMIN"; // Default for now as backend doesn't provide roles yet
+  const userRole = "SYSTEM_ADMIN"; // Standardized role name
 
   const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
   const [activeFieldId, setActiveFieldId] = useState(null);
   const [activeSortId, setActiveSortId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [formStatus, setFormStatus] = useState("DRAFT");
@@ -47,7 +48,7 @@ export default function EditFormPage() {
   useEffect(() => {
     if (!id || !user) return;
     fetch(`http://localhost:9090/api/forms/${id}`, { credentials: "include" })
-      .then((res) => { if (!res.ok) { alert("Failed to load form. Redirecting..."); router.push("/forms/all"); return null; } return res.json(); })
+      .then((res) => { if (!res.ok) { router.push("/forms/all"); return null; } return res.json(); })
       .then((res) => {
         if (!res) return;
         const data = res.data;
@@ -99,7 +100,7 @@ export default function EditFormPage() {
         setFields(loadedFields);
         setIsLoading(false);
       })
-      .catch((err) => { console.error(err); alert("Failed to load form. Redirecting..."); router.push("/forms/all"); });
+      .catch((err) => { console.error(err); router.push("/forms/all"); });
   }, [id, user]);
 
   useEffect(() => {
@@ -200,6 +201,30 @@ export default function EditFormPage() {
   const handleNumberInput = (e, id, key) => { const v = e.target.value; if (v === "" || /^\d+$/.test(v)) updateField(id, key, v); };
   const generateColumnName = (label) => label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 
+  const publishForm = async () => {
+    if (!window.confirm("Are you certain you wish to synchronize this architecture with the live database? This will create the physical data structure and make the form operational.")) return;
+    
+    setIsPublishing(true);
+    try {
+        await saveForm();
+        const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
+            method: "POST",
+            credentials: "include"
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Cloud synchronization failed.");
+        }
+        setFormStatus("PUBLISHED");
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+    } catch (err) {
+        alert(`❌ ${err.message}`);
+    } finally {
+        setIsPublishing(false);
+    }
+  };
+
   const saveForm = async () => {
     if (!formName.trim()) return alert("Please name your form.");
     const realFields = fields.filter(f => !isDisplayOnly(f.type));
@@ -273,9 +298,15 @@ export default function EditFormPage() {
       } catch (e) { console.warn("Failed to save rules:", e); }
 
       setShowSuccess(true);
-      setTimeout(() => { setShowSuccess(false); router.push("/forms/all"); }, 1500);
-    } catch (err) { alert(`❌ ${err.message}`); }
-    finally { setIsSaving(false); }
+      if (!isPublishing) {
+        setTimeout(() => { setShowSuccess(false); router.push("/forms/all"); }, 1500);
+      }
+    } catch (err) { 
+        alert(`❌ ${err.message}`); 
+        throw err;
+    } finally { 
+        setIsSaving(false); 
+    }
   };
 
   const deleteForm = async () => {
@@ -292,65 +323,108 @@ export default function EditFormPage() {
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[#f8fafc]">
-        <Loader2 className="w-10 h-10 text-violet-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-bold tracking-widest uppercase text-xs">Loading Form...</p>
+      <div className="h-full flex flex-col items-center justify-center bg-background relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-mesh opacity-50" />
+        <div className="relative z-10 text-center space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+            <p className="text-[10px] font-black tracking-widest uppercase text-slate-400">Loading Workspace...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-[#f8fafc] text-slate-900 font-sans overflow-hidden">
+    <div className="flex h-full bg-background text-slate-900 font-sans overflow-hidden">
       <Toolbar handleDragStart={handleDragStart} />
-      <main className="flex-1 flex flex-col min-w-0 bg-[#f1f5f9] relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-violet-500/5 blur-[120px] rounded-full pointer-events-none" />
+      
+      <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-40 pointer-events-none" />
+        
         <FormHeader
           formName={formName}
           setFormName={setFormName}
           formStatus={formStatus}
           saveForm={saveForm}
+          publishForm={publishForm}
           deleteForm={deleteForm}
           isSaving={isSaving}
+          isPublishing={isPublishing}
           showSuccess={showSuccess}
           saveLabel="Save Changes"
-          saveIcon={<Save size={16} />}
+          saveIcon={<Save size={18} strokeWidth={2.5} />}
           userRole={userRole}
         />
-        <div onDrop={handleDrop} onDragOver={handleDragOver}
-          className="flex-1 p-10 overflow-auto bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] relative z-0">
-          <div className="max-w-3xl mx-auto space-y-4">
+
+        <div 
+          onDrop={handleDrop} 
+          onDragOver={handleDragOver}
+          className="flex-1 p-10 overflow-auto custom-scrollbar relative z-0"
+        >
+          <div className="max-w-3xl mx-auto space-y-6 pb-20">
             {formStatus === "PUBLISHED" && (
-              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700">
-                <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-bold">Published Form</p>
-                  <p className="text-xs mt-0.5 font-medium text-amber-600">This form is live. Renaming or deleting fields will alter the database table.</p>
+              <div className="premium-card bg-amber-50/80 border-amber-200/50 shadow-none !rounded-3xl">
+                <div className="p-4 flex items-start gap-3 text-amber-900">
+                    <AlertCircle size={20} className="mt-0.5 text-amber-500 flex-shrink-0" />
+                    <div>
+                        <p className="text-xs font-black uppercase tracking-widest mb-1">Live Edition Mode</p>
+                        <p className="text-sm font-medium opacity-80 leading-relaxed">Changes to published fields will automatically synchronize with the architectural database table.</p>
+                    </div>
                 </div>
               </div>
             )}
+
             {fields.length === 0 && (
-              <div className="h-[40vh] border-2 border-slate-200 border-dashed rounded-[2rem] flex flex-col items-center justify-center bg-white/50 backdrop-blur-md">
-                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-6 shadow-inner border border-slate-200">
-                  <ArrowRight className="text-slate-400 -rotate-90" size={32} />
+              <div className="h-[40vh] border-2 border-slate-200 border-dashed rounded-[3rem] flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm group hover:border-primary/30 transition-colors">
+                <div className="w-24 h-24 rounded-[2rem] bg-white flex items-center justify-center mb-8 shadow-2xl shadow-slate-200/50 group-hover:scale-110 transition-transform duration-500">
+                  <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+                    <MousePointer2 size={32} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform" />
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-slate-700 tracking-wide">No fields</p>
-                <p className="text-sm tracking-wide text-slate-500 mt-2">Drop components from the left sidebar to add fields.</p>
+                <h3 className="text-xl font-black text-slate-800 tracking-tight">Empty Workspace</h3>
+                <p className="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest">Drag components here to start</p>
+                <div className="mt-8 flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
+                    <Sparkles size={14} className="text-primary" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Build something premium</span>
+                </div>
               </div>
             )}
+
             {fields.length > 0 && (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleSortStart} onDragEnd={handleSortEnd} onDragCancel={handleSortCancel}>
+              <DndContext 
+                sensors={sensors} 
+                collisionDetection={closestCenter} 
+                onDragStart={handleSortStart} 
+                onDragEnd={handleSortEnd} 
+                onDragCancel={handleSortCancel}
+              >
                 <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-                  {fields.map((field, idx) => (
-                    <SortableFieldItem key={field.id} field={field} idx={idx} isActive={activeFieldId === field.id}
-                      setActiveFieldId={setActiveFieldId} removeField={removeField} updateField={updateField} />
-                  ))}
+                    <div className="space-y-4">
+                        {fields.map((field, idx) => (
+                            <SortableFieldItem 
+                                key={field.id} 
+                                field={field} 
+                                idx={idx} 
+                                isActive={activeFieldId === field.id}
+                                setActiveFieldId={setActiveFieldId} 
+                                removeField={removeField} 
+                                updateField={updateField} 
+                            />
+                        ))}
+                    </div>
                 </SortableContext>
                 <DragOverlay>
-                  {activeSortField ? (
-                    <div className="flex items-center p-5 gap-5 bg-white/80 backdrop-blur-md rounded-[1.5rem] border border-violet-400 shadow-[0_15px_40px_rgba(139,92,246,0.2)] ring-2 ring-violet-400/50 cursor-grabbing rotate-2 scale-[1.02]">
-                      <GripVertical size={16} className="text-violet-500" />
-                      <div className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-500 rounded-xl border border-slate-100 shadow-inner">{FieldIcons[activeSortField.type]}</div>
-                      <span className="text-base font-bold text-slate-900">{activeSortField.label || "Enter question title..."}</span>
+                  {activeSortId ? (
+                    <div className="flex items-center scale-[1.05] p-6 gap-6 bg-white/90 backdrop-blur-xl rounded-[2rem] border-2 border-primary shadow-[0_20px_50px_rgba(59,130,246,0.2)] cursor-grabbing rotate-1 transition-all">
+                      <GripVertical size={20} className="text-primary" />
+                      <div className="w-14 h-14 flex items-center justify-center bg-primary/5 text-primary rounded-2xl border border-primary/10 shadow-inner">
+                        {FieldIcons[activeSortField?.type]}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Architectural Component</p>
+                        <span className="text-lg font-black text-slate-900 tracking-tight">{activeSortField?.label || "Untitled Component"}</span>
+                      </div>
                     </div>
                   ) : null}
                 </DragOverlay>
@@ -359,10 +433,20 @@ export default function EditFormPage() {
           </div>
         </div>
       </main>
+
       <Sidebar 
-        activeField={activeField} setActiveFieldId={setActiveFieldId} sidebarTab={sidebarTab} setSidebarTab={setSidebarTab}
-        updateField={updateField} handleNumberInput={handleNumberInput} availableForms={availableForms} 
-        selectedFormFields={selectedFormFields} fields={fields} rules={rules} setRules={setRules} isDisplayOnly={isDisplayOnly}
+        activeField={activeField} 
+        setActiveFieldId={setActiveFieldId} 
+        sidebarTab={sidebarTab} 
+        setSidebarTab={setSidebarTab}
+        updateField={updateField} 
+        handleNumberInput={handleNumberInput} 
+        availableForms={availableForms} 
+        selectedFormFields={selectedFormFields} 
+        fields={fields} 
+        rules={rules} 
+        setRules={setRules} 
+        isDisplayOnly={isDisplayOnly}
       />
     </div>
   );

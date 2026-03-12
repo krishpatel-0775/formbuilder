@@ -1,278 +1,295 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  Clipboard,
-  Table,
-  ExternalLink,
-  Plus,
-  FileText,
-  CheckCircle,
-  Sparkles,
-  Code2,
-  Check,
-  PencilLine,
-  LayoutDashboard,
-  Trash2,
+import { 
+    Plus, 
+    Search, 
+    Filter, 
+    MoreVertical, 
+    FileText, 
+    Calendar, 
+    CheckCircle2, 
+    Clock, 
+    Trash2,
+    LayoutGrid,
+    List as ListIcon,
+    ArrowUpRight,
+    ExternalLink,
+    Rocket
 } from "lucide-react";
 
-export default function FormsListPage() {
-  const [forms, setForms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState(null);
-  const [copiedApiId, setCopiedApiId] = useState(null);
+export default function FormVaultPage() {
+    const [forms, setForms] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
+    const [searchQuery, setSearchQuery] = useState("");
+    const [publishingState, setPublishingState] = useState({}); // { [id]: boolean }
 
-  useEffect(() => {
-    setLoading(true);
-    fetch(`http://localhost:9090/api/forms`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((res) => {
-        setForms(res.data || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching forms:", err);
-        setLoading(false);
-      });
-  }, []);
+    useEffect(() => {
+        fetchForms();
+    }, []);
 
-  const copyToClipboard = (id) => {
-    const url = `${window.location.origin}/forms/${id}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+    const fetchForms = async () => {
+        try {
+            const res = await fetch("http://localhost:9090/api/forms", {
+                credentials: "include"
+            });
+            const data = await res.json();
+            if (data.success) {
+                setForms(data.data || []);
+            }
+        } catch (err) {
+            console.error("Error fetching forms:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const copyApiEndpoint = (id) => {
-    const apiUrl = `http://localhost:9090/api/forms/${id}`;
-    navigator.clipboard.writeText(apiUrl);
-    setCopiedApiId(id);
-    setTimeout(() => setCopiedApiId(null), 2000);
-  };
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you certain you wish to purge this architectural protocol? This action is irreversible.")) return;
+        
+        try {
+            const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
+                method: "DELETE",
+                credentials: "include"
+            });
+            const data = await res.json();
+            if (data.success) {
+                setForms(prev => prev.filter(f => f.id !== id));
+            }
+        } catch (err) {
+            console.error("Error deleting form:", err);
+        }
+    };
 
-  const publishForm = async (id) => {
-    try {
-      const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
-        method: "POST",
-        credentials: "include",
-      });
+    const handlePublish = async (id) => {
+        if (!window.confirm("Are you certain you wish to synchronize this architecture with the live database? This will create the physical data structure and make the form operational.")) return;
+        
+        setPublishingState(prev => ({ ...prev, [id]: true }));
+        try {
+            const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
+                method: "POST",
+                credentials: "include"
+            });
+            
+            if (res.ok) {
+                setForms(prev => prev.map(f => f.id === id ? { ...f, status: "PUBLISHED" } : f));
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert(`❌ ${err.message || "Cloud synchronization failed."}`);
+            }
+        } catch (err) {
+            console.error("Error publishing form:", err);
+            alert("❌ An unexpected error occurred during synchronization.");
+        } finally {
+            setPublishingState(prev => ({ ...prev, [id]: false }));
+        }
+    };
 
-      if (!res.ok) {
-        const errorMsg = await res.text();
-        throw new Error(errorMsg || "Failed to publish form");
-      }
-
-      setForms((prevForms) =>
-        prevForms.map((f) =>
-          f.id === id ? { ...f, status: "PUBLISHED" } : f
-        )
-      );
-    } catch (err) {
-      console.error("Publish error:", err);
-      alert("Error publishing form ❌");
-    }
-  };
-
-  const deleteForm = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this form? This action cannot be undone.")) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        const errorMsg = await res.text();
-        throw new Error(errorMsg || "Failed to delete form");
-      }
-
-      setForms((prevForms) => prevForms.filter((f) => f.id !== id));
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Error deleting form ❌");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[#f8fafc]">
-        <div className="relative w-20 h-20 flex justify-center items-center">
-          <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <LayoutDashboard className="text-blue-500 absolute animate-pulse" size={24} />
-        </div>
-        <p className="text-slate-400 mt-8 font-black tracking-[0.2em] uppercase text-[10px]">
-          Synchronizing Workspace
-        </p>
-      </div>
+    const filteredForms = forms.filter(f => 
+        f.formName?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }
 
-  return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] text-slate-900 overflow-hidden relative selection:bg-blue-200 pb-20">
-      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-400/5 blur-[120px] rounded-full pointer-events-none -mr-40 -mt-40" />
+    return (
+        <div className="p-6 lg:p-10 space-y-8 animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                            <FileText size={20} />
+                        </div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Form Vault</h1>
+                    </div>
+                    <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active architectural documents.</p>
+                </div>
 
-      <div className="max-w-7xl mx-auto mt-20 px-8 relative z-10 font-sans">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm text-blue-600 text-[10px] font-black uppercase tracking-[0.15em]">
-              <Sparkles size={14} className="animate-pulse" /> My Workspace
+                <Link 
+                    href="/forms/create"
+                    className="flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all w-full md:w-auto"
+                >
+                    <Plus size={20} strokeWidth={3} />
+                    Create New Form
+                </Link>
             </div>
-            <h1 className="text-6xl font-black text-slate-950 tracking-tighter leading-none">
-              Form <span className="text-blue-600">Vault</span>
-            </h1>
-            <p className="text-slate-500 text-lg font-medium max-w-lg leading-relaxed">
-              Manage your dynamic architecture. Deploy, edit, and analyze your data streams from a single command center.
-            </p>
-          </div>
 
-          <Link href="/">
-            <button className="group flex items-center gap-3 bg-slate-950 text-white px-10 py-5 rounded-[2rem] font-bold shadow-2xl hover:bg-blue-600 hover:shadow-blue-500/30 transition-all active:scale-95 duration-500">
-              <Plus size={22} className="group-hover:rotate-90 transition-transform duration-500" />
-              <span>New Project</span>
-            </button>
-          </Link>
+            {/* Controls Section */}
+            <div className="flex flex-col md:flex-row items-center gap-4 bg-white/50 backdrop-blur-md p-2 rounded-[2rem] border border-white/20 shadow-sm">
+                <div className="relative flex-1 group w-full">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                    <input 
+                        type="text" 
+                        placeholder="Search your forms..."
+                        className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-3xl text-sm focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                
+                <div className="flex items-center gap-2 p-1 bg-white border border-slate-100 rounded-2xl">
+                    <button 
+                        onClick={() => setViewMode("grid")}
+                        className={`p-3 rounded-xl transition-all ${viewMode === "grid" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
+                    >
+                        <LayoutGrid size={18} />
+                    </button>
+                    <button 
+                        onClick={() => setViewMode("list")}
+                        className={`p-3 rounded-xl transition-all ${viewMode === "list" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
+                    >
+                        <ListIcon size={18} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Grid Content */}
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-64 bg-white rounded-[2rem] border border-slate-100 animate-pulse" />
+                    ))}
+                </div>
+            ) : filteredForms.length === 0 ? (
+                <div className="h-[50vh] flex flex-col items-center justify-center bg-white border border-dashed border-slate-200 rounded-[3rem]">
+                    <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mb-6">
+                        <FileText size={32} className="text-slate-200" />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-800 tracking-tight">No forms found</h3>
+                    <p className="text-slate-500 mt-2 font-medium">Try a different search or create your first form.</p>
+                </div>
+            ) : viewMode === "grid" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredForms.map(form => (
+                        <div key={form.id} className="relative group bg-white rounded-[2.5rem] p-4 border border-slate-100 hover:border-primary/20 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] transition-all duration-500 overflow-hidden">
+                            {/* Decorative Background Element */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100%] transition-transform group-hover:scale-110 duration-700 pointer-events-none" />
+                            
+                            <div className="relative p-6 space-y-6">
+                                {/* Header: Icon & Status */}
+                                <div className="flex justify-between items-start">
+                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 shadow-inner">
+                                        <FileText size={24} strokeWidth={2.5} />
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                                        form.status === "PUBLISHED" 
+                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.1)]" 
+                                        : "bg-amber-50 text-amber-600 border-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+                                    }`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                                        {form.status}
+                                    </div>
+                                </div>
+
+                                {/* Title & Meta Info */}
+                                <div className="space-y-1">
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight group-hover:text-primary transition-colors cursor-default truncate">
+                                        {form.formName}
+                                    </h3>
+                                </div>
+
+                                {/* Actions Footer */}
+                                <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
+                                    <Link 
+                                        href={`/forms/edit/${form.id}`}
+                                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10 hover:shadow-primary/20 hover:-translate-y-0.5"
+                                    >
+                                        Edit Architecture
+                                    </Link>
+                                    
+                                    <div className="flex gap-2">
+                                        {form.status !== "PUBLISHED" ? (
+                                            <button 
+                                                onClick={() => handlePublish(form.id)}
+                                                disabled={publishingState[form.id]}
+                                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary transition-all shadow-sm disabled:opacity-50"
+                                                title="Synchronize Architecture"
+                                            >
+                                                {publishingState[form.id] ? (
+                                                    <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                                ) : (
+                                                    <Rocket size={18} strokeWidth={2.5} />
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <Link 
+                                                href={`/forms/data/${form.id}`}
+                                                className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-emerald-50 hover:text-emerald-500 transition-all shadow-sm"
+                                                title="View Live Data"
+                                            >
+                                                <ArrowUpRight size={18} strokeWidth={2.5} />
+                                            </Link>
+                                        )}
+                                        
+                                        <button 
+                                            onClick={() => handleDelete(form.id)}
+                                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
+                                            title="Purge Protocol"
+                                        >
+                                            <Trash2 size={18} strokeWidth={2.5} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                    <table className="w-full text-left">
+                        <thead className="bg-slate-50 border-b border-slate-100">
+                            <tr>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Form Name</th>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Modified</th>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {filteredForms.map(form => (
+                                <tr key={form.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-8 py-5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
+                                                <FileText size={18} />
+                                            </div>
+                                            <span className="font-bold text-slate-900">{form.formName}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-5">
+                                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                            form.status === "PUBLISHED" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
+                                        }`}>
+                                            {form.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-8 py-5 text-xs font-semibold text-slate-500">2 hours ago</td>
+                                    <td className="px-8 py-5 text-right space-x-2">
+                                        {form.status !== "PUBLISHED" && (
+                                            <button 
+                                                onClick={() => handlePublish(form.id)}
+                                                disabled={publishingState[form.id]}
+                                                className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                                            >
+                                                <Rocket size={18} />
+                                            </button>
+                                        )}
+                                        <Link href={`/forms/edit/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                                            <FileText size={18} />
+                                        </Link>
+                                        <button 
+                                            onClick={() => handleDelete(form.id)}
+                                            className="inline-flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
-
-        {forms.length === 0 ? (
-          <div className="text-center py-40 bg-white border border-slate-100 rounded-[3rem] shadow-sm">
-            <div className="w-24 h-24 bg-slate-50 border border-slate-100 rounded-[2.5rem] mx-auto flex items-center justify-center mb-8 rotate-12 group-hover:rotate-0 transition-all">
-              <FileText className="text-slate-300" size={40} />
-            </div>
-            <h3 className="text-3xl font-black text-slate-900 mb-2">The vault is empty</h3>
-            <p className="text-slate-400 font-medium">Create your first dynamic form to see it here.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {forms.filter((form) => form.formName).map((form) => (
-              <div
-                key={form.id}
-                className="group bg-white border border-slate-200/80 rounded-[2.5rem] p-2 hover:border-blue-200 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] flex flex-col"
-              >
-                <div className="p-8 pb-4">
-                  <div className="flex justify-between items-center mb-8">
-                    <div className="px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        REF: {form.id.toString().padStart(4, "0")}
-                      </span>
-                    </div>
-                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${form.status === "PUBLISHED"
-                      ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                      : "bg-amber-50 text-amber-600 border border-amber-100"
-                      }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                      {form.status || "DRAFT"}
-                    </div>
-                  </div>
-
-                  <h3 className="text-2xl font-black text-slate-900 mb-8 capitalize tracking-tight line-clamp-2 min-h-[4rem]">
-                    {form.formName}
-                  </h3>
-
-                  <div className="grid grid-cols-3 gap-2 mb-6">
-                    <button
-                      onClick={() => form.status === "PUBLISHED" && copyToClipboard(form.id)}
-                      title={form.status === "PUBLISHED" ? "Copy Share Link" : "Publish to enable sharing"}
-                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${form.status !== "PUBLISHED"
-                        ? "bg-slate-100/50 border-slate-100 text-slate-300 cursor-not-allowed"
-                        : copiedId === form.id
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-600"
-                          : "bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-blue-200 hover:text-blue-600"
-                        }`}
-                    >
-                      {copiedId === form.id ? <Check size={18} /> : <Clipboard size={18} />}
-                      <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">Share</span>
-                    </button>
-
-                    <button
-                      onClick={() => copyApiEndpoint(form.id)}
-                      title="Copy API Endpoint"
-                      className={`flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${copiedApiId === form.id
-                        ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                        : "bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-indigo-200 hover:text-indigo-600"
-                        }`}
-                    >
-                      {copiedApiId === form.id ? <Check size={18} /> : <Code2 size={18} />}
-                      <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">API</span>
-                    </button>
-
-                    {form.status === "PUBLISHED" ? (
-                      <Link href={`/forms/data/${form.id}`}>
-                        <div className="flex flex-col items-center justify-center py-4 rounded-2xl border bg-slate-50/50 border-slate-100 text-slate-400 hover:bg-white hover:border-blue-200 hover:text-blue-600 transition-all h-full">
-                          <Table size={18} />
-                          <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">Data</span>
-                        </div>
-                      </Link>
-                    ) : (
-                      <div
-                        title="Publish to view data"
-                        className="flex flex-col items-center justify-center py-4 rounded-2xl border bg-slate-100/50 border-slate-100 text-slate-300 cursor-not-allowed h-full"
-                      >
-                        <Table size={18} />
-                        <span className="text-[8px] font-black uppercase mt-2 tracking-tighter">Data</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-2 pt-0 mt-auto">
-                  <div className="bg-slate-50 rounded-[2rem] p-2 flex flex-col gap-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => deleteForm(form.id)}
-                        className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-slate-200 text-red-500 font-bold text-xs hover:border-red-400 hover:bg-red-50 transition-all active:scale-95 shadow-sm col-span-2"
-                      >
-                        <Trash2 size={16} />
-                        <span>DELETE</span>
-                      </button>
-
-                      <Link href={`/forms/edit/${form.id}`} className="w-full">
-                        <div className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:border-blue-400 hover:text-blue-600 transition-all active:scale-95 shadow-sm">
-                          <PencilLine size={16} />
-                          <span>EDIT</span>
-                        </div>
-                      </Link>
-
-                      <button
-                        onClick={() => publishForm(form.id)}
-                        disabled={form.status === "PUBLISHED"}
-                        className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-sm ${form.status === "PUBLISHED"
-                          ? "bg-emerald-100 text-emerald-700 cursor-default border border-emerald-200"
-                          : "bg-white border border-slate-200 text-amber-600 hover:border-amber-400 hover:bg-amber-50"
-                          }`}
-                      >
-                        <CheckCircle size={16} />
-                        <span>{form.status === "PUBLISHED" ? "LIVE" : "PUBLISH"}</span>
-                      </button>
-                    </div>
-
-                    {form.status === "PUBLISHED" ? (
-                      <Link href={`/forms/${form.id}`}>
-                        <div className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-slate-950 text-white font-bold text-xs hover:bg-blue-600 transition-all active:scale-95 shadow-lg">
-                          <ExternalLink size={16} />
-                          <span className="tracking-widest uppercase">Launch Form</span>
-                        </div>
-                      </Link>
-                    ) : (
-                      <div
-                        title="Publish to launch form"
-                        className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-slate-200 text-slate-400 font-bold text-xs cursor-not-allowed"
-                      >
-                        <ExternalLink size={16} />
-                        <span className="tracking-widest uppercase">Launch Form</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    );
 }

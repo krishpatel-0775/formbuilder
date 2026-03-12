@@ -10,7 +10,6 @@ export default function RegisterPage() {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [extraDetails, setExtraDetails] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -24,7 +23,7 @@ export default function RegisterPage() {
             const res = await fetch(ENDPOINTS.AUTH_REGISTER, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, email, password, extraDetails }),
+                body: JSON.stringify({ username, email, password }),
                 credentials: "include"
             });
 
@@ -77,14 +76,6 @@ export default function RegisterPage() {
                         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
                             className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
                             placeholder="••••••••" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1 flex items-center justify-between">
-                            Extra Details <span className="text-[10px] text-slate-400 font-medium normal-case tracking-normal">Optional</span>
-                        </label>
-                        <textarea value={extraDetails} onChange={(e) => setExtraDetails(e.target.value)} rows={2}
-                            className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-900 outline-none resize-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
-                            placeholder="Admin notes or team department..." />
                     </div>
 
                     <button type="submit" disabled={loading}

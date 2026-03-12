@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Star, Zap } from "lucide-react";
 
 export function FormFieldWrapper({ 
   field, 
@@ -16,101 +16,146 @@ export function FormFieldWrapper({
   if (isShowControlled && visibility !== "SHOW") return null;
 
   const hasError = errors && errors.length > 0;
-  const inputCls = `w-full px-6 py-4 rounded-2xl border transition-all outline-none font-medium ${hasError
-    ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100"
-    : "border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-slate-50/30"
+  const inputBase = "w-full px-6 py-5 rounded-[1.5rem] border transition-all duration-500 outline-none font-bold text-[15px] shadow-sm";
+  const inputCls = `${inputBase} ${hasError
+    ? "border-red-200 bg-red-50/20 text-red-900 placeholder:text-red-200 focus:border-red-400 focus:ring-8 focus:ring-red-50"
+    : "border-slate-100 bg-slate-50/50 text-slate-800 placeholder:text-slate-200 focus:bg-white focus:border-primary focus:ring-8 focus:ring-primary/5 hover:border-slate-200"
     }`;
 
   // ── Static elements: render and return early (no label/input/errors) ──
   if (field.fieldType === "heading") {
     return (
-      <h2 className="text-2xl font-black text-slate-900 leading-snug pt-4">
-        {field.defaultValue || field.fieldName}
-      </h2>
+      <div className="pt-8 pb-4">
+        <h2 className="text-3xl font-black text-slate-900 leading-tight tracking-tight">
+          {field.defaultValue || field.fieldName}
+        </h2>
+        <div className="w-12 h-1.5 bg-primary rounded-full mt-4" />
+      </div>
     );
   }
   if (field.fieldType === "paragraph") {
     return (
-      <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap">
+      <p className="text-[15px] text-slate-500 leading-relaxed font-medium bg-slate-50/30 p-6 rounded-[2rem] border border-slate-100/50 italic">
         {field.defaultValue || field.fieldName}
       </p>
     );
   }
   if (field.fieldType === "divider") {
     return (
-      <div className="border-t border-slate-200 my-4" />
+      <div className="relative py-8">
+        <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-100" />
+        </div>
+        <div className="relative flex justify-center">
+            <div className="bg-[#f8fafc] px-4">
+                <div className="w-2 h-2 rounded-full bg-slate-200" />
+            </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div id={`field-${field.fieldName}`} className="space-y-3">
-      {/* Label */}
-      <label className="block text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2 flex-wrap">
-        <span>{field.fieldName}</span>
-        {(field.required || isRuleRequired) && <span className="text-red-500">*</span>}
-        {visibility === "SHOW" && isShowControlled && (
-          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full normal-case tracking-normal">
-            ✓ shown by rule
-          </span>
-        )}
-        {isRuleRequired && (
-          <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full normal-case tracking-normal">
-            ★ required by rule
-          </span>
-        )}
-      </label>
+    <div id={`field-${field.fieldName}`} className="space-y-4 group animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Label Area */}
+      <div className="flex items-center justify-between px-1">
+        <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <span>{field.fieldName}</span>
+            {(field.required || isRuleRequired) && <span className="text-red-500 text-lg leading-none mt-1">*</span>}
+        </label>
+        <div className="flex gap-2">
+            {visibility === "SHOW" && isShowControlled && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-[9px] font-black uppercase tracking-wider">
+                    <Zap size={10} strokeWidth={3} /> Logic Reveal
+                </div>
+            )}
+            {isRuleRequired && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[9px] font-black uppercase tracking-wider">
+                    <Star size={10} fill="currentColor" /> Mandatory
+                </div>
+            )}
+        </div>
+      </div>
 
       {/* TEXTAREA */}
       {field.fieldType === "textarea" && (
-        <textarea rows={4} value={value || ""}
+        <textarea 
+          rows={5} 
+          value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
-          className={`${inputCls} resize-none`} />
+          placeholder={`Enter your ${field.fieldName.toLowerCase()} details...`}
+          className={`${inputCls} resize-none leading-relaxed`} 
+        />
       )}
 
       {/* RADIO */}
       {field.fieldType === "radio" && (
         <div className="grid gap-3">
-          {field.options?.map((opt, idx) => (
-            <label key={idx} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${value === opt
-              ? "bg-blue-50 border-blue-200 text-blue-700"
-              : hasError ? "bg-red-50/20 border-red-200 text-slate-600"
-                : "bg-slate-50/50 border-slate-100 text-slate-600"
-              }`}>
-              <input type="radio" name={field.fieldName} value={opt}
-                checked={value === opt}
-                onChange={(e) => onChange(field.fieldName, e.target.value)}
-                className="w-4 h-4 text-blue-600" />
-              <span className="font-bold">{opt}</span>
-            </label>
-          ))}
+          {field.options?.map((opt, idx) => {
+            const isActive = value === opt;
+            return (
+              <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${
+                  isActive
+                  ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
+                  : hasError 
+                    ? "bg-red-50/20 border-red-100 text-slate-500"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                }`}>
+                <div className="flex items-center gap-4">
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
+                    }`}>
+                        {isActive && <div className="w-2 h-2 rounded-full bg-white animate-in zoom-in duration-300" />}
+                    </div>
+                    <span className="font-black text-[15px]">{opt}</span>
+                </div>
+                {isActive && <CheckCircle2 size={18} strokeWidth={3} className="animate-in slide-in-from-right-2 fade-in" />}
+                <input type="radio" name={field.fieldName} value={opt} checked={isActive}
+                    onChange={(e) => onChange(field.fieldName, e.target.value)}
+                    className="hidden" />
+              </label>
+            );
+          })}
         </div>
       )}
 
       {/* CHECKBOX */}
       {field.fieldType === "checkbox" && (
         <div className="grid gap-3">
-          {field.options?.map((opt, idx) => (
-            <label key={idx} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${value?.includes(opt)
-              ? "bg-blue-50 border-blue-200 text-blue-700"
-              : hasError ? "bg-red-50/20 border-red-200 text-slate-600"
-                : "bg-slate-50/50 border-slate-100 text-slate-600"
-              }`}>
-              <input type="checkbox" checked={value?.includes(opt)}
-                onChange={() => onCheckboxChange(field.fieldName, opt)}
-                className="w-4 h-4 rounded text-blue-600" />
-              <span className="font-bold">{opt}</span>
-            </label>
-          ))}
+          {field.options?.map((opt, idx) => {
+            const isActive = value?.includes(opt);
+            return (
+              <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${
+                  isActive
+                  ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
+                  : hasError 
+                    ? "bg-red-50/20 border-red-100 text-slate-500"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                }`}>
+                <div className="flex items-center gap-4">
+                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                        isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
+                    }`}>
+                        {isActive && <CheckCircle2 size={14} strokeWidth={4} className="text-white animate-in zoom-in duration-300" />}
+                    </div>
+                    <span className="font-black text-[15px]">{opt}</span>
+                </div>
+                <input type="checkbox" checked={isActive}
+                    onChange={() => onCheckboxChange(field.fieldName, opt)}
+                    className="hidden" />
+              </label>
+            );
+          })}
         </div>
       )}
 
       {/* SELECT */}
       {field.fieldType === "select" && (
-        <div className="relative">
+        <div className="relative group/select">
           <select value={value || ""}
             onChange={(e) => onChange(field.fieldName, e.target.value)}
-            className={`${inputCls} font-bold appearance-none cursor-pointer`}>
-            <option value="" disabled>Select an option</option>
+            className={`${inputCls} appearance-none cursor-pointer pr-16`}>
+            <option value="" disabled>Choose an architectural option...</option>
             {field.options?.map((opt, idx) => {
               const isObj = typeof opt === "object" && opt !== null;
               const val = isObj ? opt.id : opt;
@@ -118,10 +163,8 @@ export function FormFieldWrapper({
               return <option key={idx} value={val}>{label}</option>;
             })}
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
+          <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center text-slate-300 group-hover/select:text-primary transition-colors">
+            <ChevronRight size={24} className="rotate-90" strokeWidth={3} />
           </div>
         </div>
       )}
@@ -132,42 +175,48 @@ export function FormFieldWrapper({
         return (
           <div
             onClick={() => onChange(field.fieldName, isOn ? "false" : "true")}
-            className={`flex items-center justify-between p-5 rounded-2xl border-2 cursor-pointer transition-all select-none ${
+            className={`flex items-center justify-between p-6 rounded-[2rem] border-2 cursor-pointer transition-all duration-700 select-none ${
               isOn
-                ? "bg-emerald-50 border-emerald-300"
+                ? "bg-emerald-50 border-emerald-300 shadow-xl shadow-emerald-500/5 text-emerald-900"
                 : hasError
-                ? "bg-red-50/30 border-red-200"
-                : "bg-slate-50 border-slate-200 hover:border-slate-300"
+                  ? "bg-red-50/30 border-red-200 text-red-900"
+                  : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
             }`}>
-            <span className={`font-bold text-sm ${isOn ? "text-emerald-800" : "text-slate-600"}`}>
-              {isOn ? "Yes / On" : "No / Off"}
+            <span className="font-black text-[15px] uppercase tracking-widest pl-2">
+              {isOn ? "Operational: Active" : "Operational: Standby"}
             </span>
-            <div className={`relative w-14 h-7 rounded-full transition-colors ${
-              isOn ? "bg-emerald-500" : "bg-slate-300"
+            <div className={`relative w-16 h-8 rounded-full transition-all duration-500 ${
+              isOn ? "bg-emerald-500 shadow-lg shadow-emerald-500/30" : "bg-slate-200"
             }`}>
-              <div className={`absolute top-1.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                isOn ? "translate-x-8" : "translate-x-1.5"
+              <div className={`absolute top-1.5 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-500 ${
+                isOn ? "translate-x-9 scale-110" : "translate-x-1.5"
               }`} />
             </div>
           </div>
         );
       })()}
 
-      {/* TEXT / NUMBER / EMAIL / DATE / PHONE / TIME / URL */}
+      {/* GENERIC INPUTS */}
       {!["textarea", "radio", "checkbox", "select", "toggle", "heading", "paragraph", "divider"].includes(field.fieldType) && (
-        <input type={field.fieldType === "phone" ? "tel" : field.fieldType}
+        <input 
+          type={field.fieldType === "phone" ? "tel" : field.fieldType}
           value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
-          className={inputCls} />
+          placeholder={`Enter sequence for ${field.fieldName.toLowerCase()}...`}
+          className={inputCls} 
+        />
       )}
 
-      {/* Inline error list */}
+      {/* Validation Errors */}
       {hasError && (
-        <div className="rounded-xl border border-red-200 bg-red-50/70 px-4 py-3 space-y-1.5">
+        <div className="rounded-[1.5rem] border border-red-100 bg-red-50 ring-4 ring-red-50/50 p-6 space-y-2 animate-in slide-in-from-top-2 duration-500">
+          <div className="flex items-center gap-2 mb-1 px-1">
+              <AlertCircle size={14} className="text-red-500" strokeWidth={3} />
+              <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Protocol Anomaly Detected</span>
+          </div>
           {errors.map((msg, i) => (
-            <div key={i} className="flex items-start gap-2 text-red-600">
-              <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
-              <span className="text-xs font-bold leading-snug">{msg}</span>
+            <div key={i} className="flex items-start gap-3 text-red-600">
+              <span className="text-[13px] font-black leading-relaxed">{msg}</span>
             </div>
           ))}
         </div>
