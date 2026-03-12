@@ -1,6 +1,6 @@
 package com.example.formBuilder.entity;
 
-
+//import com.example.formBuilder.entity.User;
 import com.example.formBuilder.enums.FormStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -52,10 +52,6 @@ public class Form {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "admin_id")
-    private Admin admin;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "team_id")
-    private Team team;
+    @JoinColumn(name = "user_id")
+    private User user;
 }

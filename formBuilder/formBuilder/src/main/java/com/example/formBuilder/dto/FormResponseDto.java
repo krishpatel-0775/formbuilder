@@ -21,5 +21,4 @@ public class FormResponseDto {
     private FormStatus status;
     private String rules;
     private List<FormFieldResponseDto> fields;
-    private Long teamId;
 }

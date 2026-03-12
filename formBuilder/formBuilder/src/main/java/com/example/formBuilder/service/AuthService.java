@@ -3,9 +3,9 @@ package com.example.formBuilder.service;
 import com.example.formBuilder.dto.LoginRequest;
 import com.example.formBuilder.dto.LoginResponse;
 import com.example.formBuilder.dto.RegisterRequest;
-import com.example.formBuilder.entity.Admin;
+import com.example.formBuilder.entity.User;
 import com.example.formBuilder.exception.ValidationException;
-import com.example.formBuilder.repository.AdminRepository;
+import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.security.SessionUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -23,26 +23,27 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AdminRepository adminRepository;
+    private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
 
     public String register(RegisterRequest request) {
-        if (adminRepository.findByUsername(request.getUsername()).isPresent()) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new ValidationException("Username is already taken.");
         }
-        if (adminRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new ValidationException("Email is already registered.");
         }
 
-        Admin admin = new Admin();
-        admin.setUsername(request.getUsername());
-        admin.setEmail(request.getEmail());
+        User user = new User();
+        user.setName(request.getUsername()); // Default name to username
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
         // Storing password as plain text since this is intentionally non-production-grade
-        admin.setPassword(request.getPassword());
-        admin.setExtraDetails(request.getExtraDetails());
+        user.setPassword(request.getPassword());
+        user.setExtraDetails(request.getExtraDetails());
 
-        adminRepository.save(admin);
-        return "Admin registered successfully";
+        userRepository.save(user);
+        return "User registered successfully";
     }
 
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
@@ -57,10 +58,10 @@ public class AuthService {
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
 
         String authenticatedUsername = ((UserDetails) authentication.getPrincipal()).getUsername();
-        Admin admin = adminRepository.findByUsername(authenticatedUsername)
+        User user = userRepository.findByUsername(authenticatedUsername)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
-        return new LoginResponse(admin.getId(), admin.getUsername(), admin.getEmail());
+        return new LoginResponse(user.getId(), user.getUsername(), user.getEmail());
     }
 
     public void logout(HttpServletRequest request) {
@@ -71,11 +72,11 @@ public class AuthService {
         SecurityContextHolder.clearContext();
     }
 
-    public Long getCurrentAdminId() {
-        String username = SessionUtil.getCurrentAdminUsername();
+    public Long getCurrentUserId() {
+        String username = SessionUtil.getCurrentUsername();
         if (username != null) {
-            return adminRepository.findByUsername(username)
-                    .map(Admin::getId)
+            return userRepository.findByUsername(username)
+                    .map(User::getId)
                     .orElse(null);
         }
         return null;

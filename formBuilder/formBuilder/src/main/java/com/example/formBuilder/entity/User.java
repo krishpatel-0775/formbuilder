@@ -6,16 +6,16 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import com.example.formBuilder.enums.SystemRole;
 
 @Entity
-@Table(name = "admins")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Admin {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,17 +24,20 @@ public class Admin {
     @Column(unique = true, nullable = false)
     private String username;
 
+    @JsonIgnore
+    private String password;
+
     @Column(unique = true, nullable = false)
     private String email;
 
-    @JsonIgnore
-    @Column(nullable = false)
-    private String password;
-
-    @Enumerated(EnumType.STRING)
-    private SystemRole systemRole = SystemRole.USER;
-
+    private String name;
     private String extraDetails;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 }

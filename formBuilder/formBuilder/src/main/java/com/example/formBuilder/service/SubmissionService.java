@@ -2,16 +2,13 @@ package com.example.formBuilder.service;
 
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.SubmissionRequest;
-import com.example.formBuilder.entity.Admin;
+import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormField;
-import com.example.formBuilder.entity.TeamMember;
+import com.example.formBuilder.repository.UserRepository;
+import com.example.formBuilder.repository.FormRepository;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
-import com.example.formBuilder.enums.TeamRole;
-import com.example.formBuilder.repository.AdminRepository;
-import com.example.formBuilder.repository.FormRepository;
-import com.example.formBuilder.repository.TeamMemberRepository;
 import com.example.formBuilder.security.SessionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -30,25 +27,22 @@ public class SubmissionService {
     private final FormRepository formRepository;
     private final JdbcTemplate jdbcTemplate;
     private final RuleEngineService ruleEngineService;
-    private final AdminRepository adminRepository;
-    private final TeamMemberRepository teamMemberRepository;
+    private final UserRepository userRepository;
 
-    private Admin getCurrentUser() {
-        String username = SessionUtil.getCurrentAdminUsername();
+    private User getCurrentUser() {
+        String username = SessionUtil.getCurrentUsername();
         if (username == null) throw new ValidationException("Unauthorized");
-        return adminRepository.findByUsername(username)
+        return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ValidationException("User not found"));
     }
 
-    private void checkTeamAdminPermission(Long formId) {
+    private void checkUserPermission(Long formId) {
         Form form = formRepository.findById(formId)
                 .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
-        Admin user = getCurrentUser();
-        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(form.getTeam().getId(), user.getId())
-                .orElseThrow(() -> new ValidationException("Access denied: You are not a member of this team"));
+        User user = getCurrentUser();
         
-        if (member.getRole() != TeamRole.TEAM_ADMIN) {
-            throw new ValidationException("Only TEAM_ADMIN can perform this action");
+        if (form.getUser() != null && !form.getUser().getId().equals(user.getId())) {
+            throw new ValidationException("Access denied: You do not own this form");
         }
     }
 
@@ -62,7 +56,7 @@ public class SubmissionService {
      * Soft-deletes a specific response by marking its 'is_deleted' flag to true.
      */
     public String deleteResponse(Long formId, Long responseId) {
-        checkTeamAdminPermission(formId);
+        checkUserPermission(formId);
         String tableName = "form_" + formId;
         String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id = ?";
         jdbcTemplate.update(sql, responseId);
@@ -76,7 +70,7 @@ public class SubmissionService {
         if (responseIds == null || responseIds.isEmpty()) {
             return "No responses selected";
         }
-        checkTeamAdminPermission(formId);
+        checkUserPermission(formId);
         String tableName = "form_" + formId;
         String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id IN (" +
                 responseIds.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";

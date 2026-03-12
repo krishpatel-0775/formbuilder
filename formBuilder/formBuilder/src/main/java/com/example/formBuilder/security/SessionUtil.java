@@ -6,7 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 public class SessionUtil {
 
-    public static String getCurrentAdminUsername() {
+    public static String getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null && authentication.isAuthenticated()) {

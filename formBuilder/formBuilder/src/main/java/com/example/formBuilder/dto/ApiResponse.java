@@ -16,7 +16,7 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private Integer status;
-    private LocalDateTime timestamp;
+    private String timestamp;
 
     public static <T> ApiResponse<T> success(String message, T data) {
         return ApiResponse.<T>builder()
@@ -24,7 +24,7 @@ public class ApiResponse<T> {
                 .message(message)
                 .data(data)
                 .status(200)
-                .timestamp(LocalDateTime.now())
+                .timestamp(new java.util.Date().toString())
                 .build();
     }
 
@@ -37,7 +37,7 @@ public class ApiResponse<T> {
                 .success(false)
                 .message(message)
                 .status(400)
-                .timestamp(LocalDateTime.now())
+                .timestamp(new java.util.Date().toString())
                 .build();
     }
 
@@ -46,7 +46,7 @@ public class ApiResponse<T> {
                 .success(false)
                 .message(message)
                 .status(status)
-                .timestamp(LocalDateTime.now())
+                .timestamp(new java.util.Date().toString())
                 .build();
     }
 }

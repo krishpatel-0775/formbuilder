@@ -6,6 +6,7 @@ export const metadata = {
 import "./globals.css";
 import Providers from "./providers";
 import NavLinks from "./NavLinks";
+import Sidebar from "./Sidebar";
 
 export default function RootLayout({ children }) {
   return (
@@ -28,10 +29,15 @@ export default function RootLayout({ children }) {
             </div>
           </nav>
 
-          {/* MAIN CONTENT AREA SPANS FULL WIDTH */}
-          <main style={mainWrapperStyle}>
-            {children}
-          </main>
+          <div style={appContentStyle}>
+            {/* SIDEBAR */}
+            <Sidebar />
+
+            {/* MAIN CONTENT AREA */}
+            <main style={mainWrapperStyle}>
+              {children}
+            </main>
+          </div>
         </Providers>
       </body>
     </html>
@@ -41,8 +47,8 @@ export default function RootLayout({ children }) {
 // --- High-Density Fluid Styles ---
 
 const bodyStyle = {
-  backgroundColor: "#f8fafc", // Light gray background
-  color: "#0f172a", // Dark slate text
+  backgroundColor: "#f8fafc",
+  color: "#0f172a",
   minHeight: "100vh",
   margin: 0,
   padding: 0,
@@ -51,7 +57,7 @@ const bodyStyle = {
 };
 
 const navStyle = {
-  backgroundColor: "rgba(255, 255, 255, 0.9)", // slightly transparent white nav
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
   backdropFilter: "blur(12px)",
   borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
   position: "sticky",
@@ -77,7 +83,7 @@ const logoSectionStyle = {
 const logoIconStyle = {
   width: "32px",
   height: "32px",
-  background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", // Blue gradient
+  background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
   color: "white",
   borderRadius: "8px",
   display: "flex",
@@ -89,7 +95,7 @@ const logoIconStyle = {
 const logoTextStyle = {
   fontSize: "1.1rem",
   fontWeight: "900",
-  color: "#0f172a", // Dark text
+  color: "#0f172a",
   margin: 0,
   letterSpacing: "-0.03em",
   textTransform: "uppercase",
@@ -105,39 +111,16 @@ const proBadgeStyle = {
   border: "1px solid rgba(59, 130, 246, 0.2)",
 };
 
-const linkGroupStyle = {
+const appContentStyle = {
   display: "flex",
-  alignItems: "center",
-  gap: "24px",
-};
-
-const navLinkStyle = {
-  color: "#64748b",
-  textDecoration: "none",
-  fontSize: "0.75rem",
-  fontWeight: "800",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  transition: "color 0.2s",
-};
-
-const ctaLinkStyle = {
-  backgroundColor: "#0f172a", // Dark button
-  color: "#ffffff",
-  padding: "8px 16px",
-  borderRadius: "6px",
-  fontSize: "0.75rem",
-  fontWeight: "800",
-  textDecoration: "none",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.1)",
+  width: "100%",
+  minHeight: "calc(100vh - 64px)",
 };
 
 const mainWrapperStyle = {
-  width: "100%",
+  flex: 1,
+  paddingLeft: "280px",
   margin: 0,
-  padding: 0,
   display: "flex",
   flexDirection: "column",
 };

@@ -10,7 +10,6 @@ import java.util.List;
 public class FormRequest {
 
     private String formName;
-    private Long teamId;
     private List<FieldRequest> fields;
 
     /**

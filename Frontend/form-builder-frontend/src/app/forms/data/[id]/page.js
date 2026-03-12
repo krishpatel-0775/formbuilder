@@ -4,7 +4,6 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
-import { useTeam } from "../../../../context/TeamContext";
 import * as XLSX from "xlsx";
 import { ENDPOINTS } from "../../../../config/apiConfig";
 
@@ -15,7 +14,6 @@ import { ENDPOINTS } from "../../../../config/apiConfig";
  */
 export default function FormDataPage() {
   const { id } = useParams();
-  const { activeTeam, userRole } = useTeam();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formStatus, setFormStatus] = useState("DRAFT");
@@ -31,16 +29,14 @@ export default function FormDataPage() {
   const [direction, setDirection] = useState("desc");
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+
   const fetchData = async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
-      if (!activeTeam) throw new Error("Please select a team.");
-      if (userRole !== "TEAM_ADMIN") throw new Error("Access denied: Only TEAM_ADMIN can view submission data.");
-
       // Step 1: Check form status
-      const formRes = await fetch(`${ENDPOINTS.FORMS}/${id}?teamId=${activeTeam.id}`, { credentials: "include" });
+      const formRes = await fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" });
       if (!formRes.ok) throw new Error("Form not found or access denied.");
       const formJson = await formRes.json();
       const status = formJson.data?.status || "DRAFT";
@@ -50,7 +46,7 @@ export default function FormDataPage() {
         throw new Error("Form is either not published or access is restricted.");
       }
 
-      const url = `${ENDPOINTS.FORMS}/${id}/data?teamId=${activeTeam.id}&page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+      const url = `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
 
       const res = await fetch(url, { credentials: "include" });
 
@@ -65,7 +61,6 @@ export default function FormDataPage() {
       setData(responseData.content || []);
       setTotalPages(responseData.totalPages || 0);
       setTotalElements(responseData.totalElements || 0);
-      // Clear selection when data changes
       setSelectedIds([]);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -80,10 +75,10 @@ export default function FormDataPage() {
   }, [id, page, size, sortBy, direction]);
 
   const handleExport = async () => {
-    if (!id || data.length === 0 || !activeTeam) return;
+    if (!id || data.length === 0) return;
     setExporting(true);
     try {
-      const url = `${ENDPOINTS.FORMS}/${id}/data?teamId=${activeTeam.id}&page=0&size=${totalElements || 1000}&sortBy=${sortBy}&direction=${direction}`;
+      const url = `${ENDPOINTS.FORMS}/${id}/data?page=0&size=${totalElements || 1000}&sortBy=${sortBy}&direction=${direction}`;
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json();
       const allData = json.data?.content || [];
@@ -145,9 +140,8 @@ export default function FormDataPage() {
   const deleteResponse = async (responseId) => {
     if (!confirm("Are you sure you want to delete this response?")) return;
 
-    if (!activeTeam) return;
     try {
-      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/response/${responseId}?teamId=${activeTeam.id}`, {
+      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/response/${responseId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -168,10 +162,9 @@ export default function FormDataPage() {
     if (selectedIds.length === 0) return;
     if (!confirm(`Are you sure you want to delete ${selectedIds.length} selected responses?`)) return;
 
-    if (!activeTeam) return;
     setDeleting(true);
     try {
-      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/responses/bulk-delete?teamId=${activeTeam.id}`, {
+      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/responses/bulk-delete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(selectedIds),
@@ -270,7 +263,6 @@ export default function FormDataPage() {
                 >
                   <RefreshCw size={14} /> Retry Fetch
                 </button>
-                <p className="text-red-400 text-[10px] font-medium italic">Tip: If you just updated backend code, please RESTART your Java server.</p>
               </div>
             </div>
           </div>

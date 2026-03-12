@@ -25,15 +25,12 @@ public class FormController {
     private final FormService formService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FormListDto>>> getAllForms(@RequestParam(required = false) Long teamId) {
-        return ResponseEntity.ok(ApiResponse.success(formService.getAllForms(teamId)));
+    public ResponseEntity<ApiResponse<List<FormListDto>>> getAllForms() {
+        return ResponseEntity.ok(ApiResponse.success(formService.getAllForms()));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createForm(
-            @RequestBody FormRequest req,
-            @RequestParam(required = false) Long teamId) {
-        if (teamId != null) req.setTeamId(teamId);
+    public ResponseEntity<ApiResponse<String>> createForm(@RequestBody FormRequest req) {
         return ResponseEntity.ok(ApiResponse.success(formService.createForm(req), null));
     }
 

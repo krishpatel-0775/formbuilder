@@ -10,8 +10,6 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 
 public interface FormRepository extends JpaRepository<Form, Long> {
-    List<Form> findByAdminId(Long adminId);
-    Optional<Form> findByIdAndAdminId(Long id, Long adminId);
-    List<Form> findByTeamId(Long teamId);
-    List<Form> findByTeamIdIn(List<Long> teamIds);
+    List<Form> findByUserId(Long userId);
+    Optional<Form> findByIdAndUserId(Long id, Long userId);
 }

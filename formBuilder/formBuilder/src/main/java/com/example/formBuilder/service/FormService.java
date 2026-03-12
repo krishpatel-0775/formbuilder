@@ -3,18 +3,13 @@ package com.example.formBuilder.service;
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.Form;
-import com.example.formBuilder.entity.Admin;
+import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.FormField;
-import com.example.formBuilder.entity.Team;
-import com.example.formBuilder.entity.TeamMember;
-import com.example.formBuilder.enums.TeamRole;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
-import com.example.formBuilder.repository.AdminRepository;
+import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.repository.FormFieldRepository;
 import com.example.formBuilder.repository.FormRepository;
-import com.example.formBuilder.repository.TeamMemberRepository;
-import com.example.formBuilder.repository.TeamRepository;
 import com.example.formBuilder.security.SessionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -43,46 +38,23 @@ public class FormService {
     private final JdbcTemplate jdbcTemplate;
     private final SchemaManager schemaManager;
     private final ObjectMapper objectMapper;
-    private final AdminRepository adminRepository;
-    private final TeamMemberRepository teamMemberRepository;
-    private final TeamRepository teamRepository;
+    private final UserRepository userRepository;
 
-    private Admin getCurrentUser() {
-        String username = SessionUtil.getCurrentAdminUsername();
+    private User getCurrentUser() {
+        String username = SessionUtil.getCurrentUsername();
         if (username == null) throw new ValidationException("Unauthorized");
-        return adminRepository.findByUsername(username)
+        return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ValidationException("User not found"));
     }
 
-    private void checkPermission(Long teamId, TeamRole minimumRole) {
-        Admin user = getCurrentUser();
-        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, user.getId())
-                .orElseThrow(() -> new ValidationException("Access denied: You are not a member of this team"));
-        
-        if (member.getRole() == TeamRole.TEAM_ADMIN) return; // Admin can do everything
-        
-        if (minimumRole == TeamRole.TEAM_ADMIN && member.getRole() != TeamRole.TEAM_ADMIN) {
-            throw new ValidationException("Only TEAM_ADMIN can perform this action");
-        }
-        
-        if (minimumRole == TeamRole.DEVELOPER && member.getRole() == TeamRole.FORM_EDITOR) {
-            throw new ValidationException("DEVELOPER role required for this action");
-        }
-    }
-
-    private Form getFormWithPermission(Long id, TeamRole requiredRole) {
+    private Form getFormWithPermission(Long id) {
         Form form = formRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
         
-        checkPermission(form.getTeam().getId(), requiredRole);
-        
-        // FORM_EDITOR can only edit their own forms
-        if (requiredRole == TeamRole.FORM_EDITOR) {
-            Admin user = getCurrentUser();
-            TeamMember member = teamMemberRepository.findByTeamIdAndUserId(form.getTeam().getId(), user.getId()).get();
-            if (member.getRole() == TeamRole.FORM_EDITOR && !form.getAdmin().getId().equals(user.getId())) {
-                throw new ValidationException("FORM_EDITOR can only edit their own forms");
-            }
+        // Basic user check - only creator can edit
+        User user = getCurrentUser();
+        if (form.getUser() != null && !form.getUser().getId().equals(user.getId())) {
+             throw new ValidationException("Access denied: You do not own this form");
         }
         
         return form;
@@ -123,7 +95,6 @@ public class FormService {
                 .createdAt(form.getCreatedAt())
                 .status(form.getStatus())
                 .rules(form.getRules())
-                .teamId(form.getTeam() != null ? form.getTeam().getId() : null)
                 .fields(form.getFields().stream()
                         .map(f -> FormFieldResponseDto.builder()
                                 .id(f.getId())
@@ -149,8 +120,7 @@ public class FormService {
     }
 
     public Map<String, Object> getAllDataFromTable(Long id, int page, int size, String sortBy, String direction) {
-
-        Form form = getFormWithPermission(id, TeamRole.TEAM_ADMIN);
+        Form form = getFormWithPermission(id);
 
         String tableName = "form_" + id;
 
@@ -255,19 +225,9 @@ public class FormService {
         return response;
     }
 
-    public List<FormListDto> getAllForms(Long teamId) {
-        Admin user = getCurrentUser();
-        List<Form> forms;
-        
-        if (teamId != null) {
-            checkPermission(teamId, TeamRole.FORM_EDITOR); // Any member can see form list
-            forms = formRepository.findByTeamId(teamId);
-        } else {
-            List<Long> teamIds = teamMemberRepository.findByUserId(user.getId()).stream()
-                    .map(TeamMember::getTeamId)
-                    .collect(Collectors.toList());
-            forms = formRepository.findByTeamIdIn(teamIds);
-        }
+    public List<FormListDto> getAllForms() {
+        User user = getCurrentUser();
+        List<Form> forms = formRepository.findAll(); // Simplified: see all forms for now
         
         return forms.stream()
                 .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus()))
@@ -298,7 +258,7 @@ public class FormService {
     }
 
     public String publishForm(Long id) {
-        Form form = getFormWithPermission(id, TeamRole.DEVELOPER);
+        Form form = getFormWithPermission(id);
 
         String tableName = form.getTableName();
 
@@ -314,21 +274,11 @@ public class FormService {
     }
 
     public String createForm(FormRequest request) {
-        Admin admin = getCurrentUser();
+        User user = getCurrentUser();
         
-        Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
-        
-        checkPermission(team.getId(), TeamRole.FORM_EDITOR);
-
-        if (request.getFields() == null || request.getFields().isEmpty()) {
-            throw new ValidationException("Form must contain at least one field");
-        }
-
         Form form = new Form();
         form.setFormName(request.getFormName());
-        form.setAdmin(admin);
-        form.setTeam(team);
+        form.setUser(user);
         form = formRepository.save(form);
 
         String tableName = "form_" + form.getId();
@@ -409,7 +359,7 @@ public class FormService {
     @Transactional
     public String updateForm(Long formId, UpdateFormRequest request) {
 
-        Form form = getFormWithPermission(formId, TeamRole.FORM_EDITOR);
+        Form form = getFormWithPermission(formId);
 
         if (request.getFormName() != null && !request.getFormName().isBlank()) {
             form.setFormName(request.getFormName());
@@ -510,12 +460,12 @@ public class FormService {
     }
 
     public String getFormRules(Long formId) {
-        Form form = getFormWithPermission(formId, TeamRole.FORM_EDITOR);
+        Form form = getFormWithPermission(formId);
         return form.getRules();
     }
 
     public String saveFormRules(Long formId, List<FormRuleDTO> rules) {
-        Form form = getFormWithPermission(formId, TeamRole.FORM_EDITOR);
+        Form form = getFormWithPermission(formId);
         try {
             form.setRules(objectMapper.writeValueAsString(rules));
             formRepository.save(form);
@@ -527,7 +477,7 @@ public class FormService {
 
     @Transactional
     public String deleteForm(Long id) {
-        Form form = getFormWithPermission(id, TeamRole.TEAM_ADMIN);
+        Form form = getFormWithPermission(id);
         form.setIsDeleted(true);
         formRepository.save(form);
         return "Form deleted successfully";

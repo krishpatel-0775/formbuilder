@@ -37,10 +37,10 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<Long>> me() {
-        Long adminId = authService.getCurrentAdminId();
-        if (adminId == null) {
+        Long userId = authService.getCurrentUserId();
+        if (userId == null) {
             return ResponseEntity.status(401).body(ApiResponse.error(401, "Not authenticated"));
         }
-        return ResponseEntity.ok(ApiResponse.success(adminId));
+        return ResponseEntity.ok(ApiResponse.success(userId));
     }
 }

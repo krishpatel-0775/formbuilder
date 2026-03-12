@@ -24,18 +24,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable) // Simplified, non-production
+                .csrf(AbstractHttpConfigurer::disable)
+                .userDetailsService(userDetailsService) // Specifically set UserDetailsService
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/forms/**", "/api/submissions/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forms/{id}").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forms/*/lookup/*").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/submissions").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
