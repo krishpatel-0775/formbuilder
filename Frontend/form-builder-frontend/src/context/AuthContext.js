@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
             const res = await fetch(ENDPOINTS.AUTH_ME, { credentials: "include" });
             if (res.ok) {
                 const data = await res.json();
-                setUser(data.data); // data is adminId
+                setUser(data.data); // data is now { id, username, email, roles }
             } else {
                 setUser(null);
             }
@@ -53,8 +53,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const hasRole = (roleName) => {
+        return user?.roles?.includes(roleName);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, refetchAuth: fetchUser, logout }}>
+        <AuthContext.Provider value={{ user, loading, refetchAuth: fetchUser, logout, hasRole }}>
             {children}
         </AuthContext.Provider>
     );

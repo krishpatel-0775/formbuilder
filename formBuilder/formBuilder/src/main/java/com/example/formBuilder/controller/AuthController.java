@@ -5,6 +5,7 @@ import com.example.formBuilder.dto.ApiResponse;
 import com.example.formBuilder.dto.LoginRequest;
 import com.example.formBuilder.dto.LoginResponse;
 import com.example.formBuilder.dto.RegisterRequest;
+import com.example.formBuilder.dto.UserInfoResponse;
 import com.example.formBuilder.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +37,11 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<Long>> me() {
-        Long userId = authService.getCurrentUserId();
-        if (userId == null) {
+    public ResponseEntity<ApiResponse<UserInfoResponse>> me() {
+        UserInfoResponse userInfo = authService.getCurrentUserInfo();
+        if (userInfo == null) {
             return ResponseEntity.status(401).body(ApiResponse.error(401, "Not authenticated"));
         }
-        return ResponseEntity.ok(ApiResponse.success(userId));
+        return ResponseEntity.ok(ApiResponse.success(userInfo));
     }
 }

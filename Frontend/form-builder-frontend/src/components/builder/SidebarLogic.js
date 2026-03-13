@@ -21,7 +21,7 @@ export function SidebarLogic({
           </div>
           <h3 className="text-lg font-black text-slate-800 tracking-tight">Identity Required</h3>
           <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-[0.15em] max-w-[240px] leading-relaxed">
-              Define a component name in the properties tab before establishing architectural logic.
+              Define a component name in the properties tab before establishing form logic.
           </p>
       </div>
     );
@@ -60,7 +60,7 @@ export function SidebarLogic({
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Logic Protocol</span>
         </div>
         <p className="text-[11px] font-bold text-slate-500 leading-relaxed italic transition-colors group-hover:text-slate-700">
-           Establish conditional visibility and operational constraints for <span className="text-primary font-black">"{activeField.label}"</span> based on architectural dependencies.
+           Establish conditional visibility and operational constraints for <span className="text-primary font-black">"{activeField.label}"</span> based on form dependencies.
         </p>
       </div>
 

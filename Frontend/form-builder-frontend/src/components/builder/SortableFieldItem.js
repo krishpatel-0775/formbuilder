@@ -63,7 +63,7 @@ export function SortableFieldItem({
           <input
             value={field.label}
             onChange={(e) => updateField(field.id, "label", e.target.value)}
-            placeholder="Architecture landmark title..."
+            placeholder="Form landmark title..."
             className="w-full text-2xl font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"
           />
           <div className="flex gap-2 mt-4">
@@ -167,7 +167,7 @@ export function SortableFieldItem({
             {field.required && <div className="w-1 h-1 rounded-full bg-red-400" />}
         </div>
         <input 
-            placeholder="Define architecture component name..." 
+            placeholder="Define form component name..." 
             value={field.label} 
             onChange={(e) => updateField(field.id, "label", e.target.value)}
             className="w-full text-lg font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"
@@ -178,7 +178,7 @@ export function SortableFieldItem({
           {field._dbId ? (
             <span className={`${badgeBase} bg-primary/5 border-primary/10 text-primary`}>Persistent</span>
           ) : (
-            <span className={`${badgeBase} bg-emerald-50 border-emerald-100 text-emerald-500`}>Architecture Draft</span>
+            <span className={`${badgeBase} bg-emerald-50 border-emerald-100 text-emerald-500`}>Form Draft</span>
           )}
           {field.defaultValue && (
             <span className={`${badgeBase} bg-amber-50 border-amber-100 text-amber-500`}>Pre-populated</span>

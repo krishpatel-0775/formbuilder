@@ -25,7 +25,7 @@ export function FormHeader({
         </NextLink>
         <div className="flex flex-col flex-1 max-w-lg">
             <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1 ml-1 truncate">
-              {isPublished ? "Immutable Protocol" : "Architectural Draft"}
+              {isPublished ? "Live Form" : "Form Draft"}
             </span>
             <input 
                 type="text" 
@@ -76,7 +76,7 @@ export function FormHeader({
             {isPublishing ? (
               <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
             ) : (
-              <><Rocket size={18} strokeWidth={3} /> Publish Architecture</>
+              <><Rocket size={18} strokeWidth={3} /> Publish Form</>
             )}
           </button>
         )}

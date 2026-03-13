@@ -8,7 +8,7 @@ export function Toolbar({ handleDragStart }) {
             <div className="w-1.5 h-6 bg-primary rounded-full" />
             <h2 className="text-xl font-black text-slate-800 tracking-tight">Components</h2>
         </div>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3.5">Build your architecture</p>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3.5">Build your form</p>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-10 pb-20">

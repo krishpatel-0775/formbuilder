@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Star, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight } from "lucide-react";
 
 export function FormFieldWrapper({ 
   field, 
@@ -155,7 +155,7 @@ export function FormFieldWrapper({
           <select value={value || ""}
             onChange={(e) => onChange(field.fieldName, e.target.value)}
             className={`${inputCls} appearance-none cursor-pointer pr-16`}>
-            <option value="" disabled>Choose an architectural option...</option>
+            <option value="" disabled>Choose a form option...</option>
             {field.options?.map((opt, idx) => {
               const isObj = typeof opt === "object" && opt !== null;
               const val = isObj ? opt.id : opt;

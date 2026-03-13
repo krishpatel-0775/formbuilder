@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Shield, X, Check, Search } from "lucide-react";
+import AdminGuard from "../../../components/auth/AdminGuard";
 
 export default function RolesPage() {
+    return (
+        <AdminGuard>
+            <RolesPageContent />
+        </AdminGuard>
+    );
+}
+
+function RolesPageContent() {
     const [roles, setRoles] = useState([]);
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);

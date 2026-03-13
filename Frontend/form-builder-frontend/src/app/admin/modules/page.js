@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Check, X, ChevronRight, ChevronDown, Layout, Sidebar, Box } from "lucide-react";
+import AdminGuard from "../../../components/auth/AdminGuard";
 
 export default function ModulesPage() {
+    return (
+        <AdminGuard>
+            <ModulesPageContent />
+        </AdminGuard>
+    );
+}
+
+function ModulesPageContent() {
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);

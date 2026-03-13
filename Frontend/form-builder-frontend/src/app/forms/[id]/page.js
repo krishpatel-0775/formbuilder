@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertCircle, Send, ArrowLeft, Loader2, ChevronRight, ChevronLeft } from "lucide-react";
+import { AlertCircle, Send, ArrowLeft, Loader2, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { ENDPOINTS } from "../../../config/apiConfig";
 import { FormFieldWrapper } from "../../../components/builder/FormFieldWrapper";
@@ -487,10 +487,11 @@ export default function PublicFormPage() {
                         <div className="flex items-center gap-3">
                             <span className="text-xl font-black text-primary">{progressPct}%</span>
                             <div className="w-12 h-12 rounded-full border-4 border-slate-100 relative flex items-center justify-center">
-                                <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 48 48">
                                     <circle
                                         cx="24" cy="24" r="20"
                                         stroke="currentColor" strokeWidth="4" fill="transparent"
+                                        strokeLinecap="round"
                                         className="text-primary transition-all duration-1000 ease-out"
                                         strokeDasharray={126}
                                         strokeDashoffset={126 - (126 * progressPct) / 100}

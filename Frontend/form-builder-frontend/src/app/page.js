@@ -245,7 +245,7 @@ export default function BuilderPage() {
                     saveForm={saveForm}
                     isSaving={isPublishing}
                     showSuccess={showSuccess}
-                    saveLabel="Deploy Architecture"
+                    saveLabel="Draft Form"
                     saveIcon={<Rocket size={18} strokeWidth={2.5} />}
                     userRole={userRole}
                 />
@@ -293,7 +293,7 @@ export default function BuilderPage() {
                                                 {FieldIcons[activeSortField?.type]}
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Architectural Component</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Form Component</p>
                                                 <span className="text-lg font-black text-slate-900 tracking-tight">{activeSortField?.label || "Untitled Component"}</span>
                                             </div>
                                         </div>

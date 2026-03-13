@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class LoginResponse {
+public class UserInfoResponse {
     private Long id;
     private String username;
     private String email;

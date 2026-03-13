@@ -47,7 +47,7 @@ export default function FormVaultPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you certain you wish to purge this architectural protocol? This action is irreversible.")) return;
+        if (!window.confirm("Are you certain you wish to delete this form? This action is irreversible.")) return;
         
         try {
             const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
@@ -64,7 +64,7 @@ export default function FormVaultPage() {
     };
 
     const handlePublish = async (id) => {
-        if (!window.confirm("Are you certain you wish to synchronize this architecture with the live database? This will create the physical data structure and make the form operational.")) return;
+        if (!window.confirm("Are you certain you wish to synchronize this form with the live database? This will create the physical data structure and make the form operational.")) return;
         
         setPublishingState(prev => ({ ...prev, [id]: true }));
         try {
@@ -102,7 +102,7 @@ export default function FormVaultPage() {
                         </div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Form Vault</h1>
                     </div>
-                    <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active architectural documents.</p>
+                    <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active forms.</p>
                 </div>
 
                 <Link 
@@ -194,8 +194,18 @@ export default function FormVaultPage() {
                                         href={`/forms/edit/${form.id}`}
                                         className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10 hover:shadow-primary/20 hover:-translate-y-0.5"
                                     >
-                                        Edit Architecture
+                                        Edit Form
                                     </Link>
+                                    
+                                    {form.status === "PUBLISHED" && (
+                                        <Link 
+                                            href={`/forms/${form.id}`}
+                                            className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 hover:-translate-y-0.5"
+                                        >
+                                            <Rocket size={14} />
+                                            Fill Form
+                                        </Link>
+                                    )}
                                     
                                     <div className="flex gap-2">
                                         {form.status !== "PUBLISHED" ? (
@@ -203,7 +213,7 @@ export default function FormVaultPage() {
                                                 onClick={() => handlePublish(form.id)}
                                                 disabled={publishingState[form.id]}
                                                 className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary transition-all shadow-sm disabled:opacity-50"
-                                                title="Synchronize Architecture"
+                                                title="Publish Form"
                                             >
                                                 {publishingState[form.id] ? (
                                                     <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -224,7 +234,7 @@ export default function FormVaultPage() {
                                         <button 
                                             onClick={() => handleDelete(form.id)}
                                             className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
-                                            title="Purge Protocol"
+                                            title="Delete Form"
                                         >
                                             <Trash2 size={18} strokeWidth={2.5} />
                                         </button>
@@ -274,9 +284,14 @@ export default function FormVaultPage() {
                                                 <Rocket size={18} />
                                             </button>
                                         )}
-                                        <Link href={`/forms/edit/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                                        <Link href={`/forms/edit/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Edit Form">
                                             <FileText size={18} />
                                         </Link>
+                                        {form.status === "PUBLISHED" && (
+                                            <Link href={`/forms/${form.id}`} className="inline-flex p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Fill Form">
+                                                <Rocket size={18} />
+                                            </Link>
+                                        )}
                                         <button 
                                             onClick={() => handleDelete(form.id)}
                                             className="inline-flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"

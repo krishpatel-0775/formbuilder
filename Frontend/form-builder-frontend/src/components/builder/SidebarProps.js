@@ -14,7 +14,7 @@ export function DefaultValuePanel({ activeField, updateField }) {
       {textTypes.includes(activeField.type) && (
         <input 
           type={activeField.type === "number" ? "number" : "text"} 
-          placeholder="Pre-set architectural value..."
+          placeholder="Pre-set form value..."
           value={activeField.defaultValue ?? ""} 
           onChange={(e) => updateField(activeField.id, "defaultValue", e.target.value)}
           className={base} 
@@ -226,19 +226,19 @@ export function SidebarProps({
                     onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])}
                     className="w-full p-4 border-2 border-dashed border-primary/20 rounded-2xl text-primary font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary/5 hover:border-primary/40 transition-all flex items-center justify-center gap-2 group"
                 >
-                    <Plus size={16} className="group-hover:rotate-90 transition-transform" /> Add Architectural Choice
+                    <Plus size={16} className="group-hover:rotate-90 transition-transform" /> Add Form Choice
                 </button>
               </div>
             ) : (
               <div className="space-y-6 bg-primary/5 p-6 rounded-[2rem] border border-primary/10">
                 <div className="space-y-2">
-                  <label className="text-[9px] uppercase font-black tracking-widest text-primary/60 ml-1">Data Reservoir (Source Form)</label>
+                  <label className="text-[9px] uppercase font-black tracking-widest text-primary/60 ml-1">Data Source (Source Form)</label>
                   <select 
                     value={activeField.sourceTable || ""} 
                     onChange={(e) => { updateField(activeField.id, "sourceTable", e.target.value); updateField(activeField.id, "sourceColumn", ""); }}
                     className="w-full bg-white border border-primary/10 p-4 rounded-2xl text-[13px] font-black text-slate-800 outline-none focus:border-primary transition-all shadow-xl shadow-primary/5"
                   >
-                    <option value="" disabled>Select Source Protocol...</option>
+                    <option value="" disabled>Select Source Form...</option>
                     {availableForms.map((f) => <option key={f.id} value={f.id.toString()}>{f.formName}</option>)}
                   </select>
                 </div>
@@ -341,7 +341,7 @@ export function SidebarProps({
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Protocol Integrity</span>
             </div>
             <p className="text-[11px] font-bold text-slate-500 leading-relaxed mb-4 italic transition-colors group-hover:text-slate-700">
-                "Architecture automatically enforces <span className="text-primary">HTTPS/HTTP</span> protocol standards for all incoming dimensional links."
+                The system automatically enforces <span className="text-primary">HTTPS/HTTP</span> protocol standards for all incoming dimensional links.
             </p>
             <div className="flex gap-2">
                 <span className={`${badgeBase} bg-white text-primary border-primary/10`}>Secure</span>

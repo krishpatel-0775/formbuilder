@@ -15,7 +15,7 @@ const ACTION_TYPES = [
     { value: "SHOW", label: "Reveal Element", icon: <Eye size={14} />, color: "primary" },
     { value: "HIDE", label: "Occlude Element", icon: <EyeOff size={14} />, color: "slate" },
     { value: "REQUIRE", label: "Enforce Integrity", icon: <Star size={14} />, color: "amber" },
-    { value: "VALIDATION_ERROR", label: "Interrupt Protocol", icon: <X size={14} />, color: "red" },
+    { value: "VALIDATION_ERROR", label: "Validation Error", icon: <X size={14} />, color: "red" },
 ];
 
 const LOGICAL_OPERATORS = [
@@ -134,9 +134,9 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                     <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-slate-200/50 group-hover:scale-110 transition-transform">
                         <GitBranch size={24} className="text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
-                    <p className="text-sm font-black text-slate-800 tracking-tight">Logic Reservoir Empty</p>
+                    <p className="text-sm font-black text-slate-800 tracking-tight">No Rules Defined</p>
                     <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-widest leading-relaxed max-w-[200px] mx-auto">
-                        Incorporate conditional protocols to orchestrate dynamic experiences.
+                        Incorporate conditional rules to orchestrate dynamic experiences.
                     </p>
                 </div>
             )}
@@ -319,7 +319,7 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                     onChange={(e) => updateAction(ruleIdx, "targetField", e.target.value)}
                                                     className={selectCls}
                                                 >
-                                                    <option value="" disabled>Select architectural target...</option>
+                                                    <option value="" disabled>Select target field...</option>
                                                     {fieldNames.map((name) => <option key={name} value={name}>{name}</option>)}
                                                 </select>
                                             </div>
@@ -327,10 +327,10 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
 
                                         {actionType === "VALIDATION_ERROR" && (
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Protocol Failure Message</label>
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Validation Error Message</label>
                                                 <input
                                                     type="text"
-                                                    placeholder="Specify interruption narrative..."
+                                                    placeholder="Specify error message..."
                                                     value={rule.action?.message || ""}
                                                     onChange={(e) => updateAction(ruleIdx, "message", e.target.value)}
                                                     className={inputCls}

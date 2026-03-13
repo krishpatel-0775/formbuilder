@@ -202,7 +202,7 @@ export default function EditFormPage() {
   const generateColumnName = (label) => label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 
   const publishForm = async () => {
-    if (!window.confirm("Are you certain you wish to synchronize this architecture with the live database? This will create the physical data structure and make the form operational.")) return;
+    if (!window.confirm("Are you certain you wish to synchronize this form with the live database? This will create the physical data structure and make the form operational.")) return;
     
     setIsPublishing(true);
     try {
@@ -369,7 +369,7 @@ export default function EditFormPage() {
                     <AlertCircle size={20} className="mt-0.5 text-amber-500 flex-shrink-0" />
                     <div>
                         <p className="text-xs font-black uppercase tracking-widest mb-1">Live Edition Mode</p>
-                        <p className="text-sm font-medium opacity-80 leading-relaxed">Changes to published fields will automatically synchronize with the architectural database table.</p>
+                        <p className="text-sm font-medium opacity-80 leading-relaxed">Changes to published fields will automatically synchronize with the form database table.</p>
                     </div>
                 </div>
               </div>
@@ -422,7 +422,7 @@ export default function EditFormPage() {
                         {FieldIcons[activeSortField?.type]}
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Architectural Component</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Form Component</p>
                         <span className="text-lg font-black text-slate-900 tracking-tight">{activeSortField?.label || "Untitled Component"}</span>
                       </div>
                     </div>

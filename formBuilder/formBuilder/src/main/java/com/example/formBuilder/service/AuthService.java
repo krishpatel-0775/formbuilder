@@ -3,6 +3,7 @@ package com.example.formBuilder.service;
 import com.example.formBuilder.dto.LoginRequest;
 import com.example.formBuilder.dto.LoginResponse;
 import com.example.formBuilder.dto.RegisterRequest;
+import com.example.formBuilder.dto.UserInfoResponse;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.entity.Role;
@@ -23,6 +24,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -77,7 +80,11 @@ public class AuthService {
         User user = userRepository.findByUsername(authenticatedUsername)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
-        return new LoginResponse(user.getId(), user.getUsername(), user.getEmail());
+        List<String> roles = authentication.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority().replace("ROLE_", ""))
+                .collect(java.util.stream.Collectors.toList());
+
+        return new LoginResponse(user.getId(), user.getUsername(), user.getEmail(), roles);
     }
 
     public void logout(HttpServletRequest request) {
@@ -86,6 +93,24 @@ public class AuthService {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
+    }
+
+    public UserInfoResponse getCurrentUserInfo() {
+        String username = SessionUtil.getCurrentUsername();
+        if (username != null) {
+            User user = userRepository.findByUsername(username)
+                    .orElse(null);
+            if (user != null) {
+                List<String> roles = userRoleRepository.findByUserId(user.getId()).stream()
+                        .map(ur -> roleRepository.findById(ur.getRoleId()))
+                        .filter(java.util.Optional::isPresent)
+                        .map(java.util.Optional::get)
+                        .map(Role::getRoleName)
+                        .collect(java.util.stream.Collectors.toList());
+                return new UserInfoResponse(user.getId(), user.getUsername(), user.getEmail(), roles);
+            }
+        }
+        return null;
     }
 
     public Long getCurrentUserId() {

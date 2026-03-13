@@ -32,7 +32,7 @@ export function Sidebar({
           <div>
             <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-0.5">Configuration</p>
             <p className="text-lg font-black text-slate-800 tracking-tight capitalize">
-                {sidebarTab === "logic" ? "Architectural Logic" : (activeField?.type || "Field Props")}
+                {sidebarTab === "logic" ? "Form Logic" : (activeField?.type || "Field Props")}
             </p>
           </div>
         </div>

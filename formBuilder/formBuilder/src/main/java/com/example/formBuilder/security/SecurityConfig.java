@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .userDetailsService(userDetailsService) // Specifically set UserDetailsService
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/forms/**", "/api/submissions/**").permitAll()
+                        .requestMatchers("/api/users/**", "/api/roles/**", "/api/modules/**").hasRole("SYSTEM_ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
