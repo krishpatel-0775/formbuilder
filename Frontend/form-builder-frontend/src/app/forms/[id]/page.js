@@ -73,7 +73,7 @@ export default function PublicFormPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${ENDPOINTS.FORMS}/${id}`)
+    fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) return null;
         return res.json();
@@ -90,7 +90,7 @@ export default function PublicFormPage() {
             data.fields.map(async (field) => {
               if (field.fieldType === "select" && field.sourceTable && field.sourceColumn) {
                 try {
-                  const optRes = await fetch(`${ENDPOINTS.FORMS}/${field.sourceTable}/lookup/${field.sourceColumn}`);
+                  const optRes = await fetch(`${ENDPOINTS.FORMS}/${field.sourceTable}/lookup/${field.sourceColumn}`, { credentials: "include" });
                   if (optRes.ok) {
                     const optJson = await optRes.json();
                     field.options = optJson.data || [];
@@ -375,11 +375,12 @@ export default function PublicFormPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(ENDPOINTS.SUBMISSIONS, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: parseInt(id), values: formData }),
-      });
+        const res = await fetch(ENDPOINTS.SUBMISSIONS, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ formId: parseInt(id), values: formData }),
+          credentials: "include"
+        });
 
       if (res.ok) {
         router.push(`/forms/data/${id}`);

@@ -33,12 +33,44 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         if (!loading) {
             const publicPaths = ["/login", "/register"];
-            const isPublicForm = pathname.match(/^\/forms\/\d+$/); // /forms/[id] is public for respondents to fill
+            const isPublicForm = pathname.match(/^\/forms\/\d+$/);
 
-            if (!user && !publicPaths.includes(pathname) && !isPublicForm) {
-                router.push("/login");
-            } else if (user && publicPaths.includes(pathname)) {
-                router.push("/forms/all");
+            if (!user) {
+                if (!publicPaths.includes(pathname) && !isPublicForm) {
+                    router.push("/login");
+                }
+            } else {
+                if (publicPaths.includes(pathname)) {
+                    // Redirect to the first available permission or profile
+                    const firstPermission = user.permissions?.[0] || "/profile";
+                    router.push(firstPermission === "/" ? "/profile" : firstPermission);
+                } else if (!isPublicForm) {
+                    // RBAC Check for authenticated users on protected paths
+                    const isAuthorized = (path) => {
+                        // These paths are usually allowed for everyone who is logged in
+                        if (path === "/profile") return true;
+                        
+                        // Check if user has permission for forms management
+                        const hasFormsVaultAccess = user.permissions?.includes("/forms/all");
+                        const formsBasePaths = ["/forms/edit/", "/forms/data/", "/forms/create"];
+                        
+                        if (hasFormsVaultAccess && formsBasePaths.some(bp => path.startsWith(bp))) {
+                            return true;
+                        }
+
+                        // Check if path starts with any of the permitted prefixes
+                        return user.permissions?.some(p => {
+                            if (p === "/") return path === "/"; // Home page (builder) must be exact match
+                            return path.startsWith(p);
+                        });
+                    };
+
+                    if (!isAuthorized(pathname)) {
+                        console.warn(`Access denied for ${pathname}`);
+                        const fallback = user.permissions?.[0] || "/profile";
+                        router.push(fallback === "/" ? "/profile" : fallback);
+                    }
+                }
             }
         }
     }, [user, loading, pathname, router]);
@@ -53,8 +85,24 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const hasPermission = (path) => {
+        if (!user) return false;
+        if (path === "/" || path === "/profile") return true;
+        
+        const permissions = user.permissions || [];
+        const hasFormsVaultAccess = permissions.includes("/forms/all");
+        if (hasFormsVaultAccess && (path.startsWith("/forms/edit/") || path.startsWith("/forms/data/") || path.startsWith("/forms/create"))) {
+            return true;
+        }
+
+        return user.permissions?.some(p => {
+            if (p === "/") return path === "/";
+            return path.startsWith(p);
+        });
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, refetchAuth: fetchUser, logout }}>
+        <AuthContext.Provider value={{ user, loading, refetchAuth: fetchUser, logout, hasPermission }}>
             {children}
         </AuthContext.Provider>
     );

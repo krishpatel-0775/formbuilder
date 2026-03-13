@@ -42,32 +42,17 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user) {
-            fetchMenu();
-        }
-    }, [user]);
-
-    const fetchMenu = async () => {
-        try {
-            const res = await fetch("http://localhost:9090/api/menu", {
-                credentials: "include"
+        if (user && user.menu) {
+            setMenuItems(user.menu);
+            // Expand all parents by default
+            const initialExpanded = {};
+            user.menu.forEach(item => {
+                initialExpanded[item.id] = true;
             });
-            const data = await res.json();
-            if (data.success) {
-                setMenuItems(data.data);
-                // Expand all parents by default
-                const initialExpanded = {};
-                data.data.forEach(item => {
-                    initialExpanded[item.id] = true;
-                });
-                setExpandedGroups(initialExpanded);
-            }
-        } catch (err) {
-            console.error("Error fetching menu:", err);
-        } finally {
+            setExpandedGroups(initialExpanded);
             setLoading(false);
         }
-    };
+    }, [user]);
 
     const toggleGroup = (id) => {
         if (isCollapsed) {

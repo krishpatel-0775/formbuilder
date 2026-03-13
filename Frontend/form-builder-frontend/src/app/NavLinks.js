@@ -11,14 +11,15 @@ export default function NavLinks() {
         <div className="flex items-center gap-2">
             {user ? (
                 <div className="flex items-center gap-3">
-                    <div className="hidden md:flex flex-col items-end mr-2">
-                        <span className="text-xs font-black text-slate-900 tracking-tight">{user.username}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Session</span>
+                    <div className="hidden md:flex flex-col items-end mr-3">
+                        <span className="text-sm font-black text-slate-900 tracking-tight bg-slate-50/50 px-4 py-1.5 rounded-2xl border border-slate-200/50 shadow-sm">
+                            {user.username}
+                        </span>
                     </div>
                     
-                    <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200/50">
+                    <NextLink href="/profile" className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200/50 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-all shadow-sm">
                         <User size={20} />
-                    </div>
+                    </NextLink>
 
                     <div className="w-px h-6 bg-slate-200 mx-1" />
 

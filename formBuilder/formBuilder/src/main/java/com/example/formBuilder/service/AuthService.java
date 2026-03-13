@@ -1,8 +1,6 @@
 package com.example.formBuilder.service;
 
-import com.example.formBuilder.dto.LoginRequest;
-import com.example.formBuilder.dto.LoginResponse;
-import com.example.formBuilder.dto.RegisterRequest;
+import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.entity.Role;
@@ -14,6 +12,8 @@ import com.example.formBuilder.security.SessionUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import java.util.stream.Collectors;
+import java.util.List;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,6 +32,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final AuthenticationManager authenticationManager;
+    private final ModuleService moduleService;
 
     @Transactional
     public String register(RegisterRequest request) {
@@ -77,6 +78,9 @@ public class AuthService {
         User user = userRepository.findByUsername(authenticatedUsername)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
+        // Ensure user has at least one role
+        moduleService.seedModules(); // This will also assign a role to the current user if missing
+
         return new LoginResponse(user.getId(), user.getUsername(), user.getEmail());
     }
 
@@ -96,5 +100,51 @@ public class AuthService {
                     .orElse(null);
         }
         return null;
+    }
+
+    public UserDetailResponse getUserDetails() {
+        String username = SessionUtil.getCurrentUsername();
+        if (username == null) return null;
+
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) return null;
+
+        // Ensure roles/modules exist and user has a default role if none assigned
+        moduleService.seedModules();
+
+        var menu = moduleService.getUserMenuForUser(username);
+        
+        // Flatten permissions for easier checking on frontend
+        java.util.List<String> permissions = new java.util.ArrayList<>();
+        collectPrefixes(menu, permissions);
+
+        // Fetch User Roles
+        List<String> roles = userRoleRepository.findByUserId(user.getId()).stream()
+                .map(ur -> roleRepository.findById(ur.getRoleId())
+                        .map(Role::getRoleName)
+                        .orElse("UNKNOWN"))
+                .collect(Collectors.toList());
+
+        return UserDetailResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .menu(menu)
+                .permissions(permissions)
+                .roles(roles)
+                .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void collectPrefixes(java.util.List<java.util.Map<String, Object>> items, java.util.List<String> prefixes) {
+        if (items == null) return;
+        for (var item : items) {
+            String prefix = (String) item.get("prefix");
+            if (prefix != null && !prefix.isEmpty()) {
+                prefixes.add(prefix);
+            }
+            java.util.List<java.util.Map<String, Object>> children = (java.util.List<java.util.Map<String, Object>>) item.get("children");
+            collectPrefixes(children, prefixes);
+        }
     }
 }

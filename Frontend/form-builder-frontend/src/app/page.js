@@ -154,6 +154,11 @@ export default function BuilderPage() {
         setFields(fields.filter((f) => f.id !== id));
         if (activeFieldId === id) setActiveFieldId(null);
     };
+    
+    const handleNumberInput = (e, id, key) => {
+        const value = e.target.value === "" ? "" : Number(e.target.value);
+        updateField(id, key, value);
+    };
 
     const generateColumnName = (label) => label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 
@@ -311,6 +316,7 @@ export default function BuilderPage() {
                 sidebarTab={sidebarTab}
                 setSidebarTab={setSidebarTab}
                 updateField={updateField}
+                handleNumberInput={handleNumberInput}
                 availableForms={availableForms}
                 selectedFormFields={selectedFormFields}
                 fields={fields}

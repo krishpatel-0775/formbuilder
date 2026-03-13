@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Star, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight } from "lucide-react";
 
 export function FormFieldWrapper({ 
   field, 

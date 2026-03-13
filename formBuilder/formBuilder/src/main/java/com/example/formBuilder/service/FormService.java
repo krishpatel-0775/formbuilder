@@ -76,6 +76,12 @@ public class FormService {
 
     public FormResponseDto getFormResponseById(Long id) {
         Form form = getFormById(id);
+        
+        // If form is not published, only the owner can see it
+        if (form.getStatus() != PUBLISHED) {
+            getFormWithPermission(id);
+        }
+
         FormResponseDto dto = mapToResponseDto(form);
         try {
             String json = objectMapper.writeValueAsString(dto);

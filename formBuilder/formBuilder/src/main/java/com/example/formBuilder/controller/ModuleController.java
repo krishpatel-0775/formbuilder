@@ -18,16 +18,19 @@ public class ModuleController {
     private final ModuleService moduleService;
 
     @PostMapping("/modules")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Module>> createModule(@RequestBody Module module) {
         return ResponseEntity.ok(ApiResponse.success(moduleService.createModule(module)));
     }
 
     @PutMapping("/modules/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Module>> updateModule(@PathVariable Long id, @RequestBody Module module) {
         return ResponseEntity.ok(ApiResponse.success(moduleService.updateModule(id, module)));
     }
 
     @GetMapping("/modules")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<List<Module>>> getAllModules() {
         return ResponseEntity.ok(ApiResponse.success(moduleService.getAllModules()));
     }
@@ -38,6 +41,7 @@ public class ModuleController {
     }
 
     @PostMapping("/modules/seed")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<String>> seedModules() {
         moduleService.seedModules();
         return ResponseEntity.ok(ApiResponse.success("System seeded successfully"));

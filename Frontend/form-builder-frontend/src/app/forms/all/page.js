@@ -25,8 +25,10 @@ export default function FormVaultPage() {
     const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
     const [searchQuery, setSearchQuery] = useState("");
     const [publishingState, setPublishingState] = useState({}); // { [id]: boolean }
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         fetchForms();
     }, []);
 
@@ -124,6 +126,7 @@ export default function FormVaultPage() {
                         className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-3xl text-sm focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
+                        suppressHydrationWarning={true}
                     />
                 </div>
                 
@@ -131,12 +134,14 @@ export default function FormVaultPage() {
                     <button 
                         onClick={() => setViewMode("grid")}
                         className={`p-3 rounded-xl transition-all ${viewMode === "grid" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
+                        suppressHydrationWarning={true}
                     >
                         <LayoutGrid size={18} />
                     </button>
                     <button 
                         onClick={() => setViewMode("list")}
                         className={`p-3 rounded-xl transition-all ${viewMode === "list" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
+                        suppressHydrationWarning={true}
                     >
                         <ListIcon size={18} />
                     </button>
@@ -204,6 +209,7 @@ export default function FormVaultPage() {
                                                 disabled={publishingState[form.id]}
                                                 className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary transition-all shadow-sm disabled:opacity-50"
                                                 title="Synchronize Architecture"
+                                                suppressHydrationWarning={true}
                                             >
                                                 {publishingState[form.id] ? (
                                                     <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -212,19 +218,29 @@ export default function FormVaultPage() {
                                                 )}
                                             </button>
                                         ) : (
-                                            <Link 
-                                                href={`/forms/data/${form.id}`}
-                                                className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-emerald-50 hover:text-emerald-500 transition-all shadow-sm"
-                                                title="View Live Data"
-                                            >
-                                                <ArrowUpRight size={18} strokeWidth={2.5} />
-                                            </Link>
+                                            <div className="flex gap-2">
+                                                <Link 
+                                                    href={`/forms/${form.id}`}
+                                                    className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
+                                                    title="Fill Form"
+                                                >
+                                                    <ExternalLink size={18} strokeWidth={2.5} />
+                                                </Link>
+                                                <Link 
+                                                    href={`/forms/data/${form.id}`}
+                                                    className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-emerald-50 hover:text-emerald-500 transition-all shadow-sm"
+                                                    title="View Live Data"
+                                                >
+                                                    <ArrowUpRight size={18} strokeWidth={2.5} />
+                                                </Link>
+                                            </div>
                                         )}
                                         
                                         <button 
                                             onClick={() => handleDelete(form.id)}
                                             className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
                                             title="Purge Protocol"
+                                            suppressHydrationWarning={true}
                                         >
                                             <Trash2 size={18} strokeWidth={2.5} />
                                         </button>
@@ -270,16 +286,28 @@ export default function FormVaultPage() {
                                                 onClick={() => handlePublish(form.id)}
                                                 disabled={publishingState[form.id]}
                                                 className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                                                suppressHydrationWarning={true}
                                             >
                                                 <Rocket size={18} />
                                             </button>
                                         )}
-                                        <Link href={`/forms/edit/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                                        {form.status === "PUBLISHED" && (
+                                            <Link href={`/forms/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Fill Form">
+                                                <ExternalLink size={18} />
+                                            </Link>
+                                        )}
+                                        <Link href={`/forms/edit/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Edit Architecture">
                                             <FileText size={18} />
                                         </Link>
+                                        {form.status === "PUBLISHED" && (
+                                            <Link href={`/forms/data/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all" title="View Live Data">
+                                                <ArrowUpRight size={18} />
+                                            </Link>
+                                        )}
                                         <button 
                                             onClick={() => handleDelete(form.id)}
                                             className="inline-flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            suppressHydrationWarning={true}
                                         >
                                             <Trash2 size={18} />
                                         </button>

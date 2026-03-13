@@ -12,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/roles/{roleId}/modules")
 @RequiredArgsConstructor
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
 public class RoleModuleController {
 
     private final RoleModuleService roleModuleService;

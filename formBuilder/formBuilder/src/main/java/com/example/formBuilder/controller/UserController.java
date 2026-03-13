@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
 public class UserController {
 
     private final UserRepository userRepository;

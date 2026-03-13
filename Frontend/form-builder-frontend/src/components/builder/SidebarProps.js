@@ -1,4 +1,4 @@
-import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListCircle } from "lucide-react";
+import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListCircle, Code2 } from "lucide-react";
 
 export function DefaultValuePanel({ activeField, updateField }) {
   const textTypes = ["text", "email", "url", "phone", "number"];
