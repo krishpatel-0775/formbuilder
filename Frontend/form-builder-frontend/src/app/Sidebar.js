@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-    LayoutDashboard, 
-    ChevronDown, 
-    ChevronRight, 
-    FileText, 
-    Users, 
-    Shield, 
+import {
+    LayoutDashboard,
+    ChevronDown,
+    ChevronRight,
+    FileText,
+    Users,
+    Shield,
     Settings,
     PlusCircle,
     List,
@@ -37,37 +37,22 @@ const iconMap = {
 export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
     const { user } = useAuth();
     const pathname = usePathname();
-    const [menuItems, setMenuItems] = useState([]);
     const [expandedGroups, setExpandedGroups] = useState({});
-    const [loading, setLoading] = useState(true);
+
+    // Use permittedModules from user object if available
+    const menuItems = user?.permittedModules || [];
+    const loading = !user; // Consider loading if user isn't fetched yet
 
     useEffect(() => {
-        if (user) {
-            fetchMenu();
-        }
-    }, [user]);
-
-    const fetchMenu = async () => {
-        try {
-            const res = await fetch("http://localhost:9090/api/menu", {
-                credentials: "include"
+        if (menuItems.length > 0 && Object.keys(expandedGroups).length === 0) {
+            // Expand all parents by default on initial load
+            const initialExpanded = {};
+            menuItems.forEach(item => {
+                initialExpanded[item.id] = true;
             });
-            const data = await res.json();
-            if (data.success) {
-                setMenuItems(data.data);
-                // Expand all parents by default
-                const initialExpanded = {};
-                data.data.forEach(item => {
-                    initialExpanded[item.id] = true;
-                });
-                setExpandedGroups(initialExpanded);
-            }
-        } catch (err) {
-            console.error("Error fetching menu:", err);
-        } finally {
-            setLoading(false);
+            setExpandedGroups(initialExpanded);
         }
-    };
+    }, [menuItems]);
 
     const toggleGroup = (id) => {
         if (isCollapsed) {
@@ -85,7 +70,7 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
     return (
         <aside className={`h-full flex flex-col bg-white overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "items-center" : ""}`}>
             <div className={`p-6 w-full flex-1 overflow-y-auto custom-scrollbar transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "px-2" : ""}`}>
-                
+
                 <nav className="space-y-4">
                     {loading ? (
                         <div className="space-y-4 animate-pulse">
@@ -97,26 +82,24 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                         menuItems.map(item => {
                             const IconComponent = item.icon && iconMap[item.icon] ? iconMap[item.icon] : ChevronRight;
                             const isExpanded = expandedGroups[item.id] && !isCollapsed;
-                            
+
                             return (
                                 <div key={item.id} className="flex flex-col gap-1 w-full">
-                                    <button 
+                                    <button
                                         onClick={() => toggleGroup(item.id)}
                                         title={isCollapsed ? item.name : ""}
-                                        className={`flex items-center rounded-2xl transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group overflow-hidden ${isCollapsed ? "justify-center p-3.5" : "gap-3 px-4 py-3"} ${
-                                            isExpanded ? "bg-slate-50 text-slate-900 border border-slate-100 shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-primary"
-                                        }`}
+                                        className={`flex items-center rounded-2xl transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group overflow-hidden ${isCollapsed ? "justify-center p-3.5" : "gap-3 px-4 py-3"} ${isExpanded ? "bg-slate-50 text-slate-900 border border-slate-100 shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-primary"
+                                            }`}
                                     >
-                                        <div className={`flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] flex-shrink-0 ${
-                                            isExpanded || isCollapsed ? "text-primary scale-110" : "group-hover:text-primary group-hover:scale-110"
-                                        }`}>
+                                        <div className={`flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] flex-shrink-0 ${isExpanded || isCollapsed ? "text-primary scale-110" : "group-hover:text-primary group-hover:scale-110"
+                                            }`}>
                                             <IconComponent size={22} strokeWidth={2.5} />
                                         </div>
                                         {!isCollapsed && (
                                             <>
                                                 <span className="text-sm font-bold flex-1 text-left truncate tracking-tight animate-in fade-in duration-500">{item.name}</span>
-                                                <ChevronDown 
-                                                    size={14} 
+                                                <ChevronDown
+                                                    size={14}
                                                     className={`transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-40 ${isExpanded ? "rotate-180" : ""}`}
                                                 />
                                             </>
@@ -127,7 +110,7 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                                         <div className="ml-6 pl-4 border-l-2 border-slate-100/50 flex flex-col gap-1 mt-1 mb-2 animate-in slide-in-from-left duration-500">
                                             {item.children.map(child => {
                                                 const isActive = pathname === child.prefix;
-                                                
+
                                                 if (child.isSubParent) {
                                                     return (
                                                         <div key={child.id} className="mt-3 mb-1">
@@ -138,14 +121,13 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                                                                 {child.children && child.children.map(subChild => {
                                                                     const isSubActive = pathname === subChild.prefix;
                                                                     return (
-                                                                        <NextLink 
+                                                                        <NextLink
                                                                             key={subChild.id}
                                                                             href={subChild.prefix || "#"}
-                                                                            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${
-                                                                                isSubActive 
-                                                                                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
-                                                                                : "text-slate-400 hover:text-primary hover:bg-slate-50"
-                                                                            }`}
+                                                                            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${isSubActive
+                                                                                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]"
+                                                                                    : "text-slate-400 hover:text-primary hover:bg-slate-50"
+                                                                                }`}
                                                                         >
                                                                             {subChild.name}
                                                                         </NextLink>
@@ -155,16 +137,15 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                                                         </div>
                                                     );
                                                 }
-                                                
+
                                                 return (
-                                                    <NextLink 
+                                                    <NextLink
                                                         key={child.id}
                                                         href={child.prefix || "#"}
-                                                        className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${
-                                                            isActive 
-                                                            ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
-                                                            : "text-slate-500 hover:text-primary hover:bg-slate-50"
-                                                        }`}
+                                                        className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${isActive
+                                                                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]"
+                                                                : "text-slate-500 hover:text-primary hover:bg-slate-50"
+                                                            }`}
                                                     >
                                                         {child.name}
                                                     </NextLink>
@@ -181,7 +162,7 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
 
             {/* Premium Collapse Mechanic */}
             <div className={`p-4 mt-auto border-t border-slate-50 w-full transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "px-2" : ""}`}>
-                <button 
+                <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     className={`flex items-center gap-3 w-full p-3 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-primary transition-all duration-500 group ${isCollapsed ? "justify-center" : ""}`}
                 >

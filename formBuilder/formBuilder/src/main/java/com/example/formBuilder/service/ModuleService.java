@@ -101,6 +101,46 @@ public class ModuleService {
         return buildHierarchy(userModules);
     }
 
+    public boolean hasAccessToPath(String username, String path) {
+        if (username == null || path == null) return false;
+        
+        // Special case for authenticated users to access common/auth endpoints
+        if (path.startsWith("/api/auth/me") || path.startsWith("/api/auth/logout")) return true;
+
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) return false;
+
+        List<UserRole> userRoles = userRoleRepository.findByUserId(user.getId());
+        Set<Long> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toSet());
+
+        // Optimization: Admin has access to everything
+        boolean isAdmin = roleIds.stream()
+                .map(roleRepository::findById)
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .anyMatch(r -> "SYSTEM_ADMIN".equals(r.getRoleName()));
+        
+        if (isAdmin) return true;
+
+        for (Long roleId : roleIds) {
+            List<RoleModule> rms = roleModuleRepository.findByRoleId(roleId);
+            for (RoleModule rm : rms) {
+                Module m = moduleRepository.findById(rm.getModuleId()).orElse(null);
+                if (m != null && m.getApiPath() != null) {
+                    // Check direct path access
+                    if (path.startsWith(m.getApiPath())) return true;
+                    
+                    // Special case: Form modules also grant access to Submissions API
+                    if (m.getApiPath().startsWith("/api/forms") && path.startsWith("/api/submissions")) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     private List<Map<String, Object>> buildHierarchy(List<Module> modules) {
         List<Map<String, Object>> menu = new ArrayList<>();
         
@@ -168,12 +208,12 @@ public class ModuleService {
         Module adminParent = findOrCreate(existing, "System Admin", null, "shield", true);
 
         // Ensure Main Links
-        Module vaultModule = findOrCreate(existing, "Form Vault", "/forms/all", "list", formsParent.getId());
-        Module createModule = findOrCreate(existing, "Create New Form", "/", "plus-circle", formsParent.getId());
+        Module vaultModule = findOrCreate(existing, "Form Vault", "/forms/all", "list", formsParent.getId(), "/api/forms");
+        Module createModule = findOrCreate(existing, "Create New Form", "/", "plus-circle", formsParent.getId(), "/api/forms");
         
-        findOrCreate(existing, "Module Management", "/admin/modules", "layout", adminParent.getId());
-        findOrCreate(existing, "Role Management", "/admin/roles", "shield", adminParent.getId());
-        findOrCreate(existing, "User Management", "/admin/users", "users", adminParent.getId());
+        findOrCreate(existing, "Module Management", "/admin/modules", "layout", adminParent.getId(), "/api/modules");
+        findOrCreate(existing, "Role Management", "/admin/roles", "shield", adminParent.getId(), "/api/roles");
+        findOrCreate(existing, "User Management", "/admin/users", "users", adminParent.getId(), "/api/users");
 
         // Refresh existing list to get new IDs
         existing = moduleRepository.findAll();
@@ -228,18 +268,26 @@ public class ModuleService {
         return moduleRepository.save(newModule);
     }
 
-    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, Long parentId) {
+    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, Long parentId, String apiPath) {
         Optional<Module> found = existing.stream()
                 .filter(m -> m.getModuleName().trim().equalsIgnoreCase(name.trim()))
                 .findFirst();
         
-        if (found.isPresent()) return found.get();
+        if (found.isPresent()) {
+            Module m = found.get();
+            if (m.getApiPath() == null && apiPath != null) {
+                m.setApiPath(apiPath);
+                return moduleRepository.save(m);
+            }
+            return m;
+        }
 
         Module newModule = Module.builder()
                 .moduleName(name)
                 .prefix(prefix)
                 .iconCss(icon)
                 .parentId(parentId)
+                .apiPath(apiPath)
                 .active(true)
                 .build();
         return moduleRepository.save(newModule);
@@ -252,6 +300,7 @@ public class ModuleService {
         map.put("description", m.getModuleDescription());
         map.put("prefix", m.getPrefix());
         map.put("icon", m.getIconCss());
+        map.put("apiPath", m.getApiPath());
         map.put("isParent", m.isParent());
         map.put("isSubParent", m.isSubParent());
         return map;

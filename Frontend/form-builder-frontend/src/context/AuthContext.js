@@ -33,15 +33,66 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         if (!loading) {
             const publicPaths = ["/login", "/register"];
-            const isPublicForm = pathname.match(/^\/forms\/\d+$/); // /forms/[id] is public for respondents to fill
+            const isPublicForm = pathname.match(/^\/forms\/\d+$/);
 
             if (!user && !publicPaths.includes(pathname) && !isPublicForm) {
                 router.push("/login");
-            } else if (user && publicPaths.includes(pathname)) {
-                router.push("/forms/all");
+            } else if (user) {
+                const firstPath = getFirstAvailablePath(user.permittedModules) || "/login";
+                
+                if (publicPaths.includes(pathname)) {
+                    router.push(firstPath);
+                } else if (!isPublicForm) {
+                    // Check module-level access
+                    const hasAccess = checkPathAccess(pathname, user.permittedModules);
+                    if (!hasAccess) {
+                        console.warn(`Access denied to ${pathname}. Redirecting to ${firstPath}...`);
+                        router.push(firstPath);
+                    }
+                }
             }
         }
     }, [user, loading, pathname, router]);
+
+    const getFirstAvailablePath = (modules) => {
+        if (!modules) return null;
+        for (const m of modules) {
+            if (m.prefix && m.prefix !== "#") return m.prefix;
+            if (m.children) {
+                const childPath = getFirstAvailablePath(m.children);
+                if (childPath) return childPath;
+            }
+        }
+        return null;
+    };
+
+    const checkPathAccess = (path, modules) => {
+        if (!modules) return false;
+        
+        // Flatten modules to check prefixes
+        const allPrefixes = [];
+        const flatten = (items) => {
+            items.forEach(item => {
+                if (item.prefix && item.prefix !== "#") allPrefixes.push(item.prefix);
+                if (item.children) flatten(item.children);
+            });
+        };
+        flatten(modules);
+
+        const hasFormPermission = allPrefixes.some(p => p.startsWith("/forms") || p === "/");
+
+        // Strict access check
+        return allPrefixes.some(prefix => {
+            if (prefix === "/") return path === "/";
+            
+            // Allow sub-routes for forms if user has any form-related module
+            if (hasFormPermission && (path.startsWith("/forms/edit") || path.startsWith("/forms/data"))) {
+                return true;
+            }
+
+            return path.startsWith(prefix);
+        });
+    };
 
     const logout = async () => {
         try {
@@ -58,7 +109,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, refetchAuth: fetchUser, logout, hasRole }}>
+        <AuthContext.Provider value={{ user, loading, refetchAuth: fetchUser, logout, hasRole, checkPathAccess }}>
             {children}
         </AuthContext.Provider>
     );

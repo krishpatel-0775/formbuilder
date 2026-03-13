@@ -75,7 +75,11 @@ public class FormService {
     }
 
     public FormResponseDto getFormResponseById(Long id) {
+
+//        Form tempform = getFormWithPermission(id);
+
         Form form = getFormById(id);
+
         FormResponseDto dto = mapToResponseDto(form);
         try {
             String json = objectMapper.writeValueAsString(dto);

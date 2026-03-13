@@ -6,8 +6,9 @@ import { useEffect } from "react";
 import { ShieldAlert } from "lucide-react";
 
 export default function AdminGuard({ children }) {
-    const { user, loading, hasRole } = useAuth();
+    const { user, loading, hasRole, checkPathAccess } = useAuth();
     const router = useRouter();
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 
     useEffect(() => {
         if (!loading && !user) {
@@ -24,7 +25,9 @@ export default function AdminGuard({ children }) {
         );
     }
 
-    if (!user || !hasRole("SYSTEM_ADMIN")) {
+    const hasModuleAccess = user && checkPathAccess(pathname, user.permittedModules);
+
+    if (!user || (!hasRole("SYSTEM_ADMIN") && !hasModuleAccess)) {
         return (
             <div className="p-8 h-screen flex flex-col items-center justify-center bg-white text-center">
                 <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-red-100/50">

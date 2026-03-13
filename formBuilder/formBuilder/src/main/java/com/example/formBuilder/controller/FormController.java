@@ -36,6 +36,7 @@ public class FormController {
 
     @GetMapping(AppConstants.API_FORM_BY_ID)
     public ResponseEntity<ApiResponse<FormResponseDto>> getForm(@PathVariable Long id) {
+        System.out.println("bakaziki");
         return ResponseEntity.ok(ApiResponse.success(formService.getFormResponseById(id)));
     }
 

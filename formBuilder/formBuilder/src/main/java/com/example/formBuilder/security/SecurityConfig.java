@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -25,16 +26,18 @@ import java.util.List;
 public class SecurityConfig {
 
     private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    private final ModuleAccessFilter moduleAccessFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
+                .addFilterAfter(moduleAccessFilter, AuthorizationFilter.class)
                 .userDetailsService(userDetailsService) // Specifically set UserDetailsService
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/forms/**", "/api/submissions/**").permitAll()
-                        .requestMatchers("/api/users/**", "/api/roles/**", "/api/modules/**").hasRole("SYSTEM_ADMIN")
+                        .requestMatchers("/api/users/**", "/api/roles/**", "/api/modules/**").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()

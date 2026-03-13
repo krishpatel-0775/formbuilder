@@ -35,6 +35,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final AuthenticationManager authenticationManager;
+    private final ModuleService moduleService;
 
     @Transactional
     public String register(RegisterRequest request) {
@@ -84,7 +85,9 @@ public class AuthService {
                 .map(grantedAuthority -> grantedAuthority.getAuthority().replace("ROLE_", ""))
                 .collect(java.util.stream.Collectors.toList());
 
-        return new LoginResponse(user.getId(), user.getUsername(), user.getEmail(), roles);
+        List<java.util.Map<String, Object>> permittedModules = moduleService.getUserMenuForUser(user.getUsername());
+
+        return new LoginResponse(user.getId(), user.getUsername(), user.getEmail(), roles, permittedModules);
     }
 
     public void logout(HttpServletRequest request) {
@@ -107,7 +110,10 @@ public class AuthService {
                         .map(java.util.Optional::get)
                         .map(Role::getRoleName)
                         .collect(java.util.stream.Collectors.toList());
-                return new UserInfoResponse(user.getId(), user.getUsername(), user.getEmail(), roles);
+                
+                List<java.util.Map<String, Object>> permittedModules = moduleService.getUserMenuForUser(user.getUsername());
+                
+                return new UserInfoResponse(user.getId(), user.getUsername(), user.getEmail(), roles, permittedModules);
             }
         }
         return null;

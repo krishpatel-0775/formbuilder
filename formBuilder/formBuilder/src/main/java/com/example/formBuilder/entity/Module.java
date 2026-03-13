@@ -26,6 +26,7 @@ public class Module {
     private String plugin;
     private String controller;
     private String action;
+    private String apiPath;
 
     @Column(name = "is_parent")
     private boolean isParent;
