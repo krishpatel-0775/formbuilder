@@ -24,8 +24,8 @@ public class FormFieldResponseDto {
     private String pattern;
     private LocalDate beforeDate;
     private LocalDate afterDate;
-    private String minTime;
-    private String maxTime;
+    private String afterTime;
+    private String beforeTime;
     private List<String> options;
     private String sourceTable;
     private String sourceColumn;

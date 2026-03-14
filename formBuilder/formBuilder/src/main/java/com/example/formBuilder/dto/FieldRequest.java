@@ -26,6 +26,6 @@ public class FieldRequest {
     private String defaultValue;
     private String sourceTable;
     private String sourceColumn;
-    private String minTime;
-    private String maxTime;
+    private String afterTime;
+    private String beforeTime;
 }

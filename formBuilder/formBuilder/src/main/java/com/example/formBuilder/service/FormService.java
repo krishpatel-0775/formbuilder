@@ -114,8 +114,8 @@ public class FormService {
                                 .pattern(f.getPattern())
                                 .beforeDate(f.getBeforeDate())
                                 .afterDate(f.getAfterDate())
-                                .minTime(f.getMinTime())
-                                .maxTime(f.getMaxTime())
+                                .afterTime(f.getAfterTime())
+                                .beforeTime(f.getBeforeTime())
                                 .options(f.getOptions() != null ? new ArrayList<>(f.getOptions()) : null)
                                 .sourceTable(f.getSourceTable())
                                 .sourceColumn(f.getSourceColumn())
@@ -285,7 +285,27 @@ public class FormService {
         return "Form Published Successfully";
     }
 
+    @Transactional
     public String createForm(FormRequest request) {
+        // Step 1: Pre-validate all fields before saving anything
+        Set<String> reserved = Set.of(
+                "select", "from", "where", "join", "table", "order",
+                "group", "limit", "offset", "insert", "update",
+                "delete", "index", "primary", "key", "constraint",
+                "id"
+        );
+
+        for (FieldRequest field : request.getFields()) {
+            if (!isDisplayOnly(field.getType())) {
+                if (field.getName() == null || field.getName().isBlank()) {
+                    throw new ValidationException("Field name cannot be empty");
+                }
+                if (reserved.contains(field.getName().toLowerCase())) {
+                    throw new ValidationException(field.getName() + " is a reserved field name. Please choose a different name.");
+                }
+            }
+        }
+
         User user = getCurrentUser();
         
         Form form = new Form();
@@ -312,27 +332,14 @@ public class FormService {
         for (FieldRequest field : request.getFields()) {
 
             // Display-only fields (page_break, heading, paragraph, divider) — persist but never as DB columns
-            boolean isDisplayOnly = isDisplayOnly(field.getType());
-
-            if (!isDisplayOnly) {
-                Set<String> reserved = Set.of(
-                        "select","from","where","join","table","order",
-                        "group","limit","offset","insert","update",
-                        "delete","index","primary","key","constraint",
-                        "id"
-                );
-
-                if(reserved.contains(field.getName().toLowerCase())){
-                    throw new ValidationException(field.getName() + " is a reserved field name. Please choose a different name.");
-                }
-            }
+            boolean isDisplayOnlyField = isDisplayOnly(field.getType());
 
             FormField formField = new FormField();
 
             formField.setFieldName(field.getName());
             formField.setFieldType(field.getType());
 
-            if (!isDisplayOnly) {
+            if (!isDisplayOnlyField) {
                 formField.setRequired(field.getRequired());
                 formField.setMinLength(field.getMinLength());
                 formField.setMaxLength(field.getMaxLength());
@@ -340,8 +347,8 @@ public class FormService {
                 formField.setMax(field.getMax());
                 formField.setPattern(field.getPattern());
                 formField.setDefaultValue(field.getDefaultValue());
-                formField.setMinTime(field.getMinTime());
-                formField.setMaxTime(field.getMaxTime());
+                formField.setAfterTime(field.getAfterTime());
+                formField.setBeforeTime(field.getBeforeTime());
                 formField.setBeforeDate(
                         field.getBeforeDate() != null ?
                                 LocalDate.parse(field.getBeforeDate()) : null
@@ -456,6 +463,8 @@ public class FormService {
             field.setAfterDate(req.getAfterDate() != null
                     ? LocalDate.parse(req.getAfterDate()) : null);
             field.setOptions(req.getOptions());
+            field.setAfterTime(req.getAfterTime());
+            field.setBeforeTime(req.getBeforeTime());
             field.setSourceTable(req.getSourceTable());
             field.setSourceColumn(req.getSourceColumn());
         } else {

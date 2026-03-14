@@ -23,4 +23,6 @@ public class UpdateFieldRequest {
     private String defaultValue;
     private String sourceTable;
     private String sourceColumn;
+    private String afterTime;
+    private String beforeTime;
 }

@@ -93,7 +93,7 @@ export default function FormVaultPage() {
     );
 
     return (
-        <div className="p-6 lg:p-10 space-y-8 animate-in fade-in duration-500">
+        <div className="h-full overflow-y-auto p-6 lg:p-10 space-y-8 animate-in fade-in duration-500">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>

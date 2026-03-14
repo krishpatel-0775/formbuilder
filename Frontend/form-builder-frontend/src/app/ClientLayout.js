@@ -85,7 +85,7 @@ export default function ClientLayout({ children }) {
                         user ? (isSidebarOpen ? (isCollapsed ? "lg:pl-20" : "lg:pl-72") : "lg:pl-0") : ""
                     }`}
                 >
-                    <div className="flex-1 overflow-y-auto bg-mesh relative">
+                    <div className="flex-1 overflow-hidden bg-mesh relative">
                         {children}
                     </div>
                 </main>

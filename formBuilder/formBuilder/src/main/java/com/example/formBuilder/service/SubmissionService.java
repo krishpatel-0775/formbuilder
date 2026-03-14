@@ -304,6 +304,18 @@ public class SubmissionService {
                     }
                 }
             }
+            case "time" -> {
+                if (field.getAfterTime() != null && !field.getAfterTime().isBlank()) {
+                    if (stringValue.compareTo(field.getAfterTime()) < 0) {
+                        errors.add(field.getFieldName() + " must be after " + field.getAfterTime());
+                    }
+                }
+                if (field.getBeforeTime() != null && !field.getBeforeTime().isBlank()) {
+                    if (stringValue.compareTo(field.getBeforeTime()) > 0) {
+                        errors.add(field.getFieldName() + " must be before " + field.getBeforeTime());
+                    }
+                }
+            }
         }
     }
 }

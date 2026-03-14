@@ -31,9 +31,8 @@ export function FormHeader({
                 type="text" 
                 placeholder="Name your masterpiece..." 
                 value={formName} 
-                disabled={isPublished}
                 onChange={(e) => setFormName(e.target.value)}
-                className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight ${isPublished ? "text-slate-500 cursor-not-allowed" : "text-slate-900"}`} 
+                className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`} 
             />
         </div>
       </div>
