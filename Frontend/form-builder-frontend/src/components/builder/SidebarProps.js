@@ -1,4 +1,4 @@
-import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListCircle, Code2 } from "lucide-react";
+import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListCircle, Code2, CheckCircle2 } from "lucide-react";
 
 export function DefaultValuePanel({ activeField, updateField }) {
   const textTypes = ["text", "email", "url", "phone", "number"];
@@ -60,6 +60,35 @@ export function DefaultValuePanel({ activeField, updateField }) {
             {activeField.options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
           </select>
         )}
+
+      {activeField.type === "checkbox" && !activeField.sourceTable && activeField.options?.length > 0 && (
+        <div className="grid grid-cols-1 gap-2">
+            {activeField.options.map((opt, i) => {
+                const currentVals = (activeField.defaultValue || "").split(",").map(v => v.trim()).filter(Boolean);
+                const isSelected = currentVals.includes(opt);
+                return (
+                    <button 
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                            const updated = isSelected 
+                                ? currentVals.filter(v => v !== opt) 
+                                : [...currentVals, opt];
+                            updateField(activeField.id, "defaultValue", updated.join(", "));
+                        }}
+                        className={`flex items-center justify-between p-3.5 rounded-xl border-2 transition-all ${
+                            isSelected 
+                            ? "bg-primary/5 border-primary text-primary shadow-md" 
+                            : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                        }`}
+                    >
+                        <span className="text-xs font-black uppercase tracking-wider">{opt}</span>
+                        {isSelected && <CheckCircle2 size={14} strokeWidth={3} className="animate-in zoom-in duration-300" />}
+                    </button>
+                );
+            })}
+        </div>
+      )}
 
       {activeField.type === "toggle" && (
         <div 
@@ -137,7 +166,7 @@ export function SidebarProps({
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Boundary Settings</label>
         </div>
 
-        {(activeField.type === "text" || activeField.type === "textarea") && (
+        {["text", "textarea", "email", "phone", "url"].includes(activeField.type) && (
           <div className="space-y-10">
             <div className="grid grid-cols-2 gap-4">
               <div className="relative">
@@ -162,7 +191,7 @@ export function SidebarProps({
               </div>
             </div>
             
-            {activeField.type === "text" && (
+            {["text", "email", "phone", "url"].includes(activeField.type) && (
               <div className="space-y-3">
                 <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Regex Pattern validation</span>
                 <input 

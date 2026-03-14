@@ -180,6 +180,11 @@ public class SubmissionService {
                         default:
                             // Handle lookup IDs
                             if (f.getSourceTable() != null && !f.getSourceTable().isBlank()) {
+                                // For multi-select fields (checkbox), we store IDs as a comma-separated string (TEXT type).
+                                // For single-select fields (radio, select), we store as a single numeric ID (BIGINT type).
+                                if ("checkbox".equals(f.getFieldType())) {
+                                    return strVal;
+                                }
                                 try {
                                     return Long.parseLong(strVal);
                                 } catch (Exception e) {

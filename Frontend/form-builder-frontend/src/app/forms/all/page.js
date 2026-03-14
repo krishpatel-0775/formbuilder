@@ -9,7 +9,6 @@ import {
     MoreVertical, 
     FileText, 
     Calendar, 
-    CheckCircle2, 
     Clock, 
     Trash2,
     LayoutGrid,

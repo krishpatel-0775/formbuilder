@@ -146,6 +146,10 @@ public class SchemaManager {
     private String mapType(FormField field) {
         // If it's a lookup, store as record ID
         if (field.getSourceTable() != null && !field.getSourceTable().isBlank()) {
+            // Checkboxes are multi-select, so they must store a comma-separated list of IDs in a TEXT column.
+            if ("checkbox".equals(field.getFieldType())) {
+                return "TEXT";
+            }
             return "BIGINT";
         }
 

@@ -92,7 +92,12 @@ export function FormFieldWrapper({
       {field.fieldType === "radio" && (
         <div className="grid gap-3">
           {field.options?.map((opt, idx) => {
-            const isActive = value === opt;
+            const isObj = typeof opt === "object" && opt !== null;
+            const optVal = isObj ? opt.id : opt;
+            const optLabel = isObj ? opt.value : opt;
+            // Use loose equality to handle string vs number (e.g. "1" == 1)
+            const isActive = value == optVal;
+            
             return (
               <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${
                   isActive
@@ -107,11 +112,11 @@ export function FormFieldWrapper({
                     }`}>
                         {isActive && <div className="w-2 h-2 rounded-full bg-white animate-in zoom-in duration-300" />}
                     </div>
-                    <span className="font-black text-[15px]">{opt}</span>
+                    <span className="font-black text-[15px]">{optLabel}</span>
                 </div>
                 {isActive && <CheckCircle2 size={18} strokeWidth={3} className="animate-in slide-in-from-right-2 fade-in" />}
-                <input type="radio" name={field.fieldName} value={opt} checked={isActive}
-                    onChange={(e) => onChange(field.fieldName, e.target.value)}
+                <input type="radio" name={field.fieldName} value={optVal} checked={isActive}
+                    onChange={() => onChange(field.fieldName, optVal)}
                     className="hidden" />
               </label>
             );
@@ -123,13 +128,22 @@ export function FormFieldWrapper({
       {field.fieldType === "checkbox" && (
         <div className="grid gap-3">
           {field.options?.map((opt, idx) => {
-            const isActive = value?.includes(opt);
+            const isObj = typeof opt === "object" && opt !== null;
+            const optVal = isObj ? opt.id : opt;
+            const optLabel = isObj ? opt.value : opt;
+            
+            // Handle both array and comma-separated string states
+            const currentVals = Array.isArray(value) 
+                ? value 
+                : (value || "").toString().split(",").map(v => v.trim()).filter(Boolean);
+            const isActive = currentVals.some(v => v == optVal);
+
             return (
               <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${
                   isActive
                   ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
                   : hasError 
-                    ? "bg-red-50/20 border-red-100 text-slate-500"
+                    ? "bg-red-50/30 border-red-100 text-slate-500"
                     : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-4">
@@ -138,10 +152,10 @@ export function FormFieldWrapper({
                     }`}>
                         {isActive && <CheckCircle2 size={14} strokeWidth={4} className="text-white animate-in zoom-in duration-300" />}
                     </div>
-                    <span className="font-black text-[15px]">{opt}</span>
+                    <span className="font-black text-[15px]">{optLabel}</span>
                 </div>
                 <input type="checkbox" checked={isActive}
-                    onChange={() => onCheckboxChange(field.fieldName, opt)}
+                    onChange={() => onCheckboxChange(field.fieldName, optVal)}
                     className="hidden" />
               </label>
             );

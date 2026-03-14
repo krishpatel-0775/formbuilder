@@ -176,10 +176,13 @@ public class FormService {
             for (Map<String, Object> row : dataList) {
                 Object val = row.get(col);
                 if (val != null) {
-                    try {
-                        idsToResolve.add(Long.valueOf(val.toString()));
-                    } catch (NumberFormatException e) {
-                        // Skip legacy string data
+                    String[] parts = val.toString().split(",");
+                    for (String part : parts) {
+                        try {
+                            idsToResolve.add(Long.valueOf(part.trim()));
+                        } catch (NumberFormatException e) {
+                            // Skip non-numeric parts
+                        }
                     }
                 }
             }
@@ -203,14 +206,17 @@ public class FormService {
                 for (Map<String, Object> row : dataList) {
                     Object idVal = row.get(col);
                     if (idVal != null) {
-                        try {
-                            String label = labelMap.get(Long.valueOf(idVal.toString()));
-                            if (label != null) {
-                                row.put(col, label);
+                        String[] parts = idVal.toString().split(",");
+                        List<String> labels = new ArrayList<>();
+                        for (String part : parts) {
+                            try {
+                                String label = labelMap.get(Long.valueOf(part.trim()));
+                                labels.add(label != null ? label : part.trim());
+                            } catch (NumberFormatException e) {
+                                labels.add(part.trim());
                             }
-                        } catch (NumberFormatException e) {
-                            // Leave legacy string as is
                         }
+                        row.put(col, String.join(", ", labels));
                     }
                 }
             } catch (Exception e) {

@@ -50,7 +50,7 @@ export default function BuilderPage() {
     const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
 
     useEffect(() => {
-        if (activeField?.type === "select") {
+        if (["select", "radio", "checkbox"].includes(activeField?.type)) {
             fetch(ENDPOINTS.FORMS, { credentials: "include" })
                 .then(r => r.json())
                 .then(r => setAvailableForms(r.data || []))
@@ -59,7 +59,7 @@ export default function BuilderPage() {
     }, [activeField?.id, activeField?.type]);
 
     useEffect(() => {
-        if (activeField?.type === "select" && activeField?.sourceTable) {
+        if (["select", "radio", "checkbox"].includes(activeField?.type) && activeField?.sourceTable) {
             fetch(`${ENDPOINTS.FORMS}/${activeField.sourceTable}`, { credentials: "include" })
                 .then(r => r.json())
                 .then(r => setSelectedFormFields(r.data?.fields || []))
@@ -179,8 +179,7 @@ export default function BuilderPage() {
                     return fd;
                 }
                 if (field.defaultValue) fd.defaultValue = field.defaultValue;
-                if (field.type === "radio" || field.type === "checkbox") fd.options = field.options;
-                if (field.type === "select") {
+                if (["radio", "checkbox", "select"].includes(field.type)) {
                     if (field.sourceTable && field.sourceColumn) {
                         fd.sourceTable = field.sourceTable;
                         fd.sourceColumn = field.sourceColumn;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertCircle, Send, ArrowLeft, Loader2, ChevronRight, ChevronLeft } from "lucide-react";
+import { AlertCircle, Send, ArrowLeft, Loader2, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { ENDPOINTS } from "../../../config/apiConfig";
 import { FormFieldWrapper } from "../../../components/builder/FormFieldWrapper";
@@ -88,7 +88,7 @@ export default function PublicFormPage() {
         if (data?.fields) {
           await Promise.all(
             data.fields.map(async (field) => {
-              if (field.fieldType === "select" && field.sourceTable && field.sourceColumn) {
+              if (["select", "radio", "checkbox"].includes(field.fieldType) && field.sourceTable && field.sourceColumn) {
                 try {
                   const optRes = await fetch(`${ENDPOINTS.FORMS}/${field.sourceTable}/lookup/${field.sourceColumn}`, { credentials: "include" });
                   if (optRes.ok) {
@@ -145,16 +145,29 @@ export default function PublicFormPage() {
         if (data?.fields) {
           data.fields.forEach((field) => {
             if (field.fieldType === "page_break") return;
+            
+            const options = field.options || [];
+            const isOptionValid = (val) => {
+              if (options.length === 0) return true;
+              return options.some(opt => {
+                if (typeof opt === "object" && opt !== null) {
+                  return opt.id == val || opt.value == val;
+                }
+                return opt == val;
+              });
+            };
+
             if (field.fieldType === "checkbox") {
               const defaultVals = field.defaultValue
-                ? field.defaultValue.split(",").map((v) => v.trim()).filter(Boolean)
+                ? field.defaultValue.toString().split(",").map((v) => v.trim()).filter(Boolean)
                 : [];
-              initialData[field.fieldName] = field.options?.length > 0
-                ? defaultVals.filter(v => field.options.includes(v))
+              // Keep as array in state for easier manipulation, but normalize comparison
+              initialData[field.fieldName] = options.length > 0
+                ? defaultVals.filter(v => isOptionValid(v))
                 : defaultVals;
             } else if (["radio", "select"].includes(field.fieldType)) {
               let v = field.defaultValue ?? "";
-              if (v && field.options?.length > 0 && !field.options.includes(v)) v = "";
+              if (v && options.length > 0 && !isOptionValid(v)) v = "";
               initialData[field.fieldName] = v;
             } else {
               initialData[field.fieldName] = field.defaultValue ?? "";
@@ -324,10 +337,15 @@ export default function PublicFormPage() {
   };
 
   const handleCheckboxChange = (fieldName, optionValue) => {
-    const current = formData[fieldName] || [];
-    const updated = current.includes(optionValue)
-      ? current.filter((v) => v !== optionValue)
+    const current = Array.isArray(formData[fieldName]) 
+      ? formData[fieldName] 
+      : (formData[fieldName] || "").toString().split(",").map(v => v.trim()).filter(Boolean);
+    
+    // Use loose equality for comparison
+    const updated = current.some(v => v == optionValue)
+      ? current.filter((v) => v != optionValue)
       : [...current, optionValue];
+      
     handleInputChange(fieldName, updated);
   };
 
@@ -374,11 +392,21 @@ export default function PublicFormPage() {
     setErrors({});
     setIsSubmitting(true);
 
+    // Prepare data for submission: convert arrays (from Checkboxes) to comma-separated strings
+    const submissionData = Object.fromEntries(
+      Object.entries(formData).map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return [key, value.join(", ")];
+        }
+        return [key, value];
+      })
+    );
+
     try {
         const res = await fetch(ENDPOINTS.SUBMISSIONS, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ formId: parseInt(id), values: formData }),
+          body: JSON.stringify({ formId: parseInt(id), values: submissionData }),
           credentials: "include"
         });
 

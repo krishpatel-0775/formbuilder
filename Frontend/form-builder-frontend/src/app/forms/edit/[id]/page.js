@@ -105,16 +105,24 @@ export default function EditFormPage() {
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
-    if (af?.type === "select" && user) {
-      fetch(`http://localhost:9090/api/forms`, { credentials: "include" }).then(r => r.json()).then(r => setAvailableForms(r.data || [])).catch(console.error);
+    if (["select", "radio", "checkbox"].includes(af?.type) && user) {
+      fetch(`http://localhost:9090/api/forms`, { credentials: "include" })
+        .then(r => r.json())
+        .then(r => setAvailableForms(r.data || []))
+        .catch(console.error);
     }
   }, [activeFieldId, fields, user]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
-    if (af?.type === "select" && af?.sourceTable) {
-      fetch(`http://localhost:9090/api/forms/${af.sourceTable}`, { credentials: "include" }).then(r => r.json()).then(r => setSelectedFormFields(r.data?.fields || [])).catch(console.error);
-    } else { setSelectedFormFields([]); }
+    if (["select", "radio", "checkbox"].includes(af?.type) && af?.sourceTable) {
+      fetch(`http://localhost:9090/api/forms/${af.sourceTable}`, { credentials: "include" })
+        .then(r => r.json())
+        .then(r => setSelectedFormFields(r.data?.fields || []))
+        .catch(console.error);
+    } else { 
+      setSelectedFormFields([]); 
+    }
   }, [activeFieldId, fields.find((f) => f.id === activeFieldId)?.sourceTable]);
 
   const activeField = useMemo(() => fields.find((f) => f.id === activeFieldId), [fields, activeFieldId]);
@@ -238,21 +246,23 @@ export default function EditFormPage() {
         if (!field.label) throw new Error("All fields must have a label.");
         let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required };
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
-        if (field.type === "radio" || field.type === "checkbox") fd.options = field.options;
-        if (field.type === "select") {
-          if (field.sourceTable && field.sourceColumn) { fd.sourceTable = field.sourceTable; fd.sourceColumn = field.sourceColumn; fd.options = []; }
-          else fd.options = field.options;
+        if (["radio", "checkbox", "select"].includes(field.type)) {
+          if (field.sourceTable && field.sourceColumn) { 
+            fd.sourceTable = field.sourceTable; 
+            fd.sourceColumn = field.sourceColumn; 
+            fd.options = []; 
+          } else {
+            fd.options = field.options; 
+          }
         }
-        if (field.type === "text" || field.type === "textarea") {
+        if (["text", "textarea", "email", "phone", "url"].includes(field.type)) {
           if (field.minLength) fd.minLength = Number(field.minLength);
           if (field.maxLength) fd.maxLength = Number(field.maxLength);
-          if (field.type === "text" && field.pattern) fd.pattern = field.pattern;
+          if (field.pattern) fd.pattern = field.pattern;
         }
         if (field.type === "number") { if (field.min) fd.min = Number(field.min); if (field.max) fd.max = Number(field.max); }
-        if (field.type === "email" && field.pattern) fd.pattern = field.pattern;
         if (field.type === "date") { if (field.afterDate) fd.afterDate = field.afterDate; if (field.beforeDate) fd.beforeDate = field.beforeDate; }
         if (field.type === "time") { if (field.afterTime) fd.afterTime = field.afterTime; if (field.beforeTime) fd.beforeTime = field.beforeTime; }
-        if (field.type === "phone" && field.pattern) fd.pattern = field.pattern;
         return fd;
       });
       const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
