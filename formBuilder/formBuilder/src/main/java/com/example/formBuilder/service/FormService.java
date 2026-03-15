@@ -172,7 +172,7 @@ public class FormService {
             String sourceCol = field.getSourceColumn();
 
             // Collect unique IDs from this column in the current page
-            Set<Long> idsToResolve = new java.util.HashSet<>();
+            Set<Long> idsToResolve = new HashSet<>();
             for (Map<String, Object> row : dataList) {
                 Object val = row.get(col);
                 if (val != null) {

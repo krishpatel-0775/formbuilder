@@ -6,16 +6,16 @@ import { Plus, Trash2, GitBranch, AlertTriangle, Eye, EyeOff, Star, X, Sparkles,
 const OPERATORS = [
     { value: "EQUALS", label: "Strictly Equals" },
     { value: "NOT_EQUALS", label: "Does Not Equal" },
-    { value: "GREATER_THAN", label: "Exceeds" },
-    { value: "LESS_THAN", label: "Falls Below" },
+    { value: "GREATER_THAN", label: "Greater Than" },
+    { value: "LESS_THAN", label: "Less Than" },
     { value: "CONTAINS", label: "Includes Phrase" },
 ];
 
 const ACTION_TYPES = [
-    { value: "SHOW", label: "Reveal Element", icon: <Eye size={14} />, color: "primary" },
-    { value: "HIDE", label: "Occlude Element", icon: <EyeOff size={14} />, color: "slate" },
-    { value: "REQUIRE", label: "Enforce Integrity", icon: <Star size={14} />, color: "amber" },
-    { value: "VALIDATION_ERROR", label: "Interrupt Protocol", icon: <X size={14} />, color: "red" },
+    { value: "SHOW", label: "Show Field", icon: <Eye size={14} />, color: "primary" },
+    { value: "HIDE", label: "Hide Field", icon: <EyeOff size={14} />, color: "slate" },
+    { value: "REQUIRE", label: "Required", icon: <Star size={14} />, color: "amber" },
+    { value: "VALIDATION_ERROR", label: "Error", icon: <X size={14} />, color: "red" },
 ];
 
 const LOGICAL_OPERATORS = [

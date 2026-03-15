@@ -249,7 +249,7 @@ export default function BuilderPage() {
                     saveForm={saveForm}
                     isSaving={isPublishing}
                     showSuccess={showSuccess}
-                    saveLabel="Deploy Architecture"
+                    saveLabel="Draft Form"
                     saveIcon={<Rocket size={18} strokeWidth={2.5} />}
                     userRole={userRole}
                 />

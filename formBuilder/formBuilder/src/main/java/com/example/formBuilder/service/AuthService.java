@@ -12,6 +12,9 @@ import com.example.formBuilder.security.SessionUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.List;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +35,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final ModuleService moduleService;
 
@@ -44,15 +49,13 @@ public class AuthService {
         }
 
         User user = new User();
-        user.setName(request.getUsername()); // Default name to username
+        user.setName(request.getUsername());
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        // Storing password as plain text since this is intentionally non-production-grade
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         User savedUser = userRepository.save(user);
 
-        // Assign default role: FORMS_MANAGER
         roleRepository.findByRoleName("FORMS_MANAGER").ifPresent(role -> {
             userRoleRepository.save(UserRole.builder()
                     .userId(savedUser.getId())
@@ -115,7 +118,7 @@ public class AuthService {
         var menu = moduleService.getUserMenuForUser(username);
         
         // Flatten permissions for easier checking on frontend
-        java.util.List<String> permissions = new java.util.ArrayList<>();
+        List<String> permissions = new ArrayList<>();
         collectPrefixes(menu, permissions);
 
         // Fetch User Roles
@@ -136,14 +139,14 @@ public class AuthService {
     }
 
     @SuppressWarnings("unchecked")
-    private void collectPrefixes(java.util.List<java.util.Map<String, Object>> items, java.util.List<String> prefixes) {
+    private void collectPrefixes(List<Map<String, Object>> items, List<String> prefixes) {
         if (items == null) return;
         for (var item : items) {
             String prefix = (String) item.get("prefix");
             if (prefix != null && !prefix.isEmpty()) {
                 prefixes.add(prefix);
             }
-            java.util.List<java.util.Map<String, Object>> children = (java.util.List<java.util.Map<String, Object>>) item.get("children");
+            List<Map<String, Object>> children = (List<Map<String, Object>>) item.get("children");
             collectPrefixes(children, prefixes);
         }
     }

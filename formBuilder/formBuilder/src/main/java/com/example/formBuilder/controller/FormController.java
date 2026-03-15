@@ -39,11 +39,6 @@ public class FormController {
         return ResponseEntity.ok(ApiResponse.success(formService.getFormResponseById(id)));
     }
 
-//    @GetMapping(AppConstants.API_FORM_DATA)
-//    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getFormData(@PathVariable Long id) {
-//        return ResponseEntity.ok(ApiResponse.success(formService.getAllDataFromTable(id)));
-//    }
-
     @GetMapping("/{id}/data")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getFormData(
             @PathVariable Long id,

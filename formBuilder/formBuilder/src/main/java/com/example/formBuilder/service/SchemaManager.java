@@ -117,9 +117,7 @@ public class SchemaManager {
         jdbcTemplate.execute(sql);
     }
 
-    /**
-     * Removes the NOT NULL constraint from a column in the specified dynamic table.
-     */
+
     public void makeColumnNullable(String tableName, String columnName) {
         validateColumnName(columnName);
         String sql = "ALTER TABLE " + tableName +

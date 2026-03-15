@@ -15,7 +15,6 @@ public class SessionUtil {
             if (principal instanceof UserDetails) {
                 return ((UserDetails) principal).getUsername();
             } else if (principal instanceof String) {
-                // In cases like anonymous user, the principal is just the string "anonymousUser"
                 if (!"anonymousUser".equals(principal)) {
                     return (String) principal;
                 }

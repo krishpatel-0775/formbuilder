@@ -5,6 +5,7 @@ import com.example.formBuilder.entity.Module;
 import com.example.formBuilder.service.ModuleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,19 +19,19 @@ public class ModuleController {
     private final ModuleService moduleService;
 
     @PostMapping("/modules")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Module>> createModule(@RequestBody Module module) {
         return ResponseEntity.ok(ApiResponse.success(moduleService.createModule(module)));
     }
 
     @PutMapping("/modules/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Module>> updateModule(@PathVariable Long id, @RequestBody Module module) {
         return ResponseEntity.ok(ApiResponse.success(moduleService.updateModule(id, module)));
     }
 
     @GetMapping("/modules")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<List<Module>>> getAllModules() {
         return ResponseEntity.ok(ApiResponse.success(moduleService.getAllModules()));
     }
@@ -41,7 +42,7 @@ public class ModuleController {
     }
 
     @PostMapping("/modules/seed")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<String>> seedModules() {
         moduleService.seedModules();
         return ResponseEntity.ok(ApiResponse.success("System seeded successfully"));
