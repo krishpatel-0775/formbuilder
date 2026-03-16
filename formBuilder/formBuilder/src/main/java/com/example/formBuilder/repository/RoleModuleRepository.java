@@ -7,5 +7,6 @@ import java.util.List;
 public interface RoleModuleRepository extends JpaRepository<RoleModule, Long> {
     List<RoleModule> findByRoleId(Long roleId);
     List<RoleModule> findByRoleIdIn(List<Long> roleIds);
+    List<RoleModule> findByModuleId(Long moduleId);
     void deleteByRoleId(Long roleId);
 }

@@ -3,40 +3,59 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
-import { 
-    LayoutDashboard, 
-    ChevronDown, 
-    ChevronRight, 
-    FileText, 
-    Users, 
-    Shield, 
-    Settings,
-    PlusCircle,
-    List,
-    MessageSquare,
-    UserPlus,
-    UserMinus,
-    LucideIcon,
-    Flame
-} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import * as LucideIcons from "lucide-react";
 
-const iconMap = {
-    "layout": LayoutDashboard,
-    "file-text": FileText,
-    "users": Users,
-    "shield": Shield,
-    "settings": Settings,
-    "plus-circle": PlusCircle,
-    "list": List,
-    "message-square": MessageSquare,
-    "user-plus": UserPlus,
-    "user-minus": UserMinus
+// Create a map for case-insensitive lookup of all Lucide icons
+const lucideKeyMap = Object.keys(LucideIcons).reduce((acc, key) => {
+    acc[key.toLowerCase()] = key;
+    return acc;
+}, {});
+
+// Alias map for short names or backward compatibility
+const baseIconMap = {
+    "layout": "LayoutDashboard",
+    "file-text": "FileText",
+    "users": "Users",
+    "shield": "Shield",
+    "settings": "Settings",
+    "plus-circle": "PlusCircle",
+    "list": "List",
+    "message-square": "MessageSquare",
+    "user-plus": "UserPlus",
+    "user-minus": "UserMinus",
+    "box": "LayoutDashboard",
+    "flame": "Flame",
+    "box-select": "LayoutDashboard"
+};
+
+export const DynamicIcon = ({ iconName, size = 22, className = "" }) => {
+    if (!iconName) return <LucideIcons.ChevronRight size={size} className={className} />;
+    
+    const normalizedName = iconName.trim().toLowerCase();
+
+    // 1. Check Alias Map first
+    let searchKey = baseIconMap[normalizedName] || normalizedName;
+    
+    // 2. Normalize search key (remove dashes, underscores, spaces) for matching
+    const matchKey = searchKey.replace(/[-_ ]/g, "").toLowerCase();
+
+    // 3. Try to get the actual icon key from our case-insensitive map
+    const actualLucideKey = lucideKeyMap[matchKey];
+    const LucideIcon = LucideIcons[actualLucideKey];
+
+    if (LucideIcon) {
+        return <LucideIcon size={size} className={className} strokeWidth={2.5} />;
+    }
+
+    // 4. Fallback: Check if it looks like a CSS class (FontAwesome etc.)
+    return <i className={`${iconName} ${className}`} style={{ fontSize: size }}></i>;
 };
 
 export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
     const { user } = useAuth();
     const pathname = usePathname();
+    const router = useRouter();
     const [menuItems, setMenuItems] = useState([]);
     const [expandedGroups, setExpandedGroups] = useState({});
     const [loading, setLoading] = useState(true);
@@ -54,11 +73,18 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
         }
     }, [user]);
 
-    const toggleGroup = (id) => {
+    const toggleGroup = (id, prefix, shouldNavigate = true) => {
+        // 1. Navigation handling (only if shouldNavigate is true)
+        if (shouldNavigate && prefix && prefix !== "#" && pathname !== prefix) {
+            router.push(prefix);
+        }
+
+        // 2. Expansion handling
         if (isCollapsed) {
             onTypeSelect(); // Expand the sidebar if it's collapsed
             return;
         }
+
         setExpandedGroups(prev => ({
             ...prev,
             [id]: !prev[id]
@@ -80,33 +106,40 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                         </div>
                     ) : (
                         menuItems.map(item => {
-                            const IconComponent = item.icon && iconMap[item.icon] ? iconMap[item.icon] : ChevronRight;
                             const isExpanded = expandedGroups[item.id] && !isCollapsed;
                             
                             return (
                                 <div key={item.id} className="flex flex-col gap-1 w-full">
-                                    <button 
-                                        onClick={() => toggleGroup(item.id)}
+                                    <div 
+                                        onClick={() => toggleGroup(item.id, item.prefix)}
                                         title={isCollapsed ? item.name : ""}
-                                        className={`flex items-center rounded-2xl transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group overflow-hidden ${isCollapsed ? "justify-center p-3.5" : "gap-3 px-4 py-3"} ${
+                                        className={`flex items-center rounded-2xl transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer group overflow-hidden ${isCollapsed ? "justify-center p-3.5" : "gap-3 px-4 py-3"} ${
                                             isExpanded ? "bg-slate-50 text-slate-900 border border-slate-100 shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-primary"
                                         }`}
                                     >
                                         <div className={`flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] flex-shrink-0 ${
                                             isExpanded || isCollapsed ? "text-primary scale-110" : "group-hover:text-primary group-hover:scale-110"
                                         }`}>
-                                            <IconComponent size={22} strokeWidth={2.5} />
+                                            <DynamicIcon iconName={item.icon} />
                                         </div>
                                         {!isCollapsed && (
                                             <>
                                                 <span className="text-sm font-bold flex-1 text-left truncate tracking-tight animate-in fade-in duration-500">{item.name}</span>
-                                                <ChevronDown 
-                                                    size={14} 
-                                                    className={`transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-40 ${isExpanded ? "rotate-180" : ""}`}
-                                                />
+                                                <div 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Prevent navigation click
+                                                        toggleGroup(item.id, item.prefix, false); // Toggle ONLY expansion
+                                                    }}
+                                                    className={`p-2 -mr-2 rounded-xl hover:bg-slate-100 transition-colors duration-300 flex items-center justify-center ${isExpanded ? "text-primary" : "text-slate-400"}`}
+                                                >
+                                                    <LucideIcons.ChevronDown 
+                                                        size={14} 
+                                                        className={`transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? "rotate-180" : ""}`}
+                                                    />
+                                                </div>
                                             </>
                                         )}
-                                    </button>
+                                    </div>
 
                                     {isExpanded && !isCollapsed && item.children && (
                                         <div className="ml-6 pl-4 border-l-2 border-slate-100/50 flex flex-col gap-1 mt-1 mb-2 animate-in slide-in-from-left duration-500">
@@ -116,9 +149,12 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                                                 if (child.isSubParent) {
                                                     return (
                                                         <div key={child.id} className="mt-3 mb-1">
-                                                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.15em] mb-2 ml-3 truncate transition-all duration-500">
-                                                                {child.name}
-                                                            </p>
+                                                            <div className="flex items-center gap-2 mb-2 ml-3">
+                                                                <DynamicIcon iconName={child.icon} size={10} className="text-slate-300" />
+                                                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.15em] truncate transition-all duration-500">
+                                                                    {child.name}
+                                                                </p>
+                                                            </div>
                                                             <div className="flex flex-col gap-1">
                                                                 {child.children && child.children.map(subChild => {
                                                                     const isSubActive = pathname === subChild.prefix;
@@ -126,12 +162,13 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                                                                         <NextLink 
                                                                             key={subChild.id}
                                                                             href={subChild.prefix || "#"}
-                                                                            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${
+                                                                            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent cursor-pointer flex items-center gap-2 ${
                                                                                 isSubActive 
                                                                                 ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
                                                                                 : "text-slate-400 hover:text-primary hover:bg-slate-50"
                                                                             }`}
                                                                         >
+                                                                            <DynamicIcon iconName={subChild.icon} size={14} className={isSubActive ? "text-white" : "text-slate-400 group-hover:text-primary"} />
                                                                             {subChild.name}
                                                                         </NextLink>
                                                                     );
@@ -145,12 +182,13 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                                                     <NextLink 
                                                         key={child.id}
                                                         href={child.prefix || "#"}
-                                                        className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent ${
+                                                        className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent cursor-pointer flex items-center gap-2 ${
                                                             isActive 
                                                             ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
                                                             : "text-slate-500 hover:text-primary hover:bg-slate-50"
                                                         }`}
                                                     >
+                                                        <DynamicIcon iconName={child.icon} size={14} className={isActive ? "text-white" : "text-slate-400 group-hover:text-primary"} />
                                                         {child.name}
                                                     </NextLink>
                                                 );
@@ -171,7 +209,7 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                     className={`flex items-center gap-3 w-full p-3 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-primary transition-all duration-500 group ${isCollapsed ? "justify-center" : ""}`}
                 >
                     <div className={`transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? "rotate-180" : ""}`}>
-                        <ChevronRight size={20} strokeWidth={2.5} />
+                        <LucideIcons.ChevronRight size={20} strokeWidth={2.5} />
                     </div>
                     {!isCollapsed && (
                         <span className="text-[10px] font-black uppercase tracking-widest animate-in fade-in duration-500">Collapse Core</span>

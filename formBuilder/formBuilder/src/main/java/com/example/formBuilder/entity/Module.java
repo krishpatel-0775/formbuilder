@@ -1,5 +1,6 @@
 package com.example.formBuilder.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,9 +29,11 @@ public class Module {
     private String action;
 
     @Column(name = "is_parent")
+    @JsonProperty("isParent")
     private boolean isParent;
 
     @Column(name = "is_sub_parent")
+    @JsonProperty("isSubParent")
     private boolean isSubParent;
 
     @Column(name = "parent_module_id")
@@ -42,5 +45,6 @@ public class Module {
     @Column(name = "menu_icon_css")
     private String iconCss;
 
+    @Builder.Default
     private boolean active = true;
 }

@@ -23,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class AuthService {
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
     private final ModuleService moduleService;
 
     @Transactional
@@ -67,6 +69,9 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+        // Ensure roles/modules exist and user has a default role if missing BEFORE authentication
+        moduleService.seedModules(request.getIdentifier()); 
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword())
         );
@@ -81,10 +86,17 @@ public class AuthService {
         User user = userRepository.findByUsername(authenticatedUsername)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
-        // Ensure user has at least one role
-        moduleService.seedModules(); // This will also assign a role to the current user if missing
-
         return new LoginResponse(user.getId(), user.getUsername(), user.getEmail());
+    }
+
+    public void refreshSecurityContext(String username) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        Authentication newAuth = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                userDetails.getPassword(),
+                userDetails.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
     }
 
     public void logout(HttpServletRequest request) {

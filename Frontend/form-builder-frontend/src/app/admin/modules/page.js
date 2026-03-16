@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Check, X, ChevronRight, ChevronDown, Layout, Sidebar, Box } from "lucide-react";
+import { DynamicIcon } from "../../Sidebar";
 
 export default function ModulesPage() {
     const [modules, setModules] = useState([]);
@@ -69,6 +70,24 @@ export default function ModulesPage() {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this module? This will also delete all sub-modules.")) return;
+
+        try {
+            const res = await fetch(`http://localhost:9090/api/modules/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include"
+            });
+            const data = await res.json();
+            if (data.success) {
+                fetchModules();
+            }
+        } catch (err) {
+            console.error("Error deleting module:", err);
+        }
+    };
+
     const resetForm = () => {
         setFormData({
             moduleName: "",
@@ -99,8 +118,8 @@ export default function ModulesPage() {
             parentId: mod.parentId,
             subParentId: mod.subParentId,
             iconCss: mod.iconCss || "",
-            isParent: mod.parent,
-            isSubParent: mod.subParent,
+            isParent: mod.isParent,
+            isSubParent: mod.isSubParent,
             active: mod.active
         });
         setShowModal(true);
@@ -154,7 +173,7 @@ export default function ModulesPage() {
                                 <td className="px-8 py-5">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white transition-all">
-                                            <Layout size={20} />
+                                            <DynamicIcon iconName={mod.iconCss} size={20} />
                                         </div>
                                         <div>
                                             <p className="font-bold text-slate-900 tracking-tight">{mod.moduleName}</p>
@@ -187,12 +206,20 @@ export default function ModulesPage() {
                                     </div>
                                 </td>
                                 <td className="px-8 py-5 text-right">
-                                    <button 
-                                        onClick={() => openEdit(mod)}
-                                        className="p-3 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
-                                    >
-                                        <Edit2 size={18} />
-                                    </button>
+                                    <div className="flex items-center justify-end gap-2">
+                                        <button 
+                                            onClick={() => openEdit(mod)}
+                                            className="p-3 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                                        >
+                                            <Edit2 size={18} />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(mod.id)}
+                                            className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -212,61 +239,61 @@ export default function ModulesPage() {
                             <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm border border-slate-100"><X size={20} /></button>
                         </div>
                         
-                        <form onSubmit={handleSave} className="p-8 grid grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <form onSubmit={handleSave} className="p-6 grid grid-cols-2 gap-x-6 gap-y-4 overflow-y-auto custom-scrollbar">
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 px-1">Module Name</label>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 px-1">Module Name</label>
                                 <input 
                                     required
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
+                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
                                     value={formData.moduleName}
                                     onChange={e => setFormData({...formData, moduleName: e.target.value})}
                                     placeholder="e.g. Dashboard"
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 px-1">Route Prefix</label>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 px-1">Route Prefix</label>
                                 <input 
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
+                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
                                     value={formData.prefix || ""}
                                     onChange={e => setFormData({...formData, prefix: e.target.value})}
                                     placeholder="e.g. /admin/dashboard"
                                 />
                             </div>
                             <div className="col-span-2">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 px-1">Description</label>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 px-1">Description</label>
                                 <textarea 
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all h-24 shadow-inner resize-none"
+                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all h-20 shadow-inner resize-none"
                                     value={formData.moduleDescription || ""}
                                     onChange={e => setFormData({...formData, moduleDescription: e.target.value})}
                                     placeholder="Describe the module purpose..."
                                 />
                             </div>
 
-                            <div className="col-span-2 bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                            <div className="col-span-2 bg-slate-50 p-5 rounded-3xl border border-slate-100 space-y-4">
                                 <div className="flex items-center gap-6">
                                     <label className="flex items-center gap-3 cursor-pointer group">
-                                        <input type="checkbox" className="hidden" checked={formData.isParent} onChange={e => setFormData({...formData, isParent: e.target.checked, isSubParent: false})} />
-                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${formData.isParent ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'bg-white border-slate-200 group-hover:border-primary/50'}`}>
-                                            {formData.isParent && <Check size={14} className="text-white" strokeWidth={4} />}
+                                        <input type="checkbox" className="hidden" checked={formData.isParent} onChange={e => setFormData({...formData, isParent: e.target.checked, isSubParent: false, parentId: null, subParentId: null})} />
+                                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${formData.isParent ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'bg-white border-slate-200 group-hover:border-primary/50'}`}>
+                                            {formData.isParent && <Check size={12} className="text-white" strokeWidth={4} />}
                                         </div>
-                                        <span className="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-primary transition-colors">Is Parent</span>
+                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-primary transition-colors">Is Parent</span>
                                     </label>
 
                                     <label className="flex items-center gap-3 cursor-pointer group">
-                                        <input type="checkbox" className="hidden" checked={formData.isSubParent} onChange={e => setFormData({...formData, isSubParent: e.target.checked, isParent: false})} />
-                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${formData.isSubParent ? 'bg-orange-500 border-orange-500 shadow-lg shadow-orange-500/20' : 'bg-white border-slate-200 group-hover:border-orange-400'}`}>
-                                            {formData.isSubParent && <Check size={14} className="text-white" strokeWidth={4} />}
+                                        <input type="checkbox" className="hidden" checked={formData.isSubParent} onChange={e => setFormData({...formData, isSubParent: e.target.checked, isParent: false, subParentId: null})} />
+                                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${formData.isSubParent ? 'bg-orange-500 border-orange-500 shadow-lg shadow-orange-500/20' : 'bg-white border-slate-200 group-hover:border-orange-400'}`}>
+                                            {formData.isSubParent && <Check size={12} className="text-white" strokeWidth={4} />}
                                         </div>
-                                        <span className="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-orange-500 transition-colors">Is Sub-Parent</span>
+                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-orange-500 transition-colors">Is Sub-Parent</span>
                                     </label>
 
                                     <div className="flex-1" />
 
                                     <label className="flex items-center gap-3 cursor-pointer group">
-                                        <span className="text-xs font-black text-slate-600 uppercase tracking-widest transition-colors">Active Status</span>
+                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest transition-colors">Active Status</span>
                                         <input type="checkbox" className="hidden" checked={formData.active} onChange={e => setFormData({...formData, active: e.target.checked})} />
-                                        <div className={`w-12 h-6 rounded-full transition-all relative p-1 ${formData.active ? 'bg-green-500 shadow-lg shadow-green-500/20' : 'bg-slate-300'}`}>
-                                            <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${formData.active ? 'translate-x-6' : 'translate-x-0'}`} />
+                                        <div className={`w-10 h-5 rounded-full transition-all relative p-1 ${formData.active ? 'bg-green-500 shadow-lg shadow-green-500/20' : 'bg-slate-300'}`}>
+                                            <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${formData.active ? 'translate-x-5' : 'translate-x-0'}`} />
                                         </div>
                                     </label>
                                 </div>
@@ -274,15 +301,15 @@ export default function ModulesPage() {
 
                             {!formData.isParent && (
                                 <div className="col-span-1">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 px-1">Parent Module</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 px-1">Parent Module</label>
                                     <div className="relative">
                                         <select 
-                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner appearance-none"
+                                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner appearance-none"
                                             value={formData.parentId || ""}
                                             onChange={e => setFormData({...formData, parentId: e.target.value || null})}
                                         >
                                             <option value="">None (Top Level)</option>
-                                            {modules.filter(m => m.parent && m.id !== editingModule?.id).map(m => (
+                                            {modules.filter(m => m.isParent && m.id !== editingModule?.id).map(m => (
                                                 <option key={m.id} value={m.id}>{m.moduleName}</option>
                                             ))}
                                         </select>
@@ -292,20 +319,22 @@ export default function ModulesPage() {
                             )}
 
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 px-1">Icon Library Class</label>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 px-1">
+                                    Icon Library Class <span className="text-primary normal-case font-bold ml-1">(Lucide Class Name)</span>
+                                </label>
                                 <input 
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
+                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
                                     value={formData.iconCss || ""}
                                     onChange={e => setFormData({...formData, iconCss: e.target.value})}
-                                    placeholder="e.g. layout, file-text"
+                                    placeholder="e.g. layout, shield-check"
                                 />
                             </div>
 
-                            <div className="col-span-2 flex gap-4 mt-6">
-                                <button type="submit" className="flex-1 py-5 bg-slate-900 text-white rounded-[24px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-primary transition-all active:scale-95">
+                            <div className="col-span-2 flex gap-4 mt-2">
+                                <button type="submit" className="flex-1 py-4 bg-slate-900 text-white rounded-[24px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-primary transition-all active:scale-95">
                                     {editingModule ? 'Update Module' : 'Create Module'}
                                 </button>
-                                <button type="button" onClick={() => setShowModal(false)} className="px-10 py-5 bg-slate-100 text-slate-600 rounded-[24px] font-black uppercase tracking-[0.2em] hover:bg-slate-200 transition-all active:scale-95">
+                                <button type="button" onClick={() => setShowModal(false)} className="px-10 py-4 bg-slate-100 text-slate-600 rounded-[24px] font-black uppercase tracking-[0.2em] hover:bg-slate-200 transition-all active:scale-95">
                                     Cancel
                                 </button>
                             </div>

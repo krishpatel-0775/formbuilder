@@ -5,6 +5,8 @@ import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.UserRole;
 import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.repository.UserRoleRepository;
+import com.example.formBuilder.service.AuthService;
+import com.example.formBuilder.security.SessionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final AuthService authService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getAllUsersWithRoles() {
@@ -59,6 +62,14 @@ public class UserController {
         ).collect(Collectors.toList());
         
         userRoleRepository.saveAll(newRoles);
+
+        // Refresh security context if the updated user is the current user
+        String currentUsername = SessionUtil.getCurrentUsername();
+        userRepository.findById(userId).ifPresent(user -> {
+            if (user.getUsername().equals(currentUsername)) {
+                authService.refreshSecurityContext(currentUsername);
+            }
+        });
 
         return ResponseEntity.ok(ApiResponse.success("Roles updated successfully"));
     }

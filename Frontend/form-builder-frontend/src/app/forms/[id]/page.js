@@ -515,17 +515,36 @@ export default function PublicFormPage() {
                         <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 block">Completion Integrity</span>
                         <div className="flex items-center gap-3">
                             <span className="text-xl font-black text-primary">{progressPct}%</span>
-                            <div className="w-12 h-12 rounded-full border-4 border-slate-100 relative flex items-center justify-center">
-                                <svg className="absolute inset-0 w-full h-full -rotate-90">
+                            <div className="w-12 h-12 relative flex items-center justify-center">
+                                <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full -rotate-90">
+                                    <defs>
+                                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stopColor="var(--primary, #3b82f6)" />
+                                            <stop offset="100%" stopColor="#6366f1" />
+                                        </linearGradient>
+                                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                            <feGaussianBlur stdDeviation="3" result="blur" />
+                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                        </filter>
+                                    </defs>
+                                    {/* Background Circle */}
                                     <circle
-                                        cx="24" cy="24" r="20"
-                                        stroke="currentColor" strokeWidth="4" fill="transparent"
-                                        className="text-primary transition-all duration-1000 ease-out"
-                                        strokeDasharray={126}
-                                        strokeDashoffset={126 - (126 * progressPct) / 100}
+                                        cx="50" cy="50" r="42"
+                                        stroke="#f1f5f9" strokeWidth="8" fill="transparent"
+                                        className="transition-all duration-500"
+                                    />
+                                    {/* Progress Circle */}
+                                    <circle
+                                        cx="50" cy="50" r="42"
+                                        stroke="url(#progressGradient)" strokeWidth="8" fill="transparent"
+                                        strokeDasharray="264"
+                                        strokeDashoffset={264 - (264 * progressPct) / 100}
+                                        strokeLinecap="round"
+                                        style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+                                        className="transition-all duration-1000 ease-out"
                                     />
                                 </svg>
-                                <CheckCircle2 size={16} className={`transition-all duration-500 ${progressPct === 100 ? "text-primary" : "text-slate-200"}`} />
+                                <CheckCircle2 size={16} className={`relative z-10 transition-all duration-500 ${progressPct === 100 ? "text-primary scale-110" : "text-slate-200"}`} />
                             </div>
                         </div>
                       </div>

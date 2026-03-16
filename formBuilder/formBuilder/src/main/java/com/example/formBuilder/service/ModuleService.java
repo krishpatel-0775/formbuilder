@@ -22,6 +22,7 @@ public class ModuleService {
     private final RoleRepository roleRepository;
 
     public Module createModule(Module module) {
+        normalizeModule(module);
         return moduleRepository.save(module);
     }
 
@@ -41,8 +42,25 @@ public class ModuleService {
         module.setSubParentId(moduleDetails.getSubParentId());
         module.setIconCss(moduleDetails.getIconCss());
         module.setActive(moduleDetails.isActive());
+
+        normalizeModule(module);
         
         return moduleRepository.save(module);
+    }
+
+    private void normalizeModule(Module module) {
+        if (module.isParent()) {
+            // Parent modules cannot have parents or sub-parents
+            module.setParentId(null);
+            module.setSubParentId(null);
+            module.setSubParent(false);
+        } else if (module.isSubParent()) {
+            // Sub-parent modules cannot have sub-parents (no nesting sub-parents)
+            module.setSubParentId(null);
+            module.setParent(false);
+            // Must have a parentId set to be a sub-parent
+        }
+        // If it's a regular module (not parent or sub-parent), it should stay as is
     }
 
     public List<Module> getAllModules() {
@@ -149,6 +167,11 @@ public class ModuleService {
 
     @Transactional
     public void seedModules() {
+        seedModules(SessionUtil.getCurrentUsername());
+    }
+
+    @Transactional
+    public void seedModules(String targetUsername) {
         Role adminRole = roleRepository.findByRoleName("SYSTEM_ADMIN")
                 .orElseGet(() -> roleRepository.save(Role.builder()
                         .roleName("SYSTEM_ADMIN")
@@ -197,10 +220,9 @@ public class ModuleService {
             }
         }
 
-        // Ensure current user has a role if they have none
-        String currentUsername = SessionUtil.getCurrentUsername();
-        if (currentUsername != null) {
-            userRepository.findByUsername(currentUsername).ifPresent(user -> {
+        // Ensure target user has a role if they have none
+        if (targetUsername != null) {
+            userRepository.findByUsername(targetUsername).ifPresent(user -> {
                 if (userRoleRepository.findByUserId(user.getId()).isEmpty()) {
                     // If no one is an admin yet, make this user the first admin
                     boolean anyAdminExists = !userRoleRepository.findByRoleId(adminRoleId).isEmpty();
@@ -243,6 +265,27 @@ public class ModuleService {
                 .active(true)
                 .build();
         return moduleRepository.save(newModule);
+    }
+
+    @Transactional
+    public void deleteModule(Long id) {
+        Module module = moduleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Module not found"));
+
+        // Delete sub-modules if this is a parent or sub-parent
+        List<Module> children = moduleRepository.findAll().stream()
+                .filter(m -> id.equals(m.getParentId()) || id.equals(m.getSubParentId()))
+                .collect(Collectors.toList());
+        
+        for (Module child : children) {
+            deleteModule(child.getId());
+        }
+
+        // Remove role associations
+        roleModuleRepository.deleteAll(roleModuleRepository.findByModuleId(id));
+
+        // Delete the module itself
+        moduleRepository.delete(module);
     }
 
     private Map<String, Object> mapModule(Module m) {

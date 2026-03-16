@@ -19,6 +19,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hot-toast": "^2.6.0",
+    "sweetalert2": "^11.26.23",
+    "sweetalert2-react-content": "^5.1.2",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5"
   },

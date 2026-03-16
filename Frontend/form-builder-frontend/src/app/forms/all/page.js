@@ -65,7 +65,7 @@ export default function FormVaultPage() {
     };
 
     const handlePublish = async (id) => {
-        if (!window.confirm("Are you certain you wish to synchronize this architecture with the live database? This will create the physical data structure and make the form operational.")) return;
+        if (!window.confirm("Are you want to publish this form ?")) return;
         
         setPublishingState(prev => ({ ...prev, [id]: true }));
         try {
@@ -103,11 +103,11 @@ export default function FormVaultPage() {
                         </div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Form Vault</h1>
                     </div>
-                    <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active architectural documents.</p>
+                    <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active forms.</p>
                 </div>
 
                 <Link 
-                    href="/forms/create"
+                    href="/"
                     className="flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all w-full md:w-auto"
                 >
                     <Plus size={20} strokeWidth={3} />
@@ -198,7 +198,7 @@ export default function FormVaultPage() {
                                         href={`/forms/edit/${form.id}`}
                                         className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10 hover:shadow-primary/20 hover:-translate-y-0.5"
                                     >
-                                        Edit Architecture
+                                        Edit form
                                     </Link>
                                     
                                     <div className="flex gap-2">

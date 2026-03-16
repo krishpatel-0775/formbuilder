@@ -47,4 +47,12 @@ public class ModuleController {
         moduleService.seedModules();
         return ResponseEntity.ok(ApiResponse.success("System seeded successfully"));
     }
+
+    @DeleteMapping("/modules/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteModule(@PathVariable Long id) {
+        moduleService.deleteModule(id);
+        return ResponseEntity.ok(ApiResponse.success("Module deleted successfully"));
+    }
+
+
 }
