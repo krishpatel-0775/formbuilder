@@ -147,33 +147,54 @@ export default function Sidebar({ isCollapsed, onTypeSelect, setIsCollapsed }) {
                                                 const isActive = pathname === child.prefix;
                                                 
                                                 if (child.isSubParent) {
+                                                    const isSubExpanded = expandedGroups[child.id] && !isCollapsed;
                                                     return (
-                                                        <div key={child.id} className="mt-3 mb-1">
-                                                            <div className="flex items-center gap-2 mb-2 ml-3">
-                                                                <DynamicIcon iconName={child.icon} size={10} className="text-slate-300" />
-                                                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.15em] truncate transition-all duration-500">
+                                                        <div key={child.id} className="mt-2 mb-1">
+                                                            <div 
+                                                                onClick={() => toggleGroup(child.id, child.prefix)}
+                                                                className={`flex items-center gap-2 mb-1 ml-1 px-3 py-2 rounded-xl cursor-pointer transition-all duration-300 group/sub ${
+                                                                    isSubExpanded ? 'bg-slate-50 text-slate-900 shadow-sm border border-slate-100/50' : 'text-slate-500 hover:bg-slate-50 hover:text-primary'
+                                                                }`}
+                                                            >
+                                                                <DynamicIcon iconName={child.icon} size={14} className={isSubExpanded ? 'text-primary' : 'text-slate-400 group-hover/sub:text-primary'} />
+                                                                <span className="text-[10px] font-black uppercase tracking-[0.15em] truncate flex-1">
                                                                     {child.name}
-                                                                </p>
+                                                                </span>
+                                                                <div 
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleGroup(child.id, child.prefix, false);
+                                                                    }}
+                                                                    className={`p-1.5 rounded-lg hover:bg-slate-100 transition-colors ${isSubExpanded ? 'text-primary' : 'text-slate-400'}`}
+                                                                >
+                                                                    <LucideIcons.ChevronDown 
+                                                                        size={12} 
+                                                                        className={`transition-transform duration-500 ${isSubExpanded ? 'rotate-180' : ''}`} 
+                                                                    />
+                                                                </div>
                                                             </div>
-                                                            <div className="flex flex-col gap-1">
-                                                                {child.children && child.children.map(subChild => {
-                                                                    const isSubActive = pathname === subChild.prefix;
-                                                                    return (
-                                                                        <NextLink 
-                                                                            key={subChild.id}
-                                                                            href={subChild.prefix || "#"}
-                                                                            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent cursor-pointer flex items-center gap-2 ${
-                                                                                isSubActive 
-                                                                                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
-                                                                                : "text-slate-400 hover:text-primary hover:bg-slate-50"
-                                                                            }`}
-                                                                        >
-                                                                            <DynamicIcon iconName={subChild.icon} size={14} className={isSubActive ? "text-white" : "text-slate-400 group-hover:text-primary"} />
-                                                                            {subChild.name}
-                                                                        </NextLink>
-                                                                    );
-                                                                })}
-                                                            </div>
+                                                            
+                                                            {isSubExpanded && (
+                                                                <div className="flex flex-col gap-1 ml-4 pl-2 border-l border-slate-100/50 animate-in slide-in-from-top-1 duration-300 mt-1">
+                                                                    {child.children && child.children.map(subChild => {
+                                                                        const isSubActive = pathname === subChild.prefix;
+                                                                        return (
+                                                                            <NextLink 
+                                                                                key={subChild.id}
+                                                                                href={subChild.prefix || "#"}
+                                                                                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-500 truncate border border-transparent cursor-pointer flex items-center gap-2 ${
+                                                                                    isSubActive 
+                                                                                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
+                                                                                    : "text-slate-400 hover:text-primary hover:bg-slate-50"
+                                                                                }`}
+                                                                            >
+                                                                                <DynamicIcon iconName={subChild.icon} size={14} className={isSubActive ? "text-white" : "text-slate-400 group-hover:text-primary"} />
+                                                                                {subChild.name}
+                                                                            </NextLink>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 }

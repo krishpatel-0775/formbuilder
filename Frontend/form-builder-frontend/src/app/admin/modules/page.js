@@ -185,11 +185,11 @@ export default function ModulesPage() {
                                 </td>
                                 <td className="px-8 py-5">
                                     <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                        mod.parent ? 'bg-purple-100 text-purple-600' : 
-                                        mod.subParent ? 'bg-orange-100 text-orange-600' : 
+                                        mod.isParent ? 'bg-purple-100 text-purple-600' : 
+                                        mod.isSubParent ? 'bg-orange-100 text-orange-600' : 
                                         'bg-blue-100 text-blue-600'
                                     }`}>
-                                        {mod.parent ? 'Parent' : mod.subParent ? 'Sub-Parent' : 'Link'}
+                                        {mod.isParent ? 'Parent' : mod.isSubParent ? 'Sub-Parent' : 'Link'}
                                     </span>
                                 </td>
                                 <td className="px-8 py-5">
@@ -305,12 +305,43 @@ export default function ModulesPage() {
                                     <div className="relative">
                                         <select 
                                             className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner appearance-none"
-                                            value={formData.parentId || ""}
-                                            onChange={e => setFormData({...formData, parentId: e.target.value || null})}
+                                            value={formData.subParentId || formData.parentId || ""}
+                                            onChange={e => {
+                                                const selectedId = e.target.value;
+                                                if (!selectedId) {
+                                                    setFormData({...formData, parentId: null, subParentId: null});
+                                                    return;
+                                                }
+                                                const selectedModule = modules.find(m => m.id == selectedId);
+                                                if (selectedModule.isSubParent) {
+                                                    setFormData({
+                                                        ...formData, 
+                                                        parentId: selectedModule.parentId,
+                                                        subParentId: selectedModule.id
+                                                    });
+                                                } else {
+                                                    setFormData({
+                                                        ...formData, 
+                                                        parentId: selectedModule.id,
+                                                        subParentId: null
+                                                    });
+                                                }
+                                            }}
                                         >
                                             <option value="">None (Top Level)</option>
-                                            {modules.filter(m => m.isParent && m.id !== editingModule?.id).map(m => (
-                                                <option key={m.id} value={m.id}>{m.moduleName}</option>
+                                            {modules.filter(m => {
+                                                // If we are creating/editing a Sub-Parent, only show Parents
+                                                if (formData.isSubParent) return m.isParent && m.id !== editingModule?.id;
+                                                // If we are creating/editing a Link (child), show both Parents and Sub-Parents
+                                                if (!formData.isParent && !formData.isSubParent) {
+                                                    return (m.isParent || m.isSubParent) && m.id !== editingModule?.id;
+                                                }
+                                                // Parents shouldn't have any parent
+                                                return false;
+                                            }).map(m => (
+                                                <option key={m.id} value={m.id}>
+                                                    {m.moduleName} {m.isParent ? '(Parent)' : '(Sub-Parent)'}
+                                                </option>
                                             ))}
                                         </select>
                                         <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />

@@ -145,7 +145,7 @@ public class ModuleService {
                             .collect(Collectors.toList());
                     subParentNode.put("children", subChildren);
                     subMenus.add(subParentNode);
-                } else {
+                } else if (child.getSubParentId() == null) {
                     subMenus.add(mapModule(child));
                 }
             }

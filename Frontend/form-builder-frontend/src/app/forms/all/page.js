@@ -15,7 +15,9 @@ import {
     List as ListIcon,
     ArrowUpRight,
     ExternalLink,
-    Rocket
+    Rocket,
+    Copy,
+    Check
 } from "lucide-react";
 
 export default function FormVaultPage() {
@@ -24,6 +26,7 @@ export default function FormVaultPage() {
     const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
     const [searchQuery, setSearchQuery] = useState("");
     const [publishingState, setPublishingState] = useState({}); // { [id]: boolean }
+    const [copiedId, setCopiedId] = useState(null);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -86,6 +89,16 @@ export default function FormVaultPage() {
         } finally {
             setPublishingState(prev => ({ ...prev, [id]: false }));
         }
+    };
+
+    const handleCopyLink = (id) => {
+        const url = `${window.location.protocol}//${window.location.host}/forms/${id}`;
+        navigator.clipboard.writeText(url).then(() => {
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 2000);
+        }).catch(err => {
+            console.error("Failed to copy link:", err);
+        });
     };
 
     const filteredForms = forms.filter(f => 
@@ -218,6 +231,15 @@ export default function FormVaultPage() {
                                             </button>
                                         ) : (
                                             <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => handleCopyLink(form.id)}
+                                                    className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all shadow-sm ${
+                                                        copiedId === form.id ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary"
+                                                    }`}
+                                                    title="Copy Form Link"
+                                                >
+                                                    {copiedId === form.id ? <Check size={18} strokeWidth={3} /> : <Copy size={18} strokeWidth={2.5} />}
+                                                </button>
                                                 <Link 
                                                     href={`/forms/${form.id}`}
                                                     className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
@@ -291,9 +313,20 @@ export default function FormVaultPage() {
                                             </button>
                                         )}
                                         {form.status === "PUBLISHED" && (
-                                            <Link href={`/forms/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Fill Form">
-                                                <ExternalLink size={18} />
-                                            </Link>
+                                            <>
+                                                <button 
+                                                    onClick={() => handleCopyLink(form.id)}
+                                                    className={`inline-flex p-2 rounded-lg transition-all ${
+                                                        copiedId === form.id ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-primary hover:bg-primary/5"
+                                                    }`}
+                                                    title="Copy Form Link"
+                                                >
+                                                    {copiedId === form.id ? <Check size={18} /> : <Copy size={18} />}
+                                                </button>
+                                                <Link href={`/forms/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Fill Form">
+                                                    <ExternalLink size={18} />
+                                                </Link>
+                                            </>
                                         )}
                                         <Link href={`/forms/edit/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Edit Architecture">
                                             <FileText size={18} />
