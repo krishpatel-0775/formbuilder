@@ -207,6 +207,10 @@ export default function BuilderPage() {
                     if (field.beforeTime) fd.beforeTime = field.beforeTime;
                 }
                 if (field.type === "phone" && field.pattern) fd.pattern = field.pattern;
+                if (field.type === "file_upload") {
+                    fd.allowedFileTypes = field.allowedFileTypes;
+                    fd.maxFileSize = field.maxFileSize;
+                }
                 return fd;
             });
 

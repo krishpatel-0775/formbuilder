@@ -158,6 +158,7 @@ public class SchemaManager {
             case "time" -> "TIME";
             case "textarea", "checkbox" -> "TEXT";
             case "toggle" -> "BOOLEAN";
+            case "file_upload" -> "BIGINT";
             // Display-only types should never reach here, but default safely
             default -> "VARCHAR(255)";
         };

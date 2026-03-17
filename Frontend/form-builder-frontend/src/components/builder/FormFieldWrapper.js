@@ -1,14 +1,15 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2 } from "lucide-react";
 
-export function FormFieldWrapper({ 
-  field, 
-  value, 
-  onChange, 
-  errors = [], 
-  visibility = "SHOW", 
-  isShowControlled = false, 
+export function FormFieldWrapper({
+  field,
+  value,
+  onChange,
+  errors = [],
+  visibility = "SHOW",
+  isShowControlled = false,
   isRuleRequired = false,
   onCheckboxChange
 }) {
@@ -44,12 +45,12 @@ export function FormFieldWrapper({
     return (
       <div className="relative py-8">
         <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-100" />
+          <div className="w-full border-t border-slate-100" />
         </div>
         <div className="relative flex justify-center">
-            <div className="bg-[#f8fafc] px-4">
-                <div className="w-2 h-2 rounded-full bg-slate-200" />
-            </div>
+          <div className="bg-[#f8fafc] px-4">
+            <div className="w-2 h-2 rounded-full bg-slate-200" />
+          </div>
         </div>
       </div>
     );
@@ -60,31 +61,31 @@ export function FormFieldWrapper({
       {/* Label Area */}
       <div className="flex items-center justify-between px-1">
         <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-            <span>{field.fieldName}</span>
-            {(field.required || isRuleRequired) && <span className="text-red-500 text-lg leading-none mt-1">*</span>}
+          <span>{field.fieldName}</span>
+          {(field.required || isRuleRequired) && <span className="text-red-500 text-lg leading-none mt-1">*</span>}
         </label>
         <div className="flex gap-2">
-            {visibility === "SHOW" && isShowControlled && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-[9px] font-black uppercase tracking-wider">
-                    <Zap size={10} strokeWidth={3} /> Logic Reveal
-                </div>
-            )}
-            {isRuleRequired && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[9px] font-black uppercase tracking-wider">
-                    <Star size={10} fill="currentColor" /> Mandatory
-                </div>
-            )}
+          {visibility === "SHOW" && isShowControlled && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-[9px] font-black uppercase tracking-wider">
+              <Zap size={10} strokeWidth={3} /> Logic Reveal
+            </div>
+          )}
+          {isRuleRequired && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[9px] font-black uppercase tracking-wider">
+              <Star size={10} fill="currentColor" /> Mandatory
+            </div>
+          )}
         </div>
       </div>
 
       {/* TEXTAREA */}
       {field.fieldType === "textarea" && (
-        <textarea 
-          rows={5} 
+        <textarea
+          rows={5}
           value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
           placeholder={`Enter your ${field.fieldName.toLowerCase()} details...`}
-          className={`${inputCls} resize-none leading-relaxed`} 
+          className={`${inputCls} resize-none leading-relaxed`}
         />
       )}
 
@@ -97,27 +98,25 @@ export function FormFieldWrapper({
             const optLabel = isObj ? opt.value : opt;
             // Use loose equality to handle string vs number (e.g. "1" == 1)
             const isActive = value == optVal;
-            
+
             return (
-              <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${
-                  isActive
+              <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${isActive
                   ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
-                  : hasError 
+                  : hasError
                     ? "bg-red-50/20 border-red-100 text-slate-500"
                     : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-4">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
                     }`}>
-                        {isActive && <div className="w-2 h-2 rounded-full bg-white animate-in zoom-in duration-300" />}
-                    </div>
-                    <span className="font-black text-[15px]">{optLabel}</span>
+                    {isActive && <div className="w-2 h-2 rounded-full bg-white animate-in zoom-in duration-300" />}
+                  </div>
+                  <span className="font-black text-[15px]">{optLabel}</span>
                 </div>
                 {isActive && <CheckCircle2 size={18} strokeWidth={3} className="animate-in slide-in-from-right-2 fade-in" />}
                 <input type="radio" name={field.fieldName} value={optVal} checked={isActive}
-                    onChange={() => onChange(field.fieldName, optVal)}
-                    className="hidden" />
+                  onChange={() => onChange(field.fieldName, optVal)}
+                  className="hidden" />
               </label>
             );
           })}
@@ -131,32 +130,30 @@ export function FormFieldWrapper({
             const isObj = typeof opt === "object" && opt !== null;
             const optVal = isObj ? opt.id : opt;
             const optLabel = isObj ? opt.value : opt;
-            
+
             // Handle both array and comma-separated string states
-            const currentVals = Array.isArray(value) 
-                ? value 
-                : (value || "").toString().split(",").map(v => v.trim()).filter(Boolean);
+            const currentVals = Array.isArray(value)
+              ? value
+              : (value || "").toString().split(",").map(v => v.trim()).filter(Boolean);
             const isActive = currentVals.some(v => v == optVal);
 
             return (
-              <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${
-                  isActive
+              <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${isActive
                   ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
-                  : hasError 
+                  : hasError
                     ? "bg-red-50/30 border-red-100 text-slate-500"
                     : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-4">
-                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                        isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
                     }`}>
-                        {isActive && <CheckCircle2 size={14} strokeWidth={4} className="text-white animate-in zoom-in duration-300" />}
-                    </div>
-                    <span className="font-black text-[15px]">{optLabel}</span>
+                    {isActive && <CheckCircle2 size={14} strokeWidth={4} className="text-white animate-in zoom-in duration-300" />}
+                  </div>
+                  <span className="font-black text-[15px]">{optLabel}</span>
                 </div>
                 <input type="checkbox" checked={isActive}
-                    onChange={() => onCheckboxChange(field.fieldName, optVal)}
-                    className="hidden" />
+                  onChange={() => onCheckboxChange(field.fieldName, optVal)}
+                  className="hidden" />
               </label>
             );
           })}
@@ -189,35 +186,40 @@ export function FormFieldWrapper({
         return (
           <div
             onClick={() => onChange(field.fieldName, isOn ? "false" : "true")}
-            className={`flex items-center justify-between p-6 rounded-[2rem] border-2 cursor-pointer transition-all duration-700 select-none ${
-              isOn
+            className={`flex items-center justify-between p-6 rounded-[2rem] border-2 cursor-pointer transition-all duration-700 select-none ${isOn
                 ? "bg-emerald-50 border-emerald-300 shadow-xl shadow-emerald-500/5 text-emerald-900"
                 : hasError
                   ? "bg-red-50/30 border-red-200 text-red-900"
                   : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
-            }`}>
+              }`}>
             <span className="font-black text-[15px] uppercase tracking-widest pl-2">
               {isOn ? "Operational: Active" : "Operational: Standby"}
             </span>
-            <div className={`relative w-16 h-8 rounded-full transition-all duration-500 ${
-              isOn ? "bg-emerald-500 shadow-lg shadow-emerald-500/30" : "bg-slate-200"
-            }`}>
-              <div className={`absolute top-1.5 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-500 ${
-                isOn ? "translate-x-9 scale-110" : "translate-x-1.5"
-              }`} />
+            <div className={`relative w-16 h-8 rounded-full transition-all duration-500 ${isOn ? "bg-emerald-500 shadow-lg shadow-emerald-500/30" : "bg-slate-200"
+              }`}>
+              <div className={`absolute top-1.5 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-500 ${isOn ? "translate-x-9 scale-110" : "translate-x-1.5"
+                }`} />
             </div>
           </div>
         );
       })()}
 
+      {/* FILE UPLOAD */}
+      {field.fieldType === "file_upload" && (() => {
+        const [uploading, setUploading] = (typeof useState !== 'undefined') ? [false, () => { }] : [false, () => { }]; // Placeholder if needed, but we can manage local state here if wrapper allows
+        // Actually, FormFieldWrapper is a function component, we can use hooks if we import them.
+        // But wait, the file doesn't import useState. I should add it.
+        return <FileUploadItem field={field} value={value} onChange={onChange} hasError={hasError} inputCls={inputCls} />;
+      })()}
+
       {/* GENERIC INPUTS */}
-      {!["textarea", "radio", "checkbox", "select", "toggle", "heading", "paragraph", "divider"].includes(field.fieldType) && (
-        <input 
+      {!["textarea", "radio", "checkbox", "select", "toggle", "file_upload", "heading", "paragraph", "divider"].includes(field.fieldType) && (
+        <input
           type={field.fieldType === "phone" ? "tel" : field.fieldType}
           value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
           placeholder={`Enter sequence for ${field.fieldName.toLowerCase()}...`}
-          className={inputCls} 
+          className={inputCls}
         />
       )}
 
@@ -225,8 +227,8 @@ export function FormFieldWrapper({
       {hasError && (
         <div className="rounded-[1.5rem] border border-red-100 bg-red-50 ring-4 ring-red-50/50 p-6 space-y-2 animate-in slide-in-from-top-2 duration-500">
           <div className="flex items-center gap-2 mb-1 px-1">
-              <AlertCircle size={14} className="text-red-500" strokeWidth={3} />
-              <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Protocol Anomaly Detected</span>
+            <AlertCircle size={14} className="text-red-500" strokeWidth={3} />
+            <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Protocol Protocol Failure Detected</span>
           </div>
           {errors.map((msg, i) => (
             <div key={i} className="flex items-start gap-3 text-red-600">
@@ -235,6 +237,102 @@ export function FormFieldWrapper({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function FileUploadItem({ field, value, onChange, hasError, inputCls }) {
+  const [uploading, setUploading] = useState(false);
+  const [localFile, setLocalFile] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLocalFile(file);
+    setUploadError(null);
+
+    // Client-side Validation
+    if (field.maxFileSize) {
+      const maxSizeInBytes = Number(field.maxFileSize) * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        setUploadError(`File size exceeds ${field.maxFileSize}MB limit`);
+        return;
+      }
+    }
+
+    if (field.allowedFileTypes) {
+      const extension = file.name.split('.').pop().toLowerCase();
+      const allowed = field.allowedFileTypes.toLowerCase().split(',').map(t => t.trim());
+      if (!allowed.includes(extension)) {
+        setUploadError(`Invalid file type. Allowed: ${field.allowedFileTypes}`);
+        return;
+      }
+    }
+
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("fieldId", field._dbId || field.id);
+
+    try {
+      const res = await fetch("http://localhost:9090/api/files/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        onChange(field.fieldName, json.data.toString());
+      } else {
+        const err = await res.json();
+        setUploadError(err.message || "Upload failed");
+      }
+    } catch (err) {
+      setUploadError("Connection error during upload");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="relative group/upload">
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className="absolute inset-0 opacity-0 cursor-pointer z-10"
+          disabled={uploading}
+        />
+        <div className={`${inputCls} flex items-center gap-4 py-8 border-dashed border-2 group-hover/upload:border-primary group-hover/upload:bg-primary/5 transition-all text-center justify-center`}>
+          {uploading ? (
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          ) : value ? (
+            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+          ) : (
+            <Upload className="w-8 h-8 text-slate-300 group-hover/upload:text-primary transition-colors" />
+          )}
+          <div>
+            <p className="text-sm font-black text-slate-800 tracking-tight">
+              {uploading ? "Synchronizing Payload..." : value ? "Data Securely Ingested" : `Upload ${field.fieldName}`}
+            </p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+              {localFile ? localFile.name : `Max Size: ${field.maxFileSize || 5}MB | ${field.allowedFileTypes || 'All Types'}`}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {uploadError && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl border border-red-100 animate-in slide-in-from-top-2">
+          <AlertCircle size={14} />
+          <span className="text-[10px] font-black uppercase tracking-wider">{uploadError}</span>
+        </div>
+      )}
+
     </div>
   );
 }

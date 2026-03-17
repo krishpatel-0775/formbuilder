@@ -42,6 +42,12 @@ public class FormField {
     private String afterTime;
     private String beforeTime;
 
+    @Column(name = "max_file_size")
+    private Integer maxFileSize; // in MB
+
+    @Column(name = "allowed_file_types")
+    private String allowedFileTypes; // comma-separated, e.g., "pdf,jpg,png"
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "form_field_options", joinColumns = @JoinColumn(name = "field_id"))
     @Column(name = "option_value")

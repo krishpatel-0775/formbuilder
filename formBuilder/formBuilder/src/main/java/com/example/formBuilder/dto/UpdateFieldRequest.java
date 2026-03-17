@@ -25,4 +25,6 @@ public class UpdateFieldRequest {
     private String sourceColumn;
     private String afterTime;
     private String beforeTime;
+    private Integer maxFileSize;
+    private String allowedFileTypes;
 }

@@ -120,6 +120,8 @@ public class FormService {
                                 .sourceTable(f.getSourceTable())
                                 .sourceColumn(f.getSourceColumn())
                                 .defaultValue(f.getDefaultValue())
+                                .maxFileSize(f.getMaxFileSize())
+                                .allowedFileTypes(f.getAllowedFileTypes())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();
@@ -349,6 +351,8 @@ public class FormService {
                 formField.setDefaultValue(field.getDefaultValue());
                 formField.setAfterTime(field.getAfterTime());
                 formField.setBeforeTime(field.getBeforeTime());
+                formField.setMaxFileSize(field.getMaxFileSize());
+                formField.setAllowedFileTypes(field.getAllowedFileTypes());
                 formField.setBeforeDate(
                         field.getBeforeDate() != null ?
                                 LocalDate.parse(field.getBeforeDate()) : null
@@ -467,6 +471,8 @@ public class FormService {
             field.setBeforeTime(req.getBeforeTime());
             field.setSourceTable(req.getSourceTable());
             field.setSourceColumn(req.getSourceColumn());
+            field.setMaxFileSize(req.getMaxFileSize());
+            field.setAllowedFileTypes(req.getAllowedFileTypes());
         } else {
             // Persist label text for display-only elements (heading, paragraph, etc.)
             field.setDefaultValue(req.getDefaultValue());

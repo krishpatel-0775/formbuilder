@@ -30,4 +30,6 @@ public class FormFieldResponseDto {
     private String sourceTable;
     private String sourceColumn;
     private String defaultValue;
+    private Integer maxFileSize;
+    private String allowedFileTypes;
 }

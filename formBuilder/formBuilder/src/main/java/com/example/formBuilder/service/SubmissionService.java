@@ -177,6 +177,9 @@ public class SubmissionService {
                             } catch (Exception e) { return null; }
                         case "toggle":
                             return "true".equalsIgnoreCase(strVal);
+                        case "file_upload":
+                            try { return Long.parseLong(strVal); }
+                            catch (Exception e) { return null; }
                         default:
                             // Handle lookup IDs
                             if (f.getSourceTable() != null && !f.getSourceTable().isBlank()) {

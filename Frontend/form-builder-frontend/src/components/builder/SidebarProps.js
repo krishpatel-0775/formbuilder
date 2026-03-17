@@ -378,6 +378,53 @@ export function SidebarProps({
             </div>
           </div>
         )}
+
+        {activeField.type === "file_upload" && (
+          <div className="space-y-10">
+            <div className="relative">
+              <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Max File Size (MB)</span>
+              <select 
+                value={activeField.maxFileSize || "5"} 
+                onChange={(e) => updateField(activeField.id, "maxFileSize", e.target.value)}
+                className={inputBase}
+              >
+                <option value="2">2 MB (Standard)</option>
+                <option value="5">5 MB (Aggregated)</option>
+                <option value="10">10 MB (Heavy Payload)</option>
+              </select>
+            </div>
+            
+            <div className="space-y-4">
+              <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Allowed Dimensional Formats</span>
+              <div className="grid grid-cols-2 gap-2">
+                {["pdf", "jpg", "png", "xlsx", "xml"].map((ext) => {
+                  const currentTypes = (activeField.allowedFileTypes || "").split(",").map(t => t.trim()).filter(Boolean);
+                  const isSelected = currentTypes.includes(ext);
+                  return (
+                    <button 
+                      key={ext}
+                      type="button"
+                      onClick={() => {
+                        const updated = isSelected 
+                          ? currentTypes.filter(t => t !== ext) 
+                          : [...currentTypes, ext];
+                        updateField(activeField.id, "allowedFileTypes", updated.join(","));
+                      }}
+                      className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${
+                        isSelected 
+                        ? "bg-primary/5 border-primary text-primary" 
+                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${isSelected ? "bg-primary animate-pulse" : "bg-slate-200"}`} />
+                      <span className="text-[10px] font-black uppercase tracking-wider">{ext}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

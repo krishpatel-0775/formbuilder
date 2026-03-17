@@ -310,6 +310,12 @@ export default function PublicFormPage() {
           } catch (_) { }
         }
       }
+
+      if (field.fieldType === "file_upload") {
+        if (!strVal && (field.required || dynamicRequiredFields.has(field.fieldName))) {
+          push(name, "Please upload the required file.");
+        }
+      }
     });
 
     // Rule engine validation errors (only for fields on this page)

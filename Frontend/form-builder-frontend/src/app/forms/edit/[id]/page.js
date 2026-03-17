@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { 
+import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay,
 } from "@dnd-kit/core";
-import { 
-  arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, 
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { GripVertical, AlertCircle, ArrowRight, Loader2, Save, MousePointer2, Sparkles } from "lucide-react";
 import { ENDPOINTS } from "../../../../config/apiConfig";
@@ -72,6 +72,7 @@ export default function EditFormPage() {
             pattern: f.pattern ?? "",
             beforeDate: f.beforeDate ?? "", afterDate: f.afterDate ?? "",
             afterTime: f.afterTime ?? "", beforeTime: f.beforeTime ?? "",
+            maxFileSize: f.maxFileSize ?? "", allowedFileTypes: f.allowedFileTypes ?? "",
             options: f.options?.length > 0 ? f.options : noOpts.includes(f.fieldType) ? [] : ["Option 1", "Option 2"],
             sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
           };
@@ -120,8 +121,8 @@ export default function EditFormPage() {
         .then(r => r.json())
         .then(r => setSelectedFormFields(r.data?.fields || []))
         .catch(console.error);
-    } else { 
-      setSelectedFormFields([]); 
+    } else {
+      setSelectedFormFields([]);
     }
   }, [activeFieldId, fields.find((f) => f.id === activeFieldId)?.sourceTable]);
 
@@ -159,6 +160,8 @@ export default function EditFormPage() {
       id: Date.now(), _dbId: null, label: "", type: type.toLowerCase(), required: false, defaultValue: "",
       minLength: "", maxLength: "", min: "", max: "", pattern: "",
       beforeDate: "", afterDate: "", afterTime: "", beforeTime: "",
+      maxFileSize: type.toLowerCase() === "file_upload" ? "5" : "",
+      allowedFileTypes: type.toLowerCase() === "file_upload" ? "pdf,jpg,png" : "",
       options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
       sourceTable: "", sourceColumn: "",
     };
@@ -211,25 +214,25 @@ export default function EditFormPage() {
 
   const publishForm = async () => {
     if (!window.confirm("Are you certain you wish to synchronize this architecture with the live database? This will create the physical data structure and make the form operational.")) return;
-    
+
     setIsPublishing(true);
     try {
-        await saveForm();
-        const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
-            method: "POST",
-            credentials: "include"
-        });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || "Cloud synchronization failed.");
-        }
-        setFormStatus("PUBLISHED");
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
+      await saveForm();
+      const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Cloud synchronization failed.");
+      }
+      setFormStatus("PUBLISHED");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
     } catch (err) {
-        alert(`❌ ${err.message}`);
+      alert(`❌ ${err.message}`);
     } finally {
-        setIsPublishing(false);
+      setIsPublishing(false);
     }
   };
 
@@ -247,12 +250,12 @@ export default function EditFormPage() {
         let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required };
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
         if (["radio", "checkbox", "select"].includes(field.type)) {
-          if (field.sourceTable && field.sourceColumn) { 
-            fd.sourceTable = field.sourceTable; 
-            fd.sourceColumn = field.sourceColumn; 
-            fd.options = []; 
+          if (field.sourceTable && field.sourceColumn) {
+            fd.sourceTable = field.sourceTable;
+            fd.sourceColumn = field.sourceColumn;
+            fd.options = [];
           } else {
-            fd.options = field.options; 
+            fd.options = field.options;
           }
         }
         if (["text", "textarea", "email", "phone", "url"].includes(field.type)) {
@@ -263,6 +266,10 @@ export default function EditFormPage() {
         if (field.type === "number") { if (field.min) fd.min = Number(field.min); if (field.max) fd.max = Number(field.max); }
         if (field.type === "date") { if (field.afterDate) fd.afterDate = field.afterDate; if (field.beforeDate) fd.beforeDate = field.beforeDate; }
         if (field.type === "time") { if (field.afterTime) fd.afterTime = field.afterTime; if (field.beforeTime) fd.beforeTime = field.beforeTime; }
+        if (field.type === "file_upload") {
+          fd.maxFileSize = field.maxFileSize ? Number(field.maxFileSize) : 5;
+          fd.allowedFileTypes = field.allowedFileTypes || "pdf,jpg,png";
+        }
         return fd;
       });
       const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
@@ -311,11 +318,11 @@ export default function EditFormPage() {
       if (!isPublishing) {
         setTimeout(() => { setShowSuccess(false); router.push("/forms/all"); }, 1500);
       }
-    } catch (err) { 
-        alert(`❌ ${err.message}`); 
-        throw err;
-    } finally { 
-        setIsSaving(false); 
+    } catch (err) {
+      alert(`❌ ${err.message}`);
+      throw err;
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -336,10 +343,10 @@ export default function EditFormPage() {
       <div className="h-full flex flex-col items-center justify-center bg-background relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-mesh opacity-50" />
         <div className="relative z-10 text-center space-y-4">
-            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
-                <Loader2 className="w-8 h-8 animate-spin" />
-            </div>
-            <p className="text-[10px] font-black tracking-widest uppercase text-slate-400">Loading Workspace...</p>
+          <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+          <p className="text-[10px] font-black tracking-widest uppercase text-slate-400">Loading Workspace...</p>
         </div>
       </div>
     );
@@ -348,10 +355,10 @@ export default function EditFormPage() {
   return (
     <div className="flex h-full bg-background text-slate-900 font-sans overflow-hidden">
       <Toolbar handleDragStart={handleDragStart} />
-      
+
       <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-40 pointer-events-none" />
-        
+
         <FormHeader
           formName={formName}
           setFormName={setFormName}
@@ -367,8 +374,8 @@ export default function EditFormPage() {
           userRole={userRole}
         />
 
-        <div 
-          onDrop={handleDrop} 
+        <div
+          onDrop={handleDrop}
           onDragOver={handleDragOver}
           className="flex-1 p-10 overflow-auto custom-scrollbar relative z-0"
         >
@@ -376,11 +383,11 @@ export default function EditFormPage() {
             {formStatus === "PUBLISHED" && (
               <div className="premium-card bg-amber-50/80 border-amber-200/50 shadow-none !rounded-3xl">
                 <div className="p-4 flex items-start gap-3 text-amber-900">
-                    <AlertCircle size={20} className="mt-0.5 text-amber-500 flex-shrink-0" />
-                    <div>
-                        <p className="text-xs font-black uppercase tracking-widest mb-1">Live Edition Mode</p>
-                        <p className="text-sm font-medium opacity-80 leading-relaxed">Changes to published fields will automatically synchronize with the architectural database table.</p>
-                    </div>
+                  <AlertCircle size={20} className="mt-0.5 text-amber-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest mb-1">Live Edition Mode</p>
+                    <p className="text-sm font-medium opacity-80 leading-relaxed">Changes to published fields will automatically synchronize with the architectural database table.</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -395,34 +402,34 @@ export default function EditFormPage() {
                 <h3 className="text-xl font-black text-slate-800 tracking-tight">Empty Workspace</h3>
                 <p className="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest">Drag components here to start</p>
                 <div className="mt-8 flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
-                    <Sparkles size={14} className="text-primary" />
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Build something premium</span>
+                  <Sparkles size={14} className="text-primary" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Build something premium</span>
                 </div>
               </div>
             )}
 
             {fields.length > 0 && (
-              <DndContext 
-                sensors={sensors} 
-                collisionDetection={closestCenter} 
-                onDragStart={handleSortStart} 
-                onDragEnd={handleSortEnd} 
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleSortStart}
+                onDragEnd={handleSortEnd}
                 onDragCancel={handleSortCancel}
               >
                 <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-4">
-                        {fields.map((field, idx) => (
-                            <SortableFieldItem 
-                                key={field.id} 
-                                field={field} 
-                                idx={idx} 
-                                isActive={activeFieldId === field.id}
-                                setActiveFieldId={setActiveFieldId} 
-                                removeField={removeField} 
-                                updateField={updateField} 
-                            />
-                        ))}
-                    </div>
+                  <div className="space-y-4">
+                    {fields.map((field, idx) => (
+                      <SortableFieldItem
+                        key={field.id}
+                        field={field}
+                        idx={idx}
+                        isActive={activeFieldId === field.id}
+                        setActiveFieldId={setActiveFieldId}
+                        removeField={removeField}
+                        updateField={updateField}
+                      />
+                    ))}
+                  </div>
                 </SortableContext>
                 <DragOverlay>
                   {activeSortId ? (
@@ -444,18 +451,18 @@ export default function EditFormPage() {
         </div>
       </main>
 
-      <Sidebar 
-        activeField={activeField} 
-        setActiveFieldId={setActiveFieldId} 
-        sidebarTab={sidebarTab} 
+      <Sidebar
+        activeField={activeField}
+        setActiveFieldId={setActiveFieldId}
+        sidebarTab={sidebarTab}
         setSidebarTab={setSidebarTab}
-        updateField={updateField} 
-        handleNumberInput={handleNumberInput} 
-        availableForms={availableForms} 
-        selectedFormFields={selectedFormFields} 
-        fields={fields} 
-        rules={rules} 
-        setRules={setRules} 
+        updateField={updateField}
+        handleNumberInput={handleNumberInput}
+        availableForms={availableForms}
+        selectedFormFields={selectedFormFields}
+        fields={fields}
+        rules={rules}
+        setRules={setRules}
         isDisplayOnly={isDisplayOnly}
       />
     </div>

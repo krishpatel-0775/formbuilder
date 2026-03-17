@@ -22,6 +22,8 @@ public class FieldRequest {
     private String pattern;
     private String beforeDate;
     private String afterDate;
+    private Integer maxFileSize; // in MB
+    private String allowedFileTypes;
     private List<String> options;
     private String defaultValue;
     private String sourceTable;

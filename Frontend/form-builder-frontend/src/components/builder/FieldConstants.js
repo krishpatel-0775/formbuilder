@@ -16,6 +16,7 @@ export const FieldIcons = {
   checkbox: <CheckSquare size={18} />, 
   select: <ListPlus size={18} />,
   toggle: <ToggleLeft size={18} />,
+  file_upload: <Layout size={18} />,
   page_break: <Layout size={18} />,
   heading: <Heading size={18} />,
   paragraph: <Pilcrow size={18} />,
@@ -29,4 +30,4 @@ export const StaticElementTypes = [
   { type: "page_break", label: "Pagination", desc: "Multi-phase orchestration", color: "indigo", icon: <Layout size={16} /> },
 ];
 
-export const RegularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select", "toggle"];
+export const RegularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select", "toggle", "file_upload"];

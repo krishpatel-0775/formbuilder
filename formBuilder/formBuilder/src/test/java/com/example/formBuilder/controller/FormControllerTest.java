@@ -115,7 +115,14 @@ public class FormControllerTest {
 
     @Test
     void getLookupValues_ShouldReturnList() throws Exception {
-        when(formService.getLookupValues(1L, "name")).thenReturn(List.of("Value1", "Value2"));
+        Map<String, Object> val1 = new HashMap<>();
+        val1.put("id", 1L);
+        val1.put("value", "Value1");
+        Map<String, Object> val2 = new HashMap<>();
+        val2.put("id", 2L);
+        val2.put("value", "Value2");
+        
+        when(formService.getLookupValues(1L, "name")).thenReturn(List.of(val1, val2));
 
         mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1/lookup/name"))
                 .andExpect(status().isOk())

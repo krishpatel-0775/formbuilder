@@ -17,6 +17,7 @@ export default function FormDataPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formStatus, setFormStatus] = useState("DRAFT");
+  const [fields, setFields] = useState([]);
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
@@ -41,6 +42,7 @@ export default function FormDataPage() {
       const formJson = await formRes.json();
       const status = formJson.data?.status || "DRAFT";
       setFormStatus(status);
+      setFields(formJson.data?.fields || []);
 
       if (status !== "PUBLISHED") {
         throw new Error("Form is either not published or access is restricted.");
@@ -335,22 +337,39 @@ export default function FormDataPage() {
                             )}
                           </button>
                         </td>
-                        {headers.map((header) => (
-                          <td key={header} className="px-8 py-5 text-sm text-slate-600 font-medium whitespace-nowrap">
-                            {row[header] !== null && row[header] !== undefined ? (
-                              <span className="text-slate-700">
-                                {header === "created_at" && typeof row[header] === "string"
-                                  ? new Date(row[header]).toLocaleString("en-US", {
-                                    year: 'numeric', month: 'short', day: 'numeric',
-                                    hour: '2-digit', minute: '2-digit'
-                                  })
-                                  : row[header].toString()}
-                              </span>
-                            ) : (
-                              <span className="text-slate-300 italic text-xs">null</span>
-                            )}
-                          </td>
-                        ))}
+                        {headers.map((header) => {
+                          const field = fields.find(f => f.fieldName === header);
+                          const isFile = field?.fieldType === "file_upload";
+                          const val = row[header];
+
+                          return (
+                            <td key={header} className="px-8 py-5 text-sm text-slate-600 font-medium whitespace-nowrap">
+                              {val !== null && val !== undefined ? (
+                                isFile ? (
+                                  <a 
+                                    href={`http://localhost:9090/api/files/view/${val}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all text-xs font-black uppercase tracking-widest shadow-sm"
+                                  >
+                                    <ExternalLink size={14} /> Open Resource
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-700">
+                                    {header === "created_at" && typeof val === "string"
+                                      ? new Date(val).toLocaleString("en-US", {
+                                        year: 'numeric', month: 'short', day: 'numeric',
+                                        hour: '2-digit', minute: '2-digit'
+                                      })
+                                      : val.toString()}
+                                  </span>
+                                )
+                              ) : (
+                                <span className="text-slate-300 italic text-xs">null</span>
+                              )}
+                            </td>
+                          );
+                        })}
                         <td className="px-8 py-5 text-right">
                           <button
                             onClick={() => deleteResponse(row.id)}
