@@ -24,10 +24,10 @@ export const FieldIcons = {
 };
 
 export const StaticElementTypes = [
-  { type: "heading", label: "Heading Element", desc: "Define structural landmarks", color: "amber", icon: <Heading size={16} /> },
+  { type: "heading", label: "Heading Element", desc: "For heading", color: "amber", icon: <Heading size={16} /> },
   { type: "paragraph", label: "Text Narrative", desc: "Contextual descriptions", color: "sky", icon: <Pilcrow size={16} /> },
   { type: "divider", label: "Phase Breaker", desc: "Discrete visual separation", color: "slate", icon: <Minus size={16} /> },
-  { type: "page_break", label: "Pagination", desc: "Multi-phase orchestration", color: "indigo", icon: <Layout size={16} /> },
+  { type: "page_break", label: "Pagination", desc: "For next page", color: "indigo", icon: <Layout size={16} /> },
 ];
 
 export const RegularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select", "toggle", "file_upload"];

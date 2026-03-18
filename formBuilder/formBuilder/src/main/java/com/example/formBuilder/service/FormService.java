@@ -439,6 +439,14 @@ public class FormService {
             }
         }
 
+        if (request.getRules() != null) {
+            try {
+                form.setRules(objectMapper.writeValueAsString(request.getRules()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize updated rules: {}", e.getMessage());
+            }
+        }
+
         formRepository.save(form);
         return "Form updated successfully";
     }

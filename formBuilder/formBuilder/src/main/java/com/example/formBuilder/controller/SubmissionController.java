@@ -6,6 +6,7 @@ import com.example.formBuilder.dto.SubmissionRequest;
 import com.example.formBuilder.service.FormService;
 import com.example.formBuilder.service.RuleEngineService;
 import com.example.formBuilder.service.SubmissionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class SubmissionController {
 
     // Submits a new response for a specific form and persists it to the dynamic table.
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> submitForm(@RequestBody SubmissionRequest request) {
+    public ResponseEntity<ApiResponse<String>> submitForm(@Valid @RequestBody SubmissionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.submitForm(request), null));
     }
 

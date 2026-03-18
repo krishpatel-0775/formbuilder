@@ -9,6 +9,7 @@ import com.example.formBuilder.dto.FormResponseDto;
 import com.example.formBuilder.dto.UpdateFormRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.service.FormService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +31,7 @@ public class FormController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createForm(@RequestBody FormRequest req) {
+    public ResponseEntity<ApiResponse<String>> createForm(@Valid @RequestBody FormRequest req) {
         return ResponseEntity.ok(ApiResponse.success(formService.createForm(req), null));
     }
 
@@ -63,7 +64,7 @@ public class FormController {
     @PutMapping(AppConstants.API_FORM_BY_ID)
     public ResponseEntity<ApiResponse<String>> updateForm(
             @PathVariable Long id,
-            @RequestBody UpdateFormRequest req) {
+            @Valid @RequestBody UpdateFormRequest req) {
         return ResponseEntity.ok(
                 ApiResponse.success(formService.updateForm(id, req), null)
         );
@@ -77,7 +78,7 @@ public class FormController {
     @PostMapping(AppConstants.API_FORM_RULES)
     public ResponseEntity<ApiResponse<String>> saveFormRules(
             @PathVariable Long id,
-            @RequestBody java.util.List<FormRuleDTO> rules) {
+            @RequestBody List<@Valid FormRuleDTO> rules) {
         return ResponseEntity.ok(ApiResponse.success(formService.saveFormRules(id, rules), null));
     }
 

@@ -2,6 +2,7 @@ package com.example.formBuilder.dto;
 
 import com.example.formBuilder.enums.ActionType;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,20 +37,10 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RuleActionDTO {
 
-    /**
-     * The type of action to perform. Required.
-     */
+    @NotNull(message = "Action type is required")
     private ActionType type;
 
-    /**
-     * The name of the form field this action targets (e.g., "driving_license", "nickname").
-     * Not required for {@link ActionType#VALIDATION_ERROR}.
-     */
     private String targetField;
 
-    /**
-     * The error message to display when action type is {@link ActionType#VALIDATION_ERROR}.
-     * Optional for other action types.
-     */
     private String message;
 }

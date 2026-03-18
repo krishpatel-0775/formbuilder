@@ -1,6 +1,6 @@
 package com.example.formBuilder.dto;
 
-
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +11,10 @@ import java.util.List;
 @Setter
 public class FieldRequest {
 
+    @NotBlank(message = "Field name is required")
     private String name;
+
+    @NotBlank(message = "Field type is required")
     private String type;
 
     private Boolean required;
