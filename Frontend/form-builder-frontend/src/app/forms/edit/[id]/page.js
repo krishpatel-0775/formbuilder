@@ -338,6 +338,25 @@ export default function EditFormPage() {
     finally { setIsSaving(false); }
   };
 
+  const isRightSidebarOpen = activeField && !isDisplayOnly(activeField.type);
+
+  // Broadcast Right Panel state
+  useEffect(() => {
+    document.dispatchEvent(new CustomEvent("right-panel-state", { detail: { isOpen: !!isRightSidebarOpen } }));
+  }, [isRightSidebarOpen]);
+
+  // Listen for Left Menu changes
+  useEffect(() => {
+    const handleLeftMenu = (e) => {
+      // If the left menu was manually opened by the user, close the right panel
+      if (e.detail?.isOpen) {
+        setActiveFieldId(null);
+      }
+    };
+    document.addEventListener("left-menu-state", handleLeftMenu);
+    return () => document.removeEventListener("left-menu-state", handleLeftMenu);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-background relative overflow-hidden">
@@ -353,10 +372,10 @@ export default function EditFormPage() {
   }
 
   return (
-    <div className="flex h-full bg-background text-slate-900 font-sans overflow-hidden">
+    <div className="flex h-full bg-background text-slate-900 font-sans overflow-hidden w-full">
       <Toolbar handleDragStart={handleDragStart} />
 
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative overflow-y-auto overflow-x-hidden transition-all duration-700 ease-in-out">
         <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-40 pointer-events-none" />
 
         <FormHeader
@@ -372,12 +391,13 @@ export default function EditFormPage() {
           saveLabel="Save Changes"
           saveIcon={<Save size={18} strokeWidth={2.5} />}
           userRole={userRole}
+          formId={id}
         />
 
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          className="flex-1 p-10 overflow-auto custom-scrollbar relative z-0"
+          className="flex-1 p-6 md:p-8 lg:p-10 xl:p-16 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-0"
         >
           <div className="max-w-3xl mx-auto space-y-6 pb-20">
             {formStatus === "PUBLISHED" && (

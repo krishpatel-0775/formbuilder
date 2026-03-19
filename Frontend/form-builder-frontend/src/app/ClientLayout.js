@@ -13,24 +13,28 @@ export default function ClientLayout({ children }) {
 
     // Toggle sidebar on mobile
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-    
+
     // Toggle collapse on desktop
     const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
-    // Auto-handle mobile vs desktop states
+    // Coordinate with right-side form builder panel
     useEffect(() => {
-        const handleResize = () => {
-            if (window.innerWidth < 1024) {
-                setIsSidebarOpen(false);
-                setIsCollapsed(false);
-            } else {
-                setIsSidebarOpen(true);
+        const handleRightPanel = (e) => {
+            if (e.detail?.isOpen) {
+                // Force close left menubar to avoid overlap
+                if (window.innerWidth >= 1024) setIsCollapsed(true);
+                else setIsSidebarOpen(false);
             }
         };
-        handleResize();
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
+        document.addEventListener("right-panel-state", handleRightPanel);
+        return () => document.removeEventListener("right-panel-state", handleRightPanel);
     }, []);
+
+    // Broadcast left menu state to children instantly
+    useEffect(() => {
+        const isMenuOpen = window.innerWidth >= 1024 ? !isCollapsed : isSidebarOpen;
+        document.dispatchEvent(new CustomEvent("left-menu-state", { detail: { isOpen: isMenuOpen } }));
+    }, [isCollapsed, isSidebarOpen]);
 
     return (
         <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
@@ -39,14 +43,14 @@ export default function ClientLayout({ children }) {
                 <div className="flex h-16 items-center justify-between px-6 lg:px-10">
                     <div className="flex items-center gap-4 lg:gap-8">
                         {user && (
-                            <button 
+                            <button
                                 onClick={window.innerWidth < 1024 ? toggleSidebar : toggleCollapse}
                                 className="inline-flex items-center justify-center rounded-xl p-2 text-slate-500 hover:bg-slate-100 transition-all hover:scale-110 active:scale-90"
                             >
                                 {isSidebarOpen ? (isCollapsed ? <Menu size={20} /> : <X size={20} />) : <Menu size={20} />}
                             </button>
                         )}
-                        
+
                         <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-blue-600 text-white shadow-lg shadow-primary/20">
                                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,15 +68,22 @@ export default function ClientLayout({ children }) {
             </header>
 
             <div className="flex flex-1 overflow-hidden relative">
+                {/* Global Sidebar Overlay Mobile */}
+                {user && (
+                    <div
+                        className={`lg:hidden fixed inset-0 bg-slate-900/50 z-30 transition-opacity ${isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                        onClick={toggleSidebar}
+                    />
+                )}
+
                 {/* Global Sidebar */}
                 {user && (
-                    <div 
-                        className={`fixed inset-y-16 left-0 z-40 transform bg-white border-r transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0 ${
-                            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-                        } ${isCollapsed ? "w-20" : "w-72"}`}
+                    <div
+                        className={`fixed lg:relative inset-y-16 lg:inset-y-0 left-0 z-40 transform bg-white border-r transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0 flex-shrink-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                            } ${isCollapsed ? "w-20" : "w-[260px] lg:w-[288px] max-w-full"}`}
                     >
-                        <Sidebar 
-                            isCollapsed={isCollapsed} 
+                        <Sidebar
+                            isCollapsed={isCollapsed}
                             onTypeSelect={() => isCollapsed && setIsCollapsed(false)}
                             setIsCollapsed={setIsCollapsed}
                         />
@@ -80,10 +91,8 @@ export default function ClientLayout({ children }) {
                 )}
 
                 {/* Main Content */}
-                <main 
-                    className={`flex-1 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                        user ? (isSidebarOpen ? (isCollapsed ? "lg:pl-20" : "lg:pl-72") : "lg:pl-0") : ""
-                    }`}
+                <main
+                    className={`flex-1 flex flex-col min-w-0 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] relative`}
                 >
                     <div className="flex-1 overflow-hidden bg-mesh relative">
                         {children}

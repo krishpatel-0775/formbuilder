@@ -101,10 +101,10 @@ export function FormFieldWrapper({
 
             return (
               <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${isActive
-                  ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
-                  : hasError
-                    ? "bg-red-50/20 border-red-100 text-slate-500"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
+                : hasError
+                  ? "bg-red-50/20 border-red-100 text-slate-500"
+                  : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-4">
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
@@ -139,10 +139,10 @@ export function FormFieldWrapper({
 
             return (
               <label key={idx} className={`flex items-center justify-between p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 ${isActive
-                  ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
-                  : hasError
-                    ? "bg-red-50/30 border-red-100 text-slate-500"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
+                : hasError
+                  ? "bg-red-50/30 border-red-100 text-slate-500"
+                  : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-4">
                   <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
@@ -187,10 +187,10 @@ export function FormFieldWrapper({
           <div
             onClick={() => onChange(field.fieldName, isOn ? "false" : "true")}
             className={`flex items-center justify-between p-6 rounded-[2rem] border-2 cursor-pointer transition-all duration-700 select-none ${isOn
-                ? "bg-emerald-50 border-emerald-300 shadow-xl shadow-emerald-500/5 text-emerald-900"
-                : hasError
-                  ? "bg-red-50/30 border-red-200 text-red-900"
-                  : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
+              ? "bg-emerald-50 border-emerald-300 shadow-xl shadow-emerald-500/5 text-emerald-900"
+              : hasError
+                ? "bg-red-50/30 border-red-200 text-red-900"
+                : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
               }`}>
             <span className="font-black text-[15px] uppercase tracking-widest pl-2">
               {isOn ? "Operational: Active" : "Operational: Standby"}

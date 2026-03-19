@@ -1,14 +1,14 @@
 import { ArrowLeft, Trash2, CheckCircle2, Save, Send, Rocket, ShieldCheck } from "lucide-react";
 import NextLink from "next/link";
 
-export function FormHeader({ 
-  formName, 
-  setFormName, 
-  formStatus = "DRAFT", 
-  deleteForm, 
-  saveForm, 
+export function FormHeader({
+  formName,
+  setFormName,
+  formStatus = "DRAFT",
+  deleteForm,
+  saveForm,
   publishForm,
-  isSaving, 
+  isSaving,
   isPublishing,
   showSuccess,
   saveLabel = "Save Changes",
@@ -24,40 +24,40 @@ export function FormHeader({
           <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
         </NextLink>
         <div className="flex flex-col flex-1 max-w-lg">
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1 ml-1 truncate">
-              {isPublished ? "Immutable Protocol" : "Architectural Draft"}
-            </span>
-            <input 
-                type="text" 
-                placeholder="Name your masterpiece..." 
-                value={formName} 
-                onChange={(e) => setFormName(e.target.value)}
-                className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`} 
-            />
+          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1 ml-1 truncate">
+            {isPublished ? "Immutable Protocol" : "Architectural Draft"}
+          </span>
+          <input
+            type="text"
+            placeholder="Name your masterpiece..."
+            value={formName}
+            onChange={(e) => setFormName(e.target.value)}
+            className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`}
+          />
         </div>
       </div>
 
       <div className="flex items-center gap-4">
         {isPublished ? (
           <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 shadow-sm shadow-emerald-500/5 transition-all">
-              <ShieldCheck size={16} strokeWidth={3} className="animate-in zoom-in duration-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.15em]">
-                  Operational State: Live
-              </span>
+            <ShieldCheck size={16} strokeWidth={3} className="animate-in zoom-in duration-500" />
+            <span className="text-[10px] font-black uppercase tracking-[0.15em]">
+              Operational State: Live
+            </span>
           </div>
         ) : (
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                  {formStatus}
-              </span>
+            <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              {formStatus}
+            </span>
           </div>
         )}
 
         <div className="w-px h-8 bg-slate-100 mx-1" />
 
         {deleteForm && (
-          <button 
+          <button
             onClick={deleteForm}
             className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm group"
             title="Discard Changes"
@@ -67,7 +67,7 @@ export function FormHeader({
         )}
 
         {!isPublished && publishForm && (
-          <button 
+          <button
             onClick={publishForm}
             disabled={isSaving || isPublishing}
             className="flex items-center gap-3 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] bg-white border-2 border-primary text-primary hover:bg-primary/5 transition-all active:scale-95 disabled:opacity-50"
@@ -80,21 +80,20 @@ export function FormHeader({
           </button>
         )}
 
-        <button 
-          onClick={saveForm} 
+        <button
+          onClick={saveForm}
           disabled={isSaving || showSuccess || isPublishing}
-          className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl ${
-              showSuccess 
-              ? "bg-green-500 text-white shadow-green-500/20" 
+          className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl ${showSuccess
+              ? "bg-green-500 text-white shadow-green-500/20"
               : "bg-slate-900 text-white hover:bg-primary shadow-slate-900/20 hover:shadow-primary/20"
-          } disabled:opacity-50`}
+            } disabled:opacity-50`}
         >
           {showSuccess ? (
-              <><CheckCircle2 size={18} strokeWidth={3} /> Saved</>
+            <><CheckCircle2 size={18} strokeWidth={3} /> Saved</>
           ) : isSaving ? (
-              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           ) : (
-              <>{saveIcon} {saveLabel}</>
+            <>{saveIcon} {saveLabel}</>
           )}
         </button>
       </div>

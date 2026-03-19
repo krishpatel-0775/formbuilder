@@ -31,3 +31,26 @@ export const StaticElementTypes = [
 ];
 
 export const RegularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select", "toggle", "file_upload"];
+
+export const FieldCategories = [
+  {
+    name: "Text & Inputs",
+    fields: ["text", "textarea", "email", "url"]
+  },
+  {
+    name: "Numbers & Contact",
+    fields: ["number", "phone"]
+  },
+  {
+    name: "Selection & Choice",
+    fields: ["radio", "checkbox", "select", "toggle"]
+  },
+  {
+    name: "Date & Time",
+    fields: ["date", "time"]
+  },
+  {
+    name: "Advanced",
+    fields: ["file_upload"]
+  }
+];

@@ -145,7 +145,7 @@ export default function PublicFormPage() {
         if (data?.fields) {
           data.fields.forEach((field) => {
             if (field.fieldType === "page_break") return;
-            
+
             const options = field.options || [];
             const isOptionValid = (val) => {
               if (options.length === 0) return true;
@@ -343,15 +343,15 @@ export default function PublicFormPage() {
   };
 
   const handleCheckboxChange = (fieldName, optionValue) => {
-    const current = Array.isArray(formData[fieldName]) 
-      ? formData[fieldName] 
+    const current = Array.isArray(formData[fieldName])
+      ? formData[fieldName]
       : (formData[fieldName] || "").toString().split(",").map(v => v.trim()).filter(Boolean);
-    
+
     // Use loose equality for comparison
     const updated = current.some(v => v == optionValue)
       ? current.filter((v) => v != optionValue)
       : [...current, optionValue];
-      
+
     handleInputChange(fieldName, updated);
   };
 
@@ -409,12 +409,12 @@ export default function PublicFormPage() {
     );
 
     try {
-        const res = await fetch(ENDPOINTS.SUBMISSIONS, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ formId: parseInt(id), values: submissionData }),
-          credentials: "include"
-        });
+      const res = await fetch(ENDPOINTS.SUBMISSIONS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formId: parseInt(id), values: submissionData }),
+        credentials: "include"
+      });
 
       if (res.ok) {
         router.push(`/forms/data/${id}`);
@@ -497,76 +497,76 @@ export default function PublicFormPage() {
           {/* Form Header Section */}
           <div className="p-10 md:p-16 border-b border-slate-50 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5">
-                <Send size={120} strokeWidth={1} />
+              <Send size={120} strokeWidth={1} />
             </div>
 
             <div className="relative space-y-2">
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Secure Data Protocol</span>
-                </div>
-                <h1 className="text-5xl font-black text-slate-900 leading-none tracking-tight">{formConfig.formName}</h1>
-                
-                {isMultiPage ? (
-                  <div className="space-y-6 pt-8">
-                    {/* Phase Tracker */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Operational Phase</span>
-                        <p className="text-xl font-black text-slate-800">
-                          {currentPage + 1} <span className="text-slate-300 mx-1 font-medium">/</span> {totalPages}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 block">Completion Integrity</span>
-                        <div className="flex items-center gap-3">
-                            <span className="text-xl font-black text-primary">{progressPct}%</span>
-                            <div className="w-12 h-12 relative flex items-center justify-center">
-                                <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full -rotate-90">
-                                    <defs>
-                                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" stopColor="var(--primary, #3b82f6)" />
-                                            <stop offset="100%" stopColor="#6366f1" />
-                                        </linearGradient>
-                                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                            <feGaussianBlur stdDeviation="3" result="blur" />
-                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                        </filter>
-                                    </defs>
-                                    {/* Background Circle */}
-                                    <circle
-                                        cx="50" cy="50" r="42"
-                                        stroke="#f1f5f9" strokeWidth="8" fill="transparent"
-                                        className="transition-all duration-500"
-                                    />
-                                    {/* Progress Circle */}
-                                    <circle
-                                        cx="50" cy="50" r="42"
-                                        stroke="url(#progressGradient)" strokeWidth="8" fill="transparent"
-                                        strokeDasharray="264"
-                                        strokeDashoffset={264 - (264 * progressPct) / 100}
-                                        strokeLinecap="round"
-                                        style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
-                                        className="transition-all duration-1000 ease-out"
-                                    />
-                                </svg>
-                                <CheckCircle2 size={16} className={`relative z-10 transition-all duration-500 ${progressPct === 100 ? "text-primary scale-110" : "text-slate-200"}`} />
-                            </div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Secure Data Protocol</span>
+              </div>
+              <h1 className="text-5xl font-black text-slate-900 leading-none tracking-tight">{formConfig.formName}</h1>
+
+              {isMultiPage ? (
+                <div className="space-y-6 pt-8">
+                  {/* Phase Tracker */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Operational Phase</span>
+                      <p className="text-xl font-black text-slate-800">
+                        {currentPage + 1} <span className="text-slate-300 mx-1 font-medium">/</span> {totalPages}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 block">Completion Integrity</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl font-black text-primary">{progressPct}%</span>
+                        <div className="w-12 h-12 relative flex items-center justify-center">
+                          <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full -rotate-90">
+                            <defs>
+                              <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="var(--primary, #3b82f6)" />
+                                <stop offset="100%" stopColor="#6366f1" />
+                              </linearGradient>
+                              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="3" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                              </filter>
+                            </defs>
+                            {/* Background Circle */}
+                            <circle
+                              cx="50" cy="50" r="42"
+                              stroke="#f1f5f9" strokeWidth="8" fill="transparent"
+                              className="transition-all duration-500"
+                            />
+                            {/* Progress Circle */}
+                            <circle
+                              cx="50" cy="50" r="42"
+                              stroke="url(#progressGradient)" strokeWidth="8" fill="transparent"
+                              strokeDasharray="264"
+                              strokeDashoffset={264 - (264 * progressPct) / 100}
+                              strokeLinecap="round"
+                              style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+                              className="transition-all duration-1000 ease-out"
+                            />
+                          </svg>
+                          <CheckCircle2 size={16} className={`relative z-10 transition-all duration-500 ${progressPct === 100 ? "text-primary scale-110" : "text-slate-200"}`} />
                         </div>
                       </div>
                     </div>
-
-                    {/* Linear Progress */}
-                    <div className="relative h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-                        style={{ width: `${progressPct}%` }}
-                      />
-                    </div>
                   </div>
-                ) : (
-                  <p className="text-[15px] text-slate-500 font-medium pt-4 max-w-md leading-relaxed">System ready for data ingestion. Please provide the required parameters below.</p>
-                )}
+
+                  {/* Linear Progress */}
+                  <div className="relative h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[15px] text-slate-500 font-medium pt-4 max-w-md leading-relaxed">System ready for data ingestion. Please provide the required parameters below.</p>
+              )}
             </div>
           </div>
 
@@ -575,22 +575,22 @@ export default function PublicFormPage() {
             <div className="m-10 md:mx-16 mb-0 rounded-[2rem] border-2 border-red-100 bg-red-50/50 overflow-hidden animate-in slide-in-from-top-4 duration-500">
               <div className="flex items-center justify-between px-8 py-5 bg-red-100/50 border-b border-red-200">
                 <div className="flex items-center gap-3">
-                    <AlertCircle size={20} className="text-red-600 animate-pulse" />
-                    <span className="text-xs font-black text-red-700 uppercase tracking-[0.2em]">Validation Protocol Failure</span>
+                  <AlertCircle size={20} className="text-red-600 animate-pulse" />
+                  <span className="text-xs font-black text-red-700 uppercase tracking-[0.2em]">Validation Protocol Failure</span>
                 </div>
                 <span className="bg-red-200/50 text-red-700 px-3 py-1 rounded-full text-[10px] font-black">
-                    {totalErrors} CRITICAL POINT{totalErrors > 1 ? "S" : ""}
+                  {totalErrors} CRITICAL POINT{totalErrors > 1 ? "S" : ""}
                 </span>
               </div>
               <div className="p-8 grid gap-4">
                 {Object.entries(errors).filter(([k]) => k !== "_ruleError").map(([fieldName, msgs]) =>
                   msgs.map((msg, i) => (
                     <button key={`${fieldName}-${i}`} type="button"
-                        onClick={() => {
-                          const el = document.getElementById(`field-${fieldName}`);
-                          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-                        }}
-                        className="group flex items-start gap-4 p-4 rounded-2xl bg-white border border-red-100 hover:border-red-300 transition-all text-left">
+                      onClick={() => {
+                        const el = document.getElementById(`field-${fieldName}`);
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }}
+                      className="group flex items-start gap-4 p-4 rounded-2xl bg-white border border-red-100 hover:border-red-300 transition-all text-left">
                       <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-500 font-black text-[10px] group-hover:scale-110 transition-transform">
                         {i + 1}
                       </div>
@@ -614,7 +614,7 @@ export default function PublicFormPage() {
             {errors._ruleError && (
               <div className="rounded-[2.5rem] border-2 border-red-200 bg-white p-8 flex items-start gap-6 shadow-xl shadow-red-500/5">
                 <div className="w-14 h-14 rounded-[1.5rem] bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0 animate-bounce">
-                    <AlertCircle size={28} />
+                  <AlertCircle size={28} />
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-lg font-black text-slate-900 tracking-tight">System Rejection</h3>
@@ -624,7 +624,7 @@ export default function PublicFormPage() {
             )}
 
             <div className="space-y-12">
-                {currentPageFields.map(renderField)}
+              {currentPageFields.map(renderField)}
             </div>
 
             {/* Orchestration Controls */}
@@ -632,7 +632,7 @@ export default function PublicFormPage() {
               {currentPage > 0 && (
                 <button type="button" onClick={handleBack}
                   className="group flex items-center gap-4 px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:border-primary/20 hover:text-primary hover:bg-primary/5 transition-all active:scale-95">
-                  <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> 
+                  <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                   Phase Return
                 </button>
               )}
@@ -658,7 +658,7 @@ export default function PublicFormPage() {
 
         {/* Support footer */}
         <div className="mt-12 text-center">
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Powered by Antigravity Design System</p>
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Powered by Antigravity Design System</p>
         </div>
       </div>
     </div>

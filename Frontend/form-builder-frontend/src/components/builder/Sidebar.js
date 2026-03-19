@@ -20,7 +20,8 @@ export function Sidebar({
   const isOpen = activeField && !isDisplayOnly(activeField.type);
 
   return (
-    <aside className={`w-[400px] bg-white border-l border-slate-100 shadow-[-10px_0_50px_rgba(0,0,0,0.03)] transition-all duration-700 ease-in-out fixed right-0 h-full z-[35] flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
+    <aside className={`bg-white border-slate-100 shadow-[-10px_0_50px_rgba(0,0,0,0.03)] transition-all duration-700 ease-in-out flex flex-col flex-shrink-0 overflow-hidden relative z-20 ${isOpen ? "w-[300px] lg:w-[340px] xl:w-[400px] max-w-full border-l opacity-100" : "w-0 border-l-0 opacity-0"}`}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pb-32">
       {/* Sidebar header */}
       <div className="p-8 pb-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
@@ -112,6 +113,7 @@ export function Sidebar({
               <p className="text-[11px] font-bold text-slate-400">Settings are auto-saved to workspace</p>
           </div>
         </div>
+      </div>
       </div>
     </aside>
   );
