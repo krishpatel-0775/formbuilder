@@ -33,4 +33,5 @@ public class FieldRequest {
     private String sourceColumn;
     private String afterTime;
     private String beforeTime;
+    private Boolean isReadOnly;
 }

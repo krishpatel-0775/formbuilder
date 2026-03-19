@@ -75,6 +75,7 @@ export default function EditFormPage() {
             maxFileSize: f.maxFileSize ?? "", allowedFileTypes: f.allowedFileTypes ?? "",
             options: f.options?.length > 0 ? f.options : noOpts.includes(f.fieldType) ? [] : ["Option 1", "Option 2"],
             sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
+            isReadOnly: f.isReadOnly ?? false,
           };
         });
         let rulesArr = [];
@@ -164,6 +165,7 @@ export default function EditFormPage() {
       allowedFileTypes: type.toLowerCase() === "file_upload" ? "pdf,jpg,png" : "",
       options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
       sourceTable: "", sourceColumn: "",
+      isReadOnly: false,
     };
     setFields([...fields, newField]);
     setActiveFieldId(newField.id);
@@ -247,7 +249,7 @@ export default function EditFormPage() {
           return { id: field._dbId ?? null, name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
         }
         if (!field.label) throw new Error("All fields must have a label.");
-        let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required };
+        let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly };
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
         if (["radio", "checkbox", "select"].includes(field.type)) {
           if (field.sourceTable && field.sourceColumn) {

@@ -32,4 +32,5 @@ public class FormFieldResponseDto {
     private String defaultValue;
     private Integer maxFileSize;
     private String allowedFileTypes;
+    private Boolean isReadOnly;
 }

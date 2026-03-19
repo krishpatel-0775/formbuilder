@@ -31,4 +31,5 @@ public class UpdateFieldRequest {
     private String beforeTime;
     private Integer maxFileSize;
     private String allowedFileTypes;
+    private Boolean isReadOnly;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2, Lock } from "lucide-react";
 
 export function FormFieldWrapper({
   field,
@@ -75,6 +75,11 @@ export function FormFieldWrapper({
               <Star size={10} fill="currentColor" /> Mandatory
             </div>
           )}
+          {field.isReadOnly && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-[9px] font-black uppercase tracking-wider">
+              <Lock size={10} strokeWidth={3} /> Read Only
+            </div>
+          )}
         </div>
       </div>
 
@@ -85,7 +90,8 @@ export function FormFieldWrapper({
           value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
           placeholder={`Enter your ${field.fieldName.toLowerCase()} details...`}
-          className={`${inputCls} resize-none leading-relaxed`}
+          className={`${inputCls} resize-none leading-relaxed ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}
+          readOnly={field.isReadOnly}
         />
       )}
 
@@ -115,7 +121,8 @@ export function FormFieldWrapper({
                 </div>
                 {isActive && <CheckCircle2 size={18} strokeWidth={3} className="animate-in slide-in-from-right-2 fade-in" />}
                 <input type="radio" name={field.fieldName} value={optVal} checked={isActive}
-                  onChange={() => onChange(field.fieldName, optVal)}
+                  onChange={() => !field.isReadOnly && onChange(field.fieldName, optVal)}
+                  disabled={field.isReadOnly}
                   className="hidden" />
               </label>
             );
@@ -152,7 +159,8 @@ export function FormFieldWrapper({
                   <span className="font-black text-[15px]">{optLabel}</span>
                 </div>
                 <input type="checkbox" checked={isActive}
-                  onChange={() => onCheckboxChange(field.fieldName, optVal)}
+                  onChange={() => !field.isReadOnly && onCheckboxChange(field.fieldName, optVal)}
+                  disabled={field.isReadOnly}
                   className="hidden" />
               </label>
             );
@@ -165,7 +173,8 @@ export function FormFieldWrapper({
         <div className="relative group/select">
           <select value={value || ""}
             onChange={(e) => onChange(field.fieldName, e.target.value)}
-            className={`${inputCls} appearance-none cursor-pointer pr-16`}>
+            disabled={field.isReadOnly}
+            className={`${inputCls} appearance-none cursor-pointer pr-16 ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}>
             <option value="" disabled>Choose an architectural option...</option>
             {field.options?.map((opt, idx) => {
               const isObj = typeof opt === "object" && opt !== null;
@@ -185,13 +194,13 @@ export function FormFieldWrapper({
         const isOn = (value ?? field.defaultValue) === "true";
         return (
           <div
-            onClick={() => onChange(field.fieldName, isOn ? "false" : "true")}
-            className={`flex items-center justify-between p-6 rounded-[2rem] border-2 cursor-pointer transition-all duration-700 select-none ${isOn
+            onClick={() => !field.isReadOnly && onChange(field.fieldName, isOn ? "false" : "true")}
+            className={`flex items-center justify-between p-6 rounded-[2rem] border-2 transition-all duration-700 select-none ${isOn
               ? "bg-emerald-50 border-emerald-300 shadow-xl shadow-emerald-500/5 text-emerald-900"
               : hasError
                 ? "bg-red-50/30 border-red-200 text-red-900"
                 : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
-              }`}>
+              } ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}>
             <span className="font-black text-[15px] uppercase tracking-widest pl-2">
               {isOn ? "Operational: Active" : "Operational: Standby"}
             </span>
@@ -219,7 +228,8 @@ export function FormFieldWrapper({
           value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
           placeholder={`Enter sequence for ${field.fieldName.toLowerCase()}...`}
-          className={inputCls}
+          className={`${inputCls} ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}
+          readOnly={field.isReadOnly}
         />
       )}
 
@@ -304,8 +314,8 @@ function FileUploadItem({ field, value, onChange, hasError, inputCls }) {
         <input
           type="file"
           onChange={handleFileChange}
-          className="absolute inset-0 opacity-0 cursor-pointer z-10"
-          disabled={uploading}
+          className={`absolute inset-0 opacity-0 z-10 ${field.isReadOnly ? "cursor-not-allowed" : "cursor-pointer"}`}
+          disabled={uploading || field.isReadOnly}
         />
         <div className={`${inputCls} flex items-center gap-4 py-8 border-dashed border-2 group-hover/upload:border-primary group-hover/upload:bg-primary/5 transition-all text-center justify-center`}>
           {uploading ? (

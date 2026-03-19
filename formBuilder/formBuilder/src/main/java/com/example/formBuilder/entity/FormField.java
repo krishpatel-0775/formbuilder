@@ -62,6 +62,9 @@ public class FormField {
     @Column(name = "default_value")
     private String defaultValue;
 
+    @Column(name = "is_read_only")
+    private Boolean isReadOnly = false;
+
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
 

@@ -39,6 +39,13 @@ public class FormService {
     private final SchemaManager schemaManager;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
+    
+    private static final Set<String> RESERVED_FIELD_NAMES = Set.of(
+            "select", "from", "where", "join", "table", "order",
+            "group", "limit", "offset", "insert", "update",
+            "delete", "index", "primary", "key", "constraint",
+            "id", "is_deleted", "created_at"
+    );
 
     private User getCurrentUser() {
         String username = SessionUtil.getCurrentUsername();
@@ -122,6 +129,7 @@ public class FormService {
                                 .defaultValue(f.getDefaultValue())
                                 .maxFileSize(f.getMaxFileSize())
                                 .allowedFileTypes(f.getAllowedFileTypes())
+                                .isReadOnly(f.getIsReadOnly())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();
@@ -290,21 +298,21 @@ public class FormService {
     @Transactional
     public String createForm(FormRequest request) {
         // Step 1: Pre-validate all fields before saving anything
-        Set<String> reserved = Set.of(
-                "select", "from", "where", "join", "table", "order",
-                "group", "limit", "offset", "insert", "update",
-                "delete", "index", "primary", "key", "constraint",
-                "id"
-        );
-
+        Set<String> fieldNames = new HashSet<>();
         for (FieldRequest field : request.getFields()) {
             if (!isDisplayOnly(field.getType())) {
-                if (field.getName() == null || field.getName().isBlank()) {
+                String name = field.getName();
+                if (name == null || name.isBlank()) {
                     throw new ValidationException("Field name cannot be empty");
                 }
-                if (reserved.contains(field.getName().toLowerCase())) {
-                    throw new ValidationException(field.getName() + " is a reserved field name. Please choose a different name.");
+                String lowerName = name.toLowerCase();
+                if (RESERVED_FIELD_NAMES.contains(lowerName)) {
+                    throw new ValidationException(name + " is a reserved field name. Please choose a different name.");
                 }
+                if (fieldNames.contains(lowerName)) {
+                    throw new ValidationException("Duplicate field name found: " + name + ". Each field must have a unique name.");
+                }
+                fieldNames.add(lowerName);
             }
         }
 
@@ -364,6 +372,7 @@ public class FormService {
                 formField.setOptions(field.getOptions());
                 formField.setSourceTable(field.getSourceTable());
                 formField.setSourceColumn(field.getSourceColumn());
+                formField.setIsReadOnly(field.getIsReadOnly() != null ? field.getIsReadOnly() : false);
             } else {
                 // For display-only types, store the human-readable label text in defaultValue
                 // so the public form can render it without needing a separate column
@@ -389,6 +398,23 @@ public class FormService {
         }
 
         List<UpdateFieldRequest> incoming = request.getFields();
+
+        // Validate field name uniqueness
+        Set<String> fieldNames = new HashSet<>();
+        for (UpdateFieldRequest fieldReq : incoming) {
+            if (!isDisplayOnly(fieldReq.getType())) {
+                String name = fieldReq.getName();
+                if (name == null || name.isBlank()) throw new ValidationException("Field name cannot be empty");
+                String lowerName = name.toLowerCase();
+                if (RESERVED_FIELD_NAMES.contains(lowerName)) {
+                    throw new ValidationException(name + " is a reserved field name.");
+                }
+                if (fieldNames.contains(lowerName)) {
+                    throw new ValidationException("Duplicate field name found: " + name);
+                }
+                fieldNames.add(lowerName);
+            }
+        }
 
         List<FormField> existingFields = fieldRepository.findByFormId(formId);
 
@@ -481,6 +507,7 @@ public class FormService {
             field.setSourceColumn(req.getSourceColumn());
             field.setMaxFileSize(req.getMaxFileSize());
             field.setAllowedFileTypes(req.getAllowedFileTypes());
+            field.setIsReadOnly(req.getIsReadOnly() != null ? req.getIsReadOnly() : false);
         } else {
             // Persist label text for display-only elements (heading, paragraph, etc.)
             field.setDefaultValue(req.getDefaultValue());

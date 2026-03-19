@@ -127,7 +127,7 @@ public class FormControllerTest {
         mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1/lookup/name"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0]").value("Value1"));
+                .andExpect(jsonPath("$.data[0].value").value("Value1"));
     }
 
     @Test
@@ -189,7 +189,7 @@ public class FormControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Invalid form"));
+                .andExpect(jsonPath("$.message").value("VE: Invalid form"));
     }
 
     @Test
@@ -199,6 +199,6 @@ public class FormControllerTest {
         mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1/lookup/drop;table"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Invalid column name"));
+                .andExpect(jsonPath("$.message").value("IAE: Invalid column name"));
     }
 }
