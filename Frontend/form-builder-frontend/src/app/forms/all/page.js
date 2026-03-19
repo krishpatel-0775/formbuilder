@@ -51,7 +51,7 @@ export default function FormVaultPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you certain you wish to purge this architectural protocol? This action is irreversible.")) return;
+        if (!window.confirm("Are you sure ? This action is irreversible.")) return;
         
         try {
             const res = await fetch(`http://localhost:9090/api/forms/${id}`, {

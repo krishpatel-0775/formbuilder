@@ -21,7 +21,7 @@ export function SidebarLogic({
           </div>
           <h3 className="text-lg font-black text-slate-800 tracking-tight">Identity Required</h3>
           <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-[0.15em] max-w-[240px] leading-relaxed">
-              Define a component name in the properties tab before establishing architectural logic.
+              Define a field name for use logical rule.
           </p>
       </div>
     );
