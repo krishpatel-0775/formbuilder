@@ -29,6 +29,7 @@ import { SortableFieldItem } from "../components/builder/SortableFieldItem";
 import { Toolbar } from "../components/builder/Toolbar";
 import { FormHeader } from "../components/builder/FormHeader";
 import { Sidebar } from "../components/builder/Sidebar";
+import { FormPreview } from "../components/builder/FormPreview";
 import { ENDPOINTS } from "../config/apiConfig";
 
 export default function BuilderPage() {
@@ -43,6 +44,7 @@ export default function BuilderPage() {
     const [selectedFormFields, setSelectedFormFields] = useState([]);
     const [rules, setRules] = useState([]);
     const [sidebarTab, setSidebarTab] = useState("properties"); // "properties" | "logic"
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
     const isDisplayOnly = (type) => ["page_break", "heading", "paragraph", "divider"].includes(type);
 
@@ -179,6 +181,8 @@ export default function BuilderPage() {
                     return fd;
                 }
                 if (field.defaultValue) fd.defaultValue = field.defaultValue;
+                if (field.placeholder) fd.placeholder = field.placeholder;
+                if (field.helperText) fd.helperText = field.helperText;
                 if (["radio", "checkbox", "select"].includes(field.type)) {
                     if (field.sourceTable && field.sourceColumn) {
                         fd.sourceTable = field.sourceTable;
@@ -191,16 +195,15 @@ export default function BuilderPage() {
 
                 
 
-                if (field.type === "text" || field.type === "textarea") {
+                if (["text", "textarea", "email", "phone", "url"].includes(field.type)) {
                     if (field.minLength) fd.minLength = Number(field.minLength);
                     if (field.maxLength) fd.maxLength = Number(field.maxLength);
-                    if (field.type === "text" && field.pattern) fd.pattern = field.pattern;
+                    if (field.pattern) fd.pattern = field.pattern;
                 }
                 if (field.type === "number") {
                     if (field.min) fd.min = Number(field.min);
                     if (field.max) fd.max = Number(field.max);
                 }
-                if (field.type === "email" && field.pattern) fd.pattern = field.pattern;
                 if (field.type === "date") {
                     if (field.afterDate) fd.afterDate = field.afterDate;
                     if (field.beforeDate) fd.beforeDate = field.beforeDate;
@@ -209,7 +212,6 @@ export default function BuilderPage() {
                     if (field.afterTime) fd.afterTime = field.afterTime;
                     if (field.beforeTime) fd.beforeTime = field.beforeTime;
                 }
-                if (field.type === "phone" && field.pattern) fd.pattern = field.pattern;
                 if (field.type === "file_upload") {
                     fd.allowedFileTypes = field.allowedFileTypes;
                     fd.maxFileSize = field.maxFileSize;
@@ -259,6 +261,7 @@ export default function BuilderPage() {
                     saveLabel="Draft Form"
                     saveIcon={<Rocket size={18} strokeWidth={2.5} />}
                     userRole={userRole}
+                    onPreview={() => setIsPreviewOpen(true)}
                 />
 
                 <div onDrop={handleDrop} onDragOver={handleDragOver}
@@ -330,6 +333,13 @@ export default function BuilderPage() {
                 setRules={setRules}
                 isDisplayOnly={isDisplayOnly}
                 activeFieldId={activeFieldId}
+            />
+
+            <FormPreview
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                fields={fields}
+                formName={formName}
             />
         </div>
     );

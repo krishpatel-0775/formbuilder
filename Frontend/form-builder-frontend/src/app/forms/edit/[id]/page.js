@@ -17,6 +17,7 @@ import { SortableFieldItem } from "../../../../components/builder/SortableFieldI
 import { Sidebar } from "../../../../components/builder/Sidebar";
 import { Toolbar } from "../../../../components/builder/Toolbar";
 import { FormHeader } from "../../../../components/builder/FormHeader";
+import { FormPreview } from "../../../../components/builder/FormPreview";
 import { useAuth } from "../../../../context/AuthContext";
 
 // ─── Display-only types helper ───────────────────────────────────────────────
@@ -43,6 +44,7 @@ export default function EditFormPage() {
   const [selectedFormFields, setSelectedFormFields] = useState([]);
   const [rules, setRules] = useState([]);
   const [sidebarTab, setSidebarTab] = useState("properties"); // "properties" | "logic"
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Load form
   useEffect(() => {
@@ -76,6 +78,8 @@ export default function EditFormPage() {
             options: f.options?.length > 0 ? f.options : noOpts.includes(f.fieldType) ? [] : ["Option 1", "Option 2"],
             sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
             isReadOnly: f.isReadOnly ?? false,
+            placeholder: f.placeholder ?? "",
+            helperText: f.helperText ?? "",
           };
         });
         let rulesArr = [];
@@ -166,6 +170,8 @@ export default function EditFormPage() {
       options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
       sourceTable: "", sourceColumn: "",
       isReadOnly: false,
+      placeholder: "",
+      helperText: "",
     };
     setFields([...fields, newField]);
     setActiveFieldId(newField.id);
@@ -251,6 +257,8 @@ export default function EditFormPage() {
         if (!field.label) throw new Error("All fields must have a label.");
         let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly };
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
+        if (field.placeholder) fd.placeholder = field.placeholder;
+        if (field.helperText) fd.helperText = field.helperText;
         if (["radio", "checkbox", "select"].includes(field.type)) {
           if (field.sourceTable && field.sourceColumn) {
             fd.sourceTable = field.sourceTable;
@@ -394,6 +402,7 @@ export default function EditFormPage() {
           saveIcon={<Save size={18} strokeWidth={2.5} />}
           userRole={userRole}
           formId={id}
+          onPreview={() => setIsPreviewOpen(true)}
         />
 
         <div
@@ -486,6 +495,13 @@ export default function EditFormPage() {
         rules={rules}
         setRules={setRules}
         isDisplayOnly={isDisplayOnly}
+      />
+
+      <FormPreview
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        fields={fields}
+        formName={formName}
       />
     </div>
   );

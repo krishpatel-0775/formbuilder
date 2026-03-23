@@ -127,6 +127,8 @@ public class FormService {
                                 .sourceTable(f.getSourceTable())
                                 .sourceColumn(f.getSourceColumn())
                                 .defaultValue(f.getDefaultValue())
+                                .placeholder(f.getPlaceholder())
+                                .helperText(f.getHelperText())
                                 .maxFileSize(f.getMaxFileSize())
                                 .allowedFileTypes(f.getAllowedFileTypes())
                                 .isReadOnly(f.getIsReadOnly())
@@ -370,6 +372,8 @@ public class FormService {
                                 LocalDate.parse(field.getAfterDate()) : null
                 );
                 formField.setOptions(field.getOptions());
+                formField.setPlaceholder(field.getPlaceholder());
+                formField.setHelperText(field.getHelperText());
                 formField.setSourceTable(field.getSourceTable());
                 formField.setSourceColumn(field.getSourceColumn());
                 formField.setIsReadOnly(field.getIsReadOnly() != null ? field.getIsReadOnly() : false);
@@ -501,6 +505,8 @@ public class FormService {
             field.setAfterDate(req.getAfterDate() != null
                     ? LocalDate.parse(req.getAfterDate()) : null);
             field.setOptions(req.getOptions());
+            field.setPlaceholder(req.getPlaceholder());
+            field.setHelperText(req.getHelperText());
             field.setAfterTime(req.getAfterTime());
             field.setBeforeTime(req.getBeforeTime());
             field.setSourceTable(req.getSourceTable());

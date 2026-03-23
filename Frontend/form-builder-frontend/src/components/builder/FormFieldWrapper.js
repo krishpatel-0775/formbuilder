@@ -55,6 +55,20 @@ export function FormFieldWrapper({
       </div>
     );
   }
+  if (field.fieldType === "page_break") {
+    return (
+      <div className="relative py-12">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t-2 border-dashed border-slate-100" />
+        </div>
+        <div className="relative flex justify-center">
+          <div className="bg-slate-50 border border-slate-100 px-6 py-2 rounded-full shadow-sm">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{field.label || "Page Break"}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id={`field-${field.fieldName}`} className="space-y-4 group animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -89,7 +103,7 @@ export function FormFieldWrapper({
           rows={5}
           value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
-          placeholder={`Enter your ${field.fieldName.toLowerCase()} details...`}
+          placeholder={field.placeholder || `Enter your ${field.fieldName.toLowerCase()} details...`}
           className={`${inputCls} resize-none leading-relaxed ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}
           readOnly={field.isReadOnly}
         />
@@ -227,10 +241,17 @@ export function FormFieldWrapper({
           type={field.fieldType === "phone" ? "tel" : field.fieldType}
           value={value || ""}
           onChange={(e) => onChange(field.fieldName, e.target.value)}
-          placeholder={`Enter sequence for ${field.fieldName.toLowerCase()}...`}
+          placeholder={field.placeholder || `Enter sequence for ${field.fieldName.toLowerCase()}...`}
           className={`${inputCls} ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}
           readOnly={field.isReadOnly}
         />
+      )}
+
+      {/* HELPER TEXT */}
+      {field.helperText && !hasError && (
+        <p className="text-[11px] font-bold text-slate-400 px-1 italic">
+          {field.helperText}
+        </p>
       )}
 
       {/* Validation Errors */}

@@ -28,6 +28,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -41,8 +47,10 @@ public class AuthService {
     private final UserDetailsService userDetailsService;
     private final ModuleService moduleService;
 
+    private static final String PROFILE_PHOTO_DIR = "C:\\Users\\stadmin\\Desktop\\projects\\formbuilder\\formBuilder\\formBuilder\\profile-photo";
+
     @Transactional
-    public String register(RegisterRequest request) {
+    public String register(RegisterRequest request, MultipartFile profilePicture) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new ValidationException("Username is already taken.");
         }
@@ -51,10 +59,34 @@ public class AuthService {
         }
 
         User user = new User();
-        user.setName(request.getUsername());
+        user.setName(request.getFullName());
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            try {
+                File dir = new File(PROFILE_PHOTO_DIR);
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+
+                String originalFileName = profilePicture.getOriginalFilename();
+                String extension = "";
+                if (originalFileName != null && originalFileName.contains(".")) {
+                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+                }
+                String fileName = UUID.randomUUID().toString() + extension;
+                Path filePath = Paths.get(PROFILE_PHOTO_DIR, fileName);
+                Files.copy(profilePicture.getInputStream(), filePath);
+
+                // For simplicity, we store the filename. A full URL would depend on how the file is served.
+                user.setProfilePictureUrl(fileName);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to save profile picture: " + e.getMessage());
+            }
+        }
 
         User savedUser = userRepository.save(user);
 
@@ -66,6 +98,49 @@ public class AuthService {
         });
 
         return "User registered successfully";
+    }
+
+    @Transactional
+    public void updateProfile(Long userId, UpdateUserRequest request, MultipartFile profilePicture) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ValidationException("User not found"));
+
+        if (!user.getUsername().equals(request.getUsername()) && userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new ValidationException("Username is already taken.");
+        }
+        if (!user.getEmail().equals(request.getEmail()) && userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ValidationException("Email is already registered.");
+        }
+
+        user.setName(request.getFullName());
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            try {
+                File dir = new File(PROFILE_PHOTO_DIR);
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+
+                String originalFileName = profilePicture.getOriginalFilename();
+                String extension = "";
+                if (originalFileName != null && originalFileName.contains(".")) {
+                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+                }
+                String fileName = UUID.randomUUID().toString() + extension;
+                Path filePath = Paths.get(PROFILE_PHOTO_DIR, fileName);
+                Files.copy(profilePicture.getInputStream(), filePath);
+
+                // Update profile picture URL
+                user.setProfilePictureUrl(fileName);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to save profile picture: " + e.getMessage());
+            }
+        }
+
+        userRepository.save(user);
     }
 
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
@@ -143,7 +218,10 @@ public class AuthService {
         return UserDetailResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .fullName(user.getName())
                 .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .profilePictureUrl(user.getProfilePictureUrl() != null ? "/api/auth/profile-photo/" + user.getProfilePictureUrl() : null)
                 .menu(menu)
                 .permissions(permissions)
                 .roles(roles)

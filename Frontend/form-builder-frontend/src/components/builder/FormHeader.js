@@ -1,4 +1,4 @@
-import { ArrowLeft, Trash2, CheckCircle2, Save, Send, Rocket, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Trash2, CheckCircle2, Save, Send, Rocket, ShieldCheck, Eye } from "lucide-react";
 import NextLink from "next/link";
 
 export function FormHeader({
@@ -13,7 +13,8 @@ export function FormHeader({
   showSuccess,
   saveLabel = "Save Changes",
   saveIcon = <Save size={16} />,
-  userRole
+  userRole,
+  onPreview
 }) {
   const isPublished = formStatus === "PUBLISHED";
 
@@ -79,6 +80,14 @@ export function FormHeader({
             )}
           </button>
         )}
+
+        <button
+          onClick={onPreview}
+          className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all shadow-sm group"
+          title="Preview Form"
+        >
+          <Eye size={20} className="group-hover:scale-110 transition-transform" />
+        </button>
 
         <button
           onClick={saveForm}

@@ -3,6 +3,7 @@
 import { useAuth } from "../context/AuthContext";
 import NextLink from "next/link";
 import { LogOut, User, LogIn, UserPlus } from "lucide-react";
+import { API_BASE_URL } from "../config/apiConfig";
 
 export default function NavLinks() {
     const { user, logout } = useAuth();
@@ -17,8 +18,16 @@ export default function NavLinks() {
                         </span>
                     </div>
                     
-                    <NextLink href="/profile" className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200/50 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-all shadow-sm">
-                        <User size={20} />
+                    <NextLink href="/profile" className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200/50 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-all shadow-sm overflow-hidden group">
+                        {user.profilePictureUrl ? (
+                            <img 
+                                src={`${API_BASE_URL}${user.profilePictureUrl}`} 
+                                alt={user.username}
+                                className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                            />
+                        ) : (
+                            <User size={20} />
+                        )}
                     </NextLink>
 
                     <div className="w-px h-6 bg-slate-200 mx-1" />

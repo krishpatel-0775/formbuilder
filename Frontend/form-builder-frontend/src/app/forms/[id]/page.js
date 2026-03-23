@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertCircle, Send, ArrowLeft, Loader2, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Send, ArrowLeft, Loader2, ChevronRight, ChevronLeft, CheckCircle2, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { ENDPOINTS } from "../../../config/apiConfig";
 import { FormFieldWrapper } from "../../../components/builder/FormFieldWrapper";
+import { useAuth } from "../../../context/AuthContext";
 
 const evaluateConditionNode = (node, values) => {
   if (!node) return false;
@@ -54,6 +55,42 @@ function splitIntoPages(fields) {
   return pages.filter((p) => p.length > 0);
 }
 
+function getInitialFormData(fields) {
+  const initialData = {};
+  if (!fields) return initialData;
+
+  fields.forEach((field) => {
+    if (field.fieldType === "page_break") return;
+
+    const options = field.options || [];
+    const isOptionValid = (val) => {
+      if (options.length === 0) return true;
+      return options.some(opt => {
+        if (typeof opt === "object" && opt !== null) {
+          return opt.id == val || opt.value == val;
+        }
+        return opt == val;
+      });
+    };
+
+    if (field.fieldType === "checkbox") {
+      const defaultVals = field.defaultValue
+        ? field.defaultValue.toString().split(",").map((v) => v.trim()).filter(Boolean)
+        : [];
+      initialData[field.fieldName] = options.length > 0
+        ? defaultVals.filter(v => isOptionValid(v))
+        : defaultVals;
+    } else if (["radio", "select"].includes(field.fieldType)) {
+      let v = field.defaultValue ?? "";
+      if (v && options.length > 0 && !isOptionValid(v)) v = "";
+      initialData[field.fieldName] = v;
+    } else {
+      initialData[field.fieldName] = field.defaultValue ?? "";
+    }
+  });
+  return initialData;
+}
+
 export default function PublicFormPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -70,6 +107,8 @@ export default function PublicFormPage() {
   const [dynamicRequiredFields, setDynamicRequiredFields] = useState(new Set());
   // Slide direction for animation
   const [slideDir, setSlideDir] = useState("forward"); // "forward" | "back"
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!id) return;
@@ -141,39 +180,7 @@ export default function PublicFormPage() {
         setPages(splitPages);
 
         // Initialize form data
-        const initialData = {};
-        if (data?.fields) {
-          data.fields.forEach((field) => {
-            if (field.fieldType === "page_break") return;
-
-            const options = field.options || [];
-            const isOptionValid = (val) => {
-              if (options.length === 0) return true;
-              return options.some(opt => {
-                if (typeof opt === "object" && opt !== null) {
-                  return opt.id == val || opt.value == val;
-                }
-                return opt == val;
-              });
-            };
-
-            if (field.fieldType === "checkbox") {
-              const defaultVals = field.defaultValue
-                ? field.defaultValue.toString().split(",").map((v) => v.trim()).filter(Boolean)
-                : [];
-              // Keep as array in state for easier manipulation, but normalize comparison
-              initialData[field.fieldName] = options.length > 0
-                ? defaultVals.filter(v => isOptionValid(v))
-                : defaultVals;
-            } else if (["radio", "select"].includes(field.fieldType)) {
-              let v = field.defaultValue ?? "";
-              if (v && options.length > 0 && !isOptionValid(v)) v = "";
-              initialData[field.fieldName] = v;
-            } else {
-              initialData[field.fieldName] = field.defaultValue ?? "";
-            }
-          });
-        }
+        const initialData = getInitialFormData(data.fields);
         setFormData(initialData);
         setLoading(false);
       })
@@ -251,7 +258,7 @@ export default function PublicFormPage() {
           push(name, `Maximum ${field.maxLength} characters allowed (you entered ${strVal.length}).`);
       }
 
-      if (field.pattern && ["text", "email"].includes(field.fieldType)) {
+      if (field.pattern && ["text", "email", "url"].includes(field.fieldType)) {
         try {
           if (!new RegExp(field.pattern).test(strVal))
             push(name, `Value does not match the required format (${field.pattern}).`);
@@ -417,7 +424,12 @@ export default function PublicFormPage() {
       });
 
       if (res.ok) {
-        router.push(`/forms/data/${id}`);
+        if (user) {
+          router.push(`/forms/data/${id}`);
+        } else {
+          setIsSubmitted(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
       } else {
         const errorText = await res.text();
         try {
@@ -432,6 +444,16 @@ export default function PublicFormPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleResetForm = () => {
+    // Reset all form related state
+    const initialData = getInitialFormData(formConfig?.fields);
+    setFormData(initialData);
+    setErrors({});
+    setCurrentPage(0);
+    setIsSubmitted(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // ─── Loading / not found states ────────────────────────────────────────────
@@ -475,6 +497,56 @@ export default function PublicFormPage() {
       />
     );
   };
+
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] py-20 px-6 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/5 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="max-w-2xl mx-auto relative z-10">
+          <div className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_40px_100px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="p-16 text-center space-y-8">
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
+                <div className="relative w-24 h-24 bg-primary text-white rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-primary/40 animate-in zoom-in duration-700">
+                  <CheckCircle2 size={48} strokeWidth={2.5} />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Transmission Successful</span>
+                </div>
+                <h1 className="text-4xl font-black text-slate-900 leading-none tracking-tight">Response Received</h1>
+                <p className="text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
+                  Your data has been securely ingested into the system. Thank you for your contribution to the {formConfig.formName} protocol.
+                </p>
+              </div>
+
+              <div className="pt-8">
+                <button
+                  onClick={handleResetForm}
+                  className="group flex items-center gap-4 px-10 py-6 bg-slate-900 text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] hover:bg-primary shadow-2xl shadow-primary/20 transition-all active:scale-95 mx-auto"
+                >
+                  <RotateCcw size={20} className="group-hover:rotate-[-45deg] transition-transform" />
+                  Submit Another Response
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-12 text-center">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Powered by Antigravity Design System</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-20 px-6 relative overflow-hidden">

@@ -111,6 +111,51 @@ export function DefaultValuePanel({ activeField, updateField }) {
   );
 }
 
+export function InputInstructionPanel({ activeField, updateField }) {
+  const placeholderTypes = ["text", "textarea", "email", "url", "phone", "number"];
+  const base = "w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-[13px] font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-300 shadow-sm";
+
+  // Display only if the field is not a structural one (like divider, heading, paragraph)
+  const isStructural = ["heading", "paragraph", "divider", "page_break"].includes(activeField.type);
+  if (isStructural) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* Placeholder - Only for text types */}
+      {placeholderTypes.includes(activeField.type) && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <SlidersHorizontal size={14} className="text-secondary" />
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Placeholder Text</label>
+          </div>
+          <input
+            type="text"
+            placeholder="Inside input hint..."
+            value={activeField.placeholder ?? ""}
+            onChange={(e) => updateField(activeField.id, "placeholder", e.target.value)}
+            className={base}
+          />
+        </div>
+      )}
+
+      {/* Helper Text - For all "real" fields */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 px-1">
+          <Code2 size={14} className="text-primary" />
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Helper Text (Sub-label)</label>
+        </div>
+        <input
+          type="text"
+          placeholder="Guidance shown below input..."
+          value={activeField.helperText ?? ""}
+          onChange={(e) => updateField(activeField.id, "helperText", e.target.value)}
+          className={base}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function SidebarProps({
   activeField,
   updateField,
@@ -168,6 +213,11 @@ export function SidebarProps({
           </div>
         </div>
       </div>
+
+      <div className="w-full h-px bg-slate-100" />
+
+      {/* Instruction Configuration */}
+      <InputInstructionPanel activeField={activeField} updateField={updateField} />
 
       <div className="w-full h-px bg-slate-100" />
 

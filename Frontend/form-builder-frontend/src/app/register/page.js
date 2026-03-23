@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { ENDPOINTS } from "../../config/apiConfig";
-import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck, User, Phone, Camera } from "lucide-react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
     const [username, setUsername] = useState("");
+    const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
     const [password, setPassword] = useState("");
+    const [profilePicture, setProfilePicture] = useState(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -19,11 +22,28 @@ export default function RegisterPage() {
         setError("");
         setLoading(true);
 
+        const formData = new FormData();
+        const requestData = {
+            username,
+            fullName,
+            email,
+            phoneNumber,
+            password
+        };
+
+        // Spring Boot expects the JSON part as a Blob with application/json type for @RequestPart
+        formData.append("request", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
+        
+        if (profilePicture) {
+            formData.append("profilePicture", profilePicture);
+        }
+
         try {
             const res = await fetch(ENDPOINTS.AUTH_REGISTER, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, email, password }),
+                // Note: Do NOT set Content-Type header when sending FormData. 
+                // The browser will automatically set it to multipart/form-data with the correct boundary.
+                body: formData,
                 credentials: "include"
             });
 
@@ -34,6 +54,7 @@ export default function RegisterPage() {
                 setError(data.message || "Registration failed");
             }
         } catch (err) {
+            console.error(err);
             setError("Network error occurred.");
         } finally {
             setLoading(false);
@@ -61,21 +82,73 @@ export default function RegisterPage() {
                 <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Username</label>
-                        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required
-                            className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
-                            placeholder="admin123" />
+                        <div className="relative">
+                            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required
+                                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+                                placeholder="admin123" />
+                        </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Full Name</label>
+                            <div className="relative">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <User size={16} />
+                                </span>
+                                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required
+                                    className="w-full bg-slate-50 border border-slate-200 p-3.5 pl-10 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+                                    placeholder="John Doe" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Phone Number</label>
+                            <div className="relative">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <Phone size={16} />
+                                </span>
+                                <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 p-3.5 pl-10 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+                                    placeholder="+1 234 567 890" />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Email</label>
                         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
                             className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
                             placeholder="you@company.com" />
                     </div>
+
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Password</label>
                         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
                             className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
                             placeholder="••••••••" />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Profile Picture</label>
+                        <div className="relative group">
+                            <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={(e) => setProfilePicture(e.target.files[0])}
+                                className="hidden" 
+                                id="profile-upload"
+                            />
+                            <label 
+                                htmlFor="profile-upload"
+                                className="flex items-center gap-3 w-full bg-slate-50 border border-slate-200 border-dashed p-3.5 rounded-xl text-sm font-bold text-slate-500 cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 transition-all shadow-sm"
+                            >
+                                <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center group-hover:border-emerald-200 transition-all">
+                                    <Camera size={20} className="text-slate-400 group-hover:text-emerald-500" />
+                                </div>
+                                <span>{profilePicture ? profilePicture.name : "Choose an image..."}</span>
+                            </label>
+                        </div>
                     </div>
 
                     <button type="submit" disabled={loading}

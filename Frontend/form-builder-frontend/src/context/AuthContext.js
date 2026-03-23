@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
                     // RBAC Check for authenticated users on protected paths
                     const isAuthorized = (path) => {
                         // These paths are usually allowed for everyone who is logged in
-                        if (path === "/profile") return true;
+                        if (path.startsWith("/profile")) return true;
                         
                         // Check if user has permission for forms management
                         const hasFormsVaultAccess = user.permissions?.includes("/forms/all");
@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
 
     const hasPermission = (path) => {
         if (!user) return false;
-        if (path === "/" || path === "/profile") return true;
+        if (path === "/" || path.startsWith("/profile")) return true;
         
         const permissions = user.permissions || [];
         const hasFormsVaultAccess = permissions.includes("/forms/all");

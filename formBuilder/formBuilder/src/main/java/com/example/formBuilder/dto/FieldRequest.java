@@ -29,6 +29,8 @@ public class FieldRequest {
     private String allowedFileTypes;
     private List<String> options;
     private String defaultValue;
+    private String placeholder;
+    private String helperText;
     private String sourceTable;
     private String sourceColumn;
     private String afterTime;

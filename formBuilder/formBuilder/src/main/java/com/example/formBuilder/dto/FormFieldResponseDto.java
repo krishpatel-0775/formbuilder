@@ -30,6 +30,8 @@ public class FormFieldResponseDto {
     private String sourceTable;
     private String sourceColumn;
     private String defaultValue;
+    private String placeholder;
+    private String helperText;
     private Integer maxFileSize;
     private String allowedFileTypes;
     private Boolean isReadOnly;

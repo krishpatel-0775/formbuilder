@@ -62,6 +62,12 @@ public class FormField {
     @Column(name = "default_value")
     private String defaultValue;
 
+    @Column(name = "placeholder")
+    private String placeholder;
+
+    @Column(name = "helper_text")
+    private String helperText;
+
     @Column(name = "is_read_only")
     private Boolean isReadOnly = false;
 
