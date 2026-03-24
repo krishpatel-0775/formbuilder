@@ -1,6 +1,7 @@
 package com.example.formBuilder.entity;
 
 //import com.example.formBuilder.entity.User;
+import com.example.formBuilder.entity.PermittedUser;
 import com.example.formBuilder.enums.FormStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -12,6 +13,7 @@ import lombok.*;
 import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -54,4 +56,10 @@ public class Form {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(name = "visibility_type")
+    private String visibilityType;
+
+    @OneToMany(mappedBy = "form", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PermittedUser> permittedUsers = new ArrayList<>();
 }

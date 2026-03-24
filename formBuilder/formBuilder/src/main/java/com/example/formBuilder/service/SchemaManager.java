@@ -24,17 +24,28 @@ public class SchemaManager {
             "page_break", "heading", "paragraph", "divider"
     );
 
+    private static final java.util.Set<String> RESERVED_KEYWORDS = java.util.Set.of(
+            "select", "from", "where", "join", "table", "order",
+            "group", "limit", "offset", "insert", "update",
+            "delete", "index", "primary", "key", "constraint",
+            "id", "is_deleted", "created_at", "form_version_id",
+            "user", "check", "all", "any", "and", "or", "case", "when", "then", "else", "end"
+    );
+
     /**
      * Generates and executes the CREATE TABLE SQL statement with constraints for a new form.
      */
     public void createDynamicTable(String tableName, List<FormField> fields) {
         StringBuilder sql = new StringBuilder();
 
-        sql.append("CREATE TABLE ")
+        sql.append("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
                 .append(" (id BIGSERIAL PRIMARY KEY")
                 .append(", is_deleted BOOLEAN DEFAULT FALSE NOT NULL")
-                .append(", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL");
+                .append(", is_draft BOOLEAN DEFAULT FALSE NOT NULL")
+                .append(", submitted_by VARCHAR(100)")
+                .append(", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL")
+                .append(", updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL");
 
         for (FormField field : fields) {
             // Display-only elements (page_break, heading, paragraph, divider) have no DB column
@@ -170,6 +181,11 @@ public class SchemaManager {
     public void validateColumnName(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Field name cannot be empty");
+        }
+
+        String trimmed = name.trim().toLowerCase();
+        if (RESERVED_KEYWORDS.contains(trimmed)) {
+            throw new IllegalArgumentException("Invalid field name: '" + name + "' is a reserved SQL keyword");
         }
 
         if (!VALID_NAME.matcher(name).matches()) {

@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-    Plus, 
-    Search, 
-    Filter, 
-    MoreVertical, 
-    FileText, 
-    Calendar, 
-    Clock, 
+import {
+    Plus,
+    Search,
+    Filter,
+    MoreVertical,
+    FileText,
+    Calendar,
+    Clock,
     Trash2,
     LayoutGrid,
     List as ListIcon,
@@ -52,7 +52,7 @@ export default function FormVaultPage() {
 
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure ? This action is irreversible.")) return;
-        
+
         try {
             const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
                 method: "DELETE",
@@ -69,14 +69,14 @@ export default function FormVaultPage() {
 
     const handlePublish = async (id) => {
         if (!window.confirm("Are you want to publish this form ?")) return;
-        
+
         setPublishingState(prev => ({ ...prev, [id]: true }));
         try {
             const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
                 method: "POST",
                 credentials: "include"
             });
-            
+
             if (res.ok) {
                 setForms(prev => prev.map(f => f.id === id ? { ...f, status: "PUBLISHED" } : f));
             } else {
@@ -101,7 +101,7 @@ export default function FormVaultPage() {
         });
     };
 
-    const filteredForms = forms.filter(f => 
+    const filteredForms = forms.filter(f =>
         f.formName?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -119,7 +119,7 @@ export default function FormVaultPage() {
                     <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active forms.</p>
                 </div>
 
-                <Link 
+                <Link
                     href="/"
                     className="flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all w-full md:w-auto"
                 >
@@ -132,8 +132,8 @@ export default function FormVaultPage() {
             <div className="flex flex-col md:flex-row items-center gap-4 bg-white/50 backdrop-blur-md p-2 rounded-[2rem] border border-white/20 shadow-sm">
                 <div className="relative flex-1 group w-full">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder="Search your forms..."
                         className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-3xl text-sm focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                         value={searchQuery}
@@ -141,16 +141,16 @@ export default function FormVaultPage() {
                         suppressHydrationWarning={true}
                     />
                 </div>
-                
+
                 <div className="flex items-center gap-2 p-1 bg-white border border-slate-100 rounded-2xl">
-                    <button 
+                    <button
                         onClick={() => setViewMode("grid")}
                         className={`p-3 rounded-xl transition-all ${viewMode === "grid" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
                         suppressHydrationWarning={true}
                     >
                         <LayoutGrid size={18} />
                     </button>
-                    <button 
+                    <button
                         onClick={() => setViewMode("list")}
                         className={`p-3 rounded-xl transition-all ${viewMode === "list" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
                         suppressHydrationWarning={true}
@@ -181,18 +181,17 @@ export default function FormVaultPage() {
                         <div key={form.id} className="relative group bg-white rounded-[2.5rem] p-4 border border-slate-100 hover:border-primary/20 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] transition-all duration-500 overflow-hidden">
                             {/* Decorative Background Element */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100%] transition-transform group-hover:scale-110 duration-700 pointer-events-none" />
-                            
+
                             <div className="relative p-6 space-y-6">
                                 {/* Header: Icon & Status */}
                                 <div className="flex justify-between items-start">
                                     <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 shadow-inner">
                                         <FileText size={24} strokeWidth={2.5} />
                                     </div>
-                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                                        form.status === "PUBLISHED" 
-                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.1)]" 
-                                        : "bg-amber-50 text-amber-600 border-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
-                                    }`}>
+                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${form.status === "PUBLISHED"
+                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                                            : "bg-amber-50 text-amber-600 border-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+                                        }`}>
                                         <span className={`w-1.5 h-1.5 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                                         {form.status}
                                     </div>
@@ -207,16 +206,16 @@ export default function FormVaultPage() {
 
                                 {/* Actions Footer */}
                                 <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
-                                    <Link 
+                                    <Link
                                         href={`/forms/edit/${form.id}`}
                                         className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10 hover:shadow-primary/20 hover:-translate-y-0.5"
                                     >
                                         Edit form
                                     </Link>
-                                    
+
                                     <div className="flex gap-2">
                                         {form.status !== "PUBLISHED" ? (
-                                            <button 
+                                            <button
                                                 onClick={() => handlePublish(form.id)}
                                                 disabled={publishingState[form.id]}
                                                 className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary transition-all shadow-sm disabled:opacity-50"
@@ -231,23 +230,22 @@ export default function FormVaultPage() {
                                             </button>
                                         ) : (
                                             <div className="flex gap-2">
-                                                <button 
+                                                <button
                                                     onClick={() => handleCopyLink(form.id)}
-                                                    className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all shadow-sm ${
-                                                        copiedId === form.id ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary"
-                                                    }`}
+                                                    className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all shadow-sm ${copiedId === form.id ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary"
+                                                        }`}
                                                     title="Copy Form Link"
                                                 >
                                                     {copiedId === form.id ? <Check size={18} strokeWidth={3} /> : <Copy size={18} strokeWidth={2.5} />}
                                                 </button>
-                                                <Link 
+                                                <Link
                                                     href={`/forms/${form.id}`}
                                                     className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
                                                     title="Fill Form"
                                                 >
                                                     <ExternalLink size={18} strokeWidth={2.5} />
                                                 </Link>
-                                                <Link 
+                                                <Link
                                                     href={`/forms/data/${form.id}`}
                                                     className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-emerald-50 hover:text-emerald-500 transition-all shadow-sm"
                                                     title="View Live Data"
@@ -256,8 +254,8 @@ export default function FormVaultPage() {
                                                 </Link>
                                             </div>
                                         )}
-                                        
-                                        <button 
+
+                                        <button
                                             onClick={() => handleDelete(form.id)}
                                             className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
                                             title="Purge Protocol"
@@ -294,16 +292,15 @@ export default function FormVaultPage() {
                                         </div>
                                     </td>
                                     <td className="px-8 py-5">
-                                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${
-                                            form.status === "PUBLISHED" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
-                                        }`}>
+                                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${form.status === "PUBLISHED" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
+                                            }`}>
                                             {form.status}
                                         </span>
                                     </td>
                                     <td className="px-8 py-5 text-xs font-semibold text-slate-500">2 hours ago</td>
                                     <td className="px-8 py-5 text-right space-x-2">
                                         {form.status !== "PUBLISHED" && (
-                                            <button 
+                                            <button
                                                 onClick={() => handlePublish(form.id)}
                                                 disabled={publishingState[form.id]}
                                                 className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
@@ -314,11 +311,10 @@ export default function FormVaultPage() {
                                         )}
                                         {form.status === "PUBLISHED" && (
                                             <>
-                                                <button 
+                                                <button
                                                     onClick={() => handleCopyLink(form.id)}
-                                                    className={`inline-flex p-2 rounded-lg transition-all ${
-                                                        copiedId === form.id ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-primary hover:bg-primary/5"
-                                                    }`}
+                                                    className={`inline-flex p-2 rounded-lg transition-all ${copiedId === form.id ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-primary hover:bg-primary/5"
+                                                        }`}
                                                     title="Copy Form Link"
                                                 >
                                                     {copiedId === form.id ? <Check size={18} /> : <Copy size={18} />}
@@ -336,7 +332,7 @@ export default function FormVaultPage() {
                                                 <ArrowUpRight size={18} />
                                             </Link>
                                         )}
-                                        <button 
+                                        <button
                                             onClick={() => handleDelete(form.id)}
                                             className="inline-flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                             suppressHydrationWarning={true}

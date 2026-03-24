@@ -53,8 +53,9 @@ export const AuthProvider = ({ children }) => {
                         // Check if user has permission for forms management
                         const hasFormsVaultAccess = user.permissions?.includes("/forms/all");
                         const formsBasePaths = ["/forms/edit/", "/forms/data/", "/forms/create"];
+                        const isVersionsPath = /^\/forms\/\d+\/versions$/.test(path);
                         
-                        if (hasFormsVaultAccess && formsBasePaths.some(bp => path.startsWith(bp))) {
+                        if (hasFormsVaultAccess && (formsBasePaths.some(bp => path.startsWith(bp)) || isVersionsPath)) {
                             return true;
                         }
 
@@ -91,7 +92,8 @@ export const AuthProvider = ({ children }) => {
         
         const permissions = user.permissions || [];
         const hasFormsVaultAccess = permissions.includes("/forms/all");
-        if (hasFormsVaultAccess && (path.startsWith("/forms/edit/") || path.startsWith("/forms/data/") || path.startsWith("/forms/create"))) {
+        const isVersionsPath = /^\/forms\/\d+\/versions$/.test(path);
+        if (hasFormsVaultAccess && (path.startsWith("/forms/edit/") || path.startsWith("/forms/data/") || path.startsWith("/forms/create") || isVersionsPath)) {
             return true;
         }
 

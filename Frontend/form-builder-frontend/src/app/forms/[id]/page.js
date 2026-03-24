@@ -539,7 +539,7 @@ export default function PublicFormPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="mt-12 text-center">
             <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Powered by Antigravity Design System</p>
           </div>

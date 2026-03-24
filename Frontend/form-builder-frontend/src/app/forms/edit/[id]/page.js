@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay,
 } from "@dnd-kit/core";
 import {
   arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { GripVertical, AlertCircle, ArrowRight, Loader2, Save, MousePointer2, Sparkles } from "lucide-react";
+import { GripVertical, AlertCircle, ArrowRight, Loader2, Save, MousePointer2, Sparkles, GitBranch, Lock } from "lucide-react";
 import { ENDPOINTS } from "../../../../config/apiConfig";
+import Link from "next/link";
 
 // Components
 import { FieldIcons } from "../../../../components/builder/FieldConstants";
@@ -28,8 +29,12 @@ const isDisplayOnly = (type) => DISPLAY_ONLY_TYPES.has(type);
 export default function EditFormPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const userRole = "SYSTEM_ADMIN"; // Standardized role name
+
+  // Version context — if versionId is in the query, we're editing a specific draft version
+  const versionId = searchParams.get("versionId");
 
   const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
@@ -40,25 +45,58 @@ export default function EditFormPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [formStatus, setFormStatus] = useState("DRAFT");
+  const [isVersionActive, setIsVersionActive] = useState(false); // true = read-only
   const [availableForms, setAvailableForms] = useState([]);
   const [selectedFormFields, setSelectedFormFields] = useState([]);
   const [rules, setRules] = useState([]);
   const [sidebarTab, setSidebarTab] = useState("properties"); // "properties" | "logic"
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Load form
+  // Load form — if versionId param present, load from version endpoint
   useEffect(() => {
     if (!id || !user) return;
-    fetch(`http://localhost:9090/api/forms/${id}`, { credentials: "include" })
+
+    // Auto-versioning: if no versionId, fetch current draft or create new one
+    if (!versionId) {
+      fetch(ENDPOINTS.formDraft(id), { credentials: "include" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.data?.id) {
+            router.replace(`/forms/edit/${id}?versionId=${data.data.id}`);
+          } else {
+            router.push("/forms/all");
+          }
+        })
+        .catch(() => router.push("/forms/all"));
+      return;
+    }
+
+    const formUrl = `${ENDPOINTS.FORMS}/${id}`;
+    const versionUrl = `${ENDPOINTS.formVersion(id, versionId)}`;
+
+    // Always fetch form metadata (name, status)
+    fetch(formUrl, { credentials: "include" })
       .then((res) => { if (!res.ok) { router.push("/forms/all"); return null; } return res.json(); })
-      .then((res) => {
+      .then(async (res) => {
         if (!res) return;
-        const data = res.data;
-        setFormName(data.formName || "");
-        setFormStatus(data.status || "DRAFT");
+        const formData = res.data;
+        setFormName(formData.formName || "");
+        setFormStatus(formData.status || "DRAFT");
+
+        // Determine where to load fields from
+        let fieldSource = formData; // default: use form fields
+        if (versionUrl) {
+          const vRes = await fetch(versionUrl, { credentials: "include" });
+          if (vRes.ok) {
+            const vJson = await vRes.json();
+            fieldSource = vJson.data; // the version, which has .fields and .rules
+            setIsVersionActive(!!vJson.data?.isActive);
+          }
+        }
+
         const noOpts = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "page_break", "heading", "paragraph", "divider"];
         const staticFieldTypes = new Set(["heading", "paragraph", "divider"]);
-        const loadedFields = (data.fields || []).map((f) => {
+        const loadedFields = (fieldSource.fields || []).map((f) => {
           const isStatic = staticFieldTypes.has(f.fieldType);
           const orderKey = f.fieldName || "";
           return {
@@ -82,10 +120,12 @@ export default function EditFormPage() {
             helperText: f.helperText ?? "",
           };
         });
+
         let rulesArr = [];
         try {
-          if (data.rules) {
-            rulesArr = typeof data.rules === "string" ? JSON.parse(data.rules) : data.rules;
+          const rulesRaw = fieldSource.rules;
+          if (rulesRaw) {
+            rulesArr = typeof rulesRaw === "string" ? JSON.parse(rulesRaw) : rulesRaw;
             rulesArr = rulesArr || [];
             const orderRule = rulesArr.find(r => r.action?.targetField === "__FIELD_ORDER__");
             if (orderRule && orderRule.action?.message) {
@@ -107,7 +147,7 @@ export default function EditFormPage() {
         setIsLoading(false);
       })
       .catch((err) => { console.error(err); router.push("/forms/all"); });
-  }, [id, user]);
+  }, [id, user, versionId]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
@@ -282,9 +322,13 @@ export default function EditFormPage() {
         }
         return fd;
       });
-      const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
+      const updateUrl = versionId 
+        ? ENDPOINTS.formVersion(id, versionId)
+        : `${ENDPOINTS.FORMS}/${id}`;
+
+      const res = await fetch(updateUrl, {
         method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formName: formName.trim(), fields: formattedFields }),
+        body: JSON.stringify(versionId ? formattedFields : { formName: formName.trim(), fields: formattedFields }),
         credentials: "include"
       });
       if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || "Failed to update form."); }
@@ -318,7 +362,11 @@ export default function EditFormPage() {
 
         cleanRules.push({ action: { type: "SHOW", targetField: "__FIELD_ORDER__", message: currentOrderList } });
 
-        await fetch(ENDPOINTS.formRules(id), {
+        const rulesUrl = versionId
+          ? ENDPOINTS.formVersionRules(id, versionId)
+          : ENDPOINTS.formRules(id);
+
+        await fetch(rulesUrl, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(cleanRules), credentials: "include"
         });
@@ -411,7 +459,29 @@ export default function EditFormPage() {
           className="flex-1 p-6 md:p-8 lg:p-10 xl:p-16 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-0"
         >
           <div className="max-w-3xl mx-auto space-y-6 pb-20">
-            {formStatus === "PUBLISHED" && (
+            {/* Version read-only banner — when editing an active (live) version */}
+            {isVersionActive && (
+              <div className="premium-card bg-violet-50/80 border-violet-200/50 shadow-none !rounded-3xl">
+                <div className="p-4 flex items-start gap-3 text-violet-900">
+                  <Lock size={20} className="mt-0.5 text-violet-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs font-black uppercase tracking-widest mb-1">Read-Only Version</p>
+                    <p className="text-sm font-medium opacity-80 leading-relaxed">
+                      This is the active version and cannot be modified.
+                      Create a new version to make changes.
+                    </p>
+                  </div>
+                  <Link
+                    href={`/forms/${id}/versions`}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 text-white rounded-xl text-xs font-black hover:bg-violet-700 transition-all whitespace-nowrap"
+                  >
+                    <GitBranch size={12} /> Versions
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {formStatus === "PUBLISHED" && !isVersionActive && (
               <div className="premium-card bg-amber-50/80 border-amber-200/50 shadow-none !rounded-3xl">
                 <div className="p-4 flex items-start gap-3 text-amber-900">
                   <AlertCircle size={20} className="mt-0.5 text-amber-500 flex-shrink-0" />

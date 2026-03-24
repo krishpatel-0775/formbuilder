@@ -3,6 +3,8 @@ package com.example.formBuilder.service;
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.Form;
+import com.example.formBuilder.entity.FormVersion;
+import com.example.formBuilder.entity.PermittedUser;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.FormField;
 import com.example.formBuilder.exception.ResourceNotFoundException;
@@ -10,11 +12,13 @@ import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.repository.FormFieldRepository;
 import com.example.formBuilder.repository.FormRepository;
+import com.example.formBuilder.repository.FormVersionRepository;
 import com.example.formBuilder.security.SessionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -39,13 +43,11 @@ public class FormService {
     private final SchemaManager schemaManager;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
+    private final FormVersionRepository versionRepository;
+
     
-    private static final Set<String> RESERVED_FIELD_NAMES = Set.of(
-            "select", "from", "where", "join", "table", "order",
-            "group", "limit", "offset", "insert", "update",
-            "delete", "index", "primary", "key", "constraint",
-            "id", "is_deleted", "created_at"
-    );
+    @Autowired
+    private FormVersionService versionService;
 
     private User getCurrentUser() {
         String username = SessionUtil.getCurrentUsername();
@@ -100,40 +102,59 @@ public class FormService {
         return dto;
     }
 
+    private List<FormField> getActiveFields(Form form) {
+        return versionRepository.findByFormIdAndIsActiveTrue(form.getId())
+                .map(v -> fieldRepository.findByFormVersionId(v.getId()))
+                .orElseGet(form::getFields);
+    }
+
+    private String getActiveRules(Form form) {
+        return versionRepository.findByFormIdAndIsActiveTrue(form.getId())
+                .map(FormVersion::getRules)
+                .orElseGet(form::getRules);
+    }
+
     private FormResponseDto mapToResponseDto(Form form) {
+        List<FormField> activeFields = getActiveFields(form);
+        String activeRules = getActiveRules(form);
+
         return FormResponseDto.builder()
                 .id(form.getId())
                 .formName(form.getFormName())
                 .tableName(form.getTableName())
                 .createdAt(form.getCreatedAt())
                 .status(form.getStatus())
-                .rules(form.getRules())
-                .fields(form.getFields().stream()
-                        .map(f -> FormFieldResponseDto.builder()
-                                .id(f.getId())
-                                .fieldName(f.getFieldName())
-                                .fieldType(f.getFieldType())
-                                .required(f.getRequired())
-                                .minLength(f.getMinLength())
-                                .maxLength(f.getMaxLength())
-                                .min(f.getMin())
-                                .max(f.getMax())
-                                .pattern(f.getPattern())
-                                .beforeDate(f.getBeforeDate())
-                                .afterDate(f.getAfterDate())
-                                .afterTime(f.getAfterTime())
-                                .beforeTime(f.getBeforeTime())
-                                .options(f.getOptions() != null ? new ArrayList<>(f.getOptions()) : null)
-                                .sourceTable(f.getSourceTable())
-                                .sourceColumn(f.getSourceColumn())
-                                .defaultValue(f.getDefaultValue())
-                                .placeholder(f.getPlaceholder())
-                                .helperText(f.getHelperText())
-                                .maxFileSize(f.getMaxFileSize())
-                                .allowedFileTypes(f.getAllowedFileTypes())
-                                .isReadOnly(f.getIsReadOnly())
-                                .build())
+                .rules(activeRules)
+                .fields(activeFields.stream()
+                        .map(this::mapFieldToResponse)
                         .collect(Collectors.toList()))
+                .build();
+    }
+
+    private FormFieldResponseDto mapFieldToResponse(FormField f) {
+        return FormFieldResponseDto.builder()
+                .id(f.getId())
+                .fieldName(f.getFieldName())
+                .fieldType(f.getFieldType())
+                .required(f.getRequired())
+                .minLength(f.getMinLength())
+                .maxLength(f.getMaxLength())
+                .min(f.getMin())
+                .max(f.getMax())
+                .pattern(f.getPattern())
+                .beforeDate(f.getBeforeDate())
+                .afterDate(f.getAfterDate())
+                .afterTime(f.getAfterTime())
+                .beforeTime(f.getBeforeTime())
+                .options(f.getOptions() != null ? new ArrayList<>(f.getOptions()) : null)
+                .sourceTable(f.getSourceTable())
+                .sourceColumn(f.getSourceColumn())
+                .defaultValue(f.getDefaultValue())
+                .placeholder(f.getPlaceholder())
+                .helperText(f.getHelperText())
+                .maxFileSize(f.getMaxFileSize())
+                .allowedFileTypes(f.getAllowedFileTypes())
+                .isReadOnly(f.getIsReadOnly())
                 .build();
     }
 
@@ -161,7 +182,8 @@ public class FormService {
         List<Map<String, Object>> dataList = jdbcTemplate.queryForList(dataQuery, size, offset);
 
         // Filter columns to only include active fields
-        Set<String> activeFieldNames = form.getFields().stream()
+        List<FormField> activeFields = getActiveFields(form);
+        Set<String> activeFieldNames = activeFields.stream()
                 .filter(f -> !isDisplayOnly(f.getFieldType()))
                 .map(FormField::getFieldName)
                 .collect(Collectors.toSet());
@@ -173,7 +195,7 @@ public class FormService {
         }
 
         // STEP: Resolve Lookup IDs to Labels for Display
-        List<FormField> lookupFields = form.getFields().stream()
+        List<FormField> lookupFields = activeFields.stream()
                 .filter(f -> f.getSourceTable() != null && !f.getSourceTable().isBlank())
                 .collect(Collectors.toList());
 
@@ -264,7 +286,7 @@ public class FormService {
         String tableName = form.getTableName();
 
         // Check if the column belongs to an active field
-        boolean isActive = form.getFields().stream()
+        boolean isActive = getActiveFields(form).stream()
                 .anyMatch(f -> f.getFieldName().equals(columnName));
 
         if (!isActive) {
@@ -284,16 +306,24 @@ public class FormService {
     public String publishForm(Long id) {
         Form form = getFormWithPermission(id);
 
+        // Find the latest non-active (draft) version for this form
+        Optional<FormVersion> draftVersionOpt = versionRepository.findByFormIdOrderByVersionNumberAsc(form.getId())
+                .stream()
+                .filter(v -> !Boolean.TRUE.equals(v.getIsActive()))
+                .reduce((first, second) -> second);
+
+        if (draftVersionOpt.isPresent()) {
+            // Activate the draft version through the version service
+            versionService.activateVersion(form.getId(), draftVersionOpt.get().getId());
+            return "Form published via version " + draftVersionOpt.get().getVersionNumber();
+        }
+
+        // Legacy fallback: no versions yet — activate using SchemaManager directly
         String tableName = form.getTableName();
-
         List<FormField> fields = fieldRepository.findByFormId(id);
-
         schemaManager.createDynamicTable(tableName, fields);
-
         form.setStatus(PUBLISHED);
-
         formRepository.save(form);
-
         return "Form Published Successfully";
     }
 
@@ -307,10 +337,8 @@ public class FormService {
                 if (name == null || name.isBlank()) {
                     throw new ValidationException("Field name cannot be empty");
                 }
+                schemaManager.validateColumnName(name); // Throws if reserved or invalid
                 String lowerName = name.toLowerCase();
-                if (RESERVED_FIELD_NAMES.contains(lowerName)) {
-                    throw new ValidationException(name + " is a reserved field name. Please choose a different name.");
-                }
                 if (fieldNames.contains(lowerName)) {
                     throw new ValidationException("Duplicate field name found: " + name + ". Each field must have a unique name.");
                 }
@@ -387,7 +415,8 @@ public class FormService {
             fieldList.add(formField);
         }
 
-        fieldRepository.saveAll(fieldList);
+        // Create initial version (v1), which also saves the fields and sets status to PUBLISHED
+        versionService.createInitialVersion(form.getId(), fieldList, form.getRules());
 
         return "Form Created Successfully";
     }
@@ -397,22 +426,20 @@ public class FormService {
 
         Form form = getFormWithPermission(formId);
 
-        if (request.getFormName() != null && !request.getFormName().isBlank()) {
-            form.setFormName(request.getFormName());
+        if (form.getStatus() == PUBLISHED) {
+            throw new ValidationException("Cannot edit a published form directly. Please use the version editor.");
         }
 
         List<UpdateFieldRequest> incoming = request.getFields();
 
-        // Validate field name uniqueness
+        // Validate field name uniqueness and keywords
         Set<String> fieldNames = new HashSet<>();
         for (UpdateFieldRequest fieldReq : incoming) {
             if (!isDisplayOnly(fieldReq.getType())) {
                 String name = fieldReq.getName();
-                if (name == null || name.isBlank()) throw new ValidationException("Field name cannot be empty");
+                schemaManager.validateColumnName(name); // Throws if invalid or reserved
+                
                 String lowerName = name.toLowerCase();
-                if (RESERVED_FIELD_NAMES.contains(lowerName)) {
-                    throw new ValidationException(name + " is a reserved field name.");
-                }
                 if (fieldNames.contains(lowerName)) {
                     throw new ValidationException("Duplicate field name found: " + name);
                 }
@@ -529,7 +556,7 @@ public class FormService {
 
     public String getFormRules(Long formId) {
         Form form = getFormWithPermission(formId);
-        return form.getRules();
+        return getActiveRules(form);
     }
 
     public String saveFormRules(Long formId, List<FormRuleDTO> rules) {
@@ -546,8 +573,52 @@ public class FormService {
     @Transactional
     public String deleteForm(Long id) {
         Form form = getFormWithPermission(id);
+        
+        // Rule 3.4: Prevent deletion if there are live submissions
+        if (hasLiveSubmissions(form)) {
+            throw new ValidationException("Cannot delete form: It has live submissions. Please clear submissions first or disable the form.");
+        }
+        
         form.setIsDeleted(true);
         formRepository.save(form);
         return "Form deleted successfully";
+    }
+
+    private boolean hasLiveSubmissions(Form form) {
+        if (form.getTableName() == null) return false;
+        try {
+            // "Live Submission" = active SUBMITTED row (not draft, not deleted)
+            String sql = "SELECT COUNT(*) FROM " + form.getTableName() + " WHERE is_deleted = false AND is_draft = false";
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+            return count != null && count > 0;
+        } catch (Exception e) {
+            log.warn("Could not check live submissions for form {}: {}", form.getId(), e.getMessage());
+            return false;
+        }
+    }
+
+    @Transactional
+    public String updateVisibility(Long formId, VisibilityRequest request) {
+        Form form = getFormWithPermission(formId);
+
+        if (request.getVisibilityType() != null) {
+            form.setVisibilityType(request.getVisibilityType());
+        }
+
+        if (request.getPermittedUsers() != null) {
+            form.getPermittedUsers().clear();
+            final Form f = form;
+            List<PermittedUser> puList = request.getPermittedUsers().stream()
+                    .map(identifier -> {
+                        PermittedUser pu = new PermittedUser();
+                        pu.setIdentifier(identifier);
+                        pu.setForm(f);
+                        return pu;
+                    }).collect(Collectors.toList());
+            form.getPermittedUsers().addAll(puList);
+        }
+
+        formRepository.save(form);
+        return "Visibility settings updated successfully";
     }
 }

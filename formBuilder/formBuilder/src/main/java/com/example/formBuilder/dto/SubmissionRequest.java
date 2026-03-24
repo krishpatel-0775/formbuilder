@@ -12,5 +12,7 @@ import java.util.Map;
 public class SubmissionRequest {
 
     private Long formId;
+    private Long versionId;
+    private Boolean isDraft;
     private Map<String, Object> values;
 }

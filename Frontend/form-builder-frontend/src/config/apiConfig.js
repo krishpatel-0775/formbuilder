@@ -11,4 +11,11 @@ export const ENDPOINTS = {
     AUTH_ME: `${API_BASE_URL}/api/auth/me`,
     // Helper functions for per-form endpoints
     formRules: (id) => `${API_BASE_URL}/api/forms/${id}/rules`,
+    // Version management
+    formVersions: (formId) => `${API_BASE_URL}/api/forms/${formId}/versions`,
+    formVersion: (formId, versionId) => `${API_BASE_URL}/api/forms/${formId}/versions/${versionId}`,
+    formVersionRules: (formId, versionId) => `${API_BASE_URL}/api/forms/${formId}/versions/${versionId}/rules`,
+    formDraft: (formId) => `${API_BASE_URL}/api/forms/${formId}/versions/draft`,
+    activateVersion: (formId, versionId) => `${API_BASE_URL}/api/forms/${formId}/versions/${versionId}/activate`,
 };
+

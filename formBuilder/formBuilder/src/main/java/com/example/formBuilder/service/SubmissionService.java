@@ -5,8 +5,11 @@ import com.example.formBuilder.dto.SubmissionRequest;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormField;
+import com.example.formBuilder.entity.FormVersion;
 import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.repository.FormRepository;
+import com.example.formBuilder.repository.FormFieldRepository;
+import com.example.formBuilder.repository.FormVersionRepository;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.security.SessionUtil;
@@ -28,6 +31,8 @@ public class SubmissionService {
     private final JdbcTemplate jdbcTemplate;
     private final RuleEngineService ruleEngineService;
     private final UserRepository userRepository;
+    private final FormFieldRepository fieldRepository;
+    private final FormVersionRepository versionRepository;
 
     private User getCurrentUser() {
         String username = SessionUtil.getCurrentUsername();
@@ -90,8 +95,19 @@ public class SubmissionService {
 
         Map<String, Object> values = request.getValues();
 
-        // STEP 1 — Fetch metadata fields
-        List<FormField> formFields = form.getFields();
+        // STEP 1 — Resolve target version and its fields
+        FormVersion targetVersion = null;
+        if (request.getVersionId() != null) {
+            targetVersion = versionRepository.findById(request.getVersionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Version " + request.getVersionId() + " not found"));
+        } else {
+            targetVersion = versionRepository.findByFormIdAndIsActiveTrue(form.getId()).orElse(null);
+        }
+
+        List<FormField> formFields = (targetVersion != null)
+                ? fieldRepository.findByFormVersionId(targetVersion.getId())
+                : form.getFields();
+        Long activeVersionId = targetVersion != null ? targetVersion.getId() : null;
 
         Map<String, FormField> fieldMap =
                 formFields.stream()
@@ -152,62 +168,99 @@ public class SubmissionService {
         Object[] safeValues = formFields.stream()
                 .filter(f -> !isDisplayOnly(f.getFieldType()))
                 .filter(f -> values.containsKey(f.getFieldName()))
-                .map(f -> {
-                    Object value = values.get(f.getFieldName());
-
-                    // Treat null or blank string as SQL NULL — safe for optional fields
-                    if (value == null || value.toString().trim().isEmpty()) return null;
-
-                    String strVal = value.toString().trim();
-                    switch (f.getFieldType()) {
-                        case "number":
-                            try {
-                                return Integer.parseInt(strVal);
-                            } catch (NumberFormatException e) {
-                                try { return Double.parseDouble(strVal); }
-                                catch (NumberFormatException e2) { return null; }
-                            }
-                        case "date":
-                            try { return java.sql.Date.valueOf(strVal); }
-                            catch (Exception e) { return null; }
-                        case "time":
-                            try {
-                                if (strVal.length() == 5) strVal = strVal + ":00";
-                                return java.sql.Time.valueOf(strVal);
-                            } catch (Exception e) { return null; }
-                        case "toggle":
-                            return "true".equalsIgnoreCase(strVal);
-                        case "file_upload":
-                            try { return Long.parseLong(strVal); }
-                            catch (Exception e) { return null; }
-                        default:
-                            // Handle lookup IDs
-                            if (f.getSourceTable() != null && !f.getSourceTable().isBlank()) {
-                                // For multi-select fields (checkbox), we store IDs as a comma-separated string (TEXT type).
-                                // For single-select fields (radio, select), we store as a single numeric ID (BIGINT type).
-                                if ("checkbox".equals(f.getFieldType())) {
-                                    return strVal;
-                                }
-                                try {
-                                    return Long.parseLong(strVal);
-                                } catch (Exception e) {
-                                    return null;
-                                }
-                            }
-                            return strVal;
-                    }
-                })
+                .map(f -> getSafeValue(f, values.get(f.getFieldName())))
                 .toArray();
 
-        String sql = "INSERT INTO " + tableName +
-                " (" + columns + ") VALUES (" + placeholders + ")";
+        String sql;
+        Object[] finalValues;
+        boolean isDraft = Boolean.TRUE.equals(request.getIsDraft());
+        String currentUser = SessionUtil.getCurrentUsername();
 
-        jdbcTemplate.update(sql, safeValues);
+        // Rule 4.1: Users CANNOT submit drafts for INACTIVE versions.
+        if (isDraft && targetVersion != null && !Boolean.TRUE.equals(targetVersion.getIsActive())) {
+            throw new ValidationException("Your draft was discarded because the form was updated.");
+        }
 
-        // STEP 6 — Trigger post-submission workflows (notifications, hooks, etc.)
+        // Rule 5.1: Only one draft per user per form.
+        // Check if an existing draft exists in this version for this user.
+        Long existingDraftId = null;
+        if (activeVersionId != null) {
+            try {
+                String checkSql = "SELECT id FROM " + tableName + 
+                                  " WHERE form_version_id = ? AND submitted_by = ? AND is_draft = true AND is_deleted = false LIMIT 1";
+                existingDraftId = jdbcTemplate.queryForObject(checkSql, Long.class, activeVersionId, currentUser);
+            } catch (Exception e) { /* no existing draft */ }
+        }
+
+        if (existingDraftId != null) {
+            // UPDATE existing draft
+            StringBuilder updateSql = new StringBuilder("UPDATE " + tableName + " SET ");
+            List<Object> updateValues = new ArrayList<>();
+            for (FormField f : formFields) {
+                if (isDisplayOnly(f.getFieldType())) continue;
+                if (values.containsKey(f.getFieldName())) {
+                    updateSql.append(f.getFieldName()).append(" = ?, ");
+                    updateValues.add(getSafeValue(f, values.get(f.getFieldName())));
+                }
+            }
+            updateSql.append("is_draft = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            updateValues.add(isDraft);
+            updateValues.add(existingDraftId);
+            jdbcTemplate.update(updateSql.toString(), updateValues.toArray());
+        } else {
+            // INSERT new record
+            if (activeVersionId != null) {
+                sql = "INSERT INTO " + tableName +
+                        " (" + columns + ",form_version_id,is_draft,submitted_by) VALUES (" + placeholders + ",?,?,?)";
+                Object[] extraValues = new Object[safeValues.length + 3];
+                System.arraycopy(safeValues, 0, extraValues, 0, safeValues.length);
+                extraValues[safeValues.length] = activeVersionId;
+                extraValues[safeValues.length + 1] = isDraft;
+                extraValues[safeValues.length + 2] = currentUser;
+                finalValues = extraValues;
+            } else {
+                sql = "INSERT INTO " + tableName +
+                        " (" + columns + ",is_draft,submitted_by) VALUES (" + placeholders + ",?,?)";
+                Object[] extraValues = new Object[safeValues.length + 2];
+                System.arraycopy(safeValues, 0, extraValues, 0, safeValues.length);
+                extraValues[safeValues.length] = isDraft;
+                extraValues[safeValues.length + 1] = currentUser;
+                finalValues = extraValues;
+            }
+            jdbcTemplate.update(sql, finalValues);
+        }
+
+        // STEP 6 — Trigger post-submission workflows
         ruleEngineService.executePostSubmissionWorkflows(form, values);
 
-        return "Form Submitted Successfully";
+        return isDraft ? "Draft Saved" : "Form Submitted Successfully";
+    }
+
+    private Object getSafeValue(FormField f, Object value) {
+        if (value == null || value.toString().trim().isEmpty()) return null;
+        String strVal = value.toString().trim();
+        switch (f.getFieldType()) {
+            case "number":
+                try { return Integer.parseInt(strVal); }
+                catch (NumberFormatException e) {
+                    try { return Double.parseDouble(strVal); }
+                    catch (NumberFormatException e2) { return null; }
+                }
+            case "date": try { return java.sql.Date.valueOf(strVal); } catch (Exception e) { return null; }
+            case "time":
+                try {
+                    if (strVal.length() == 5) strVal = strVal + ":00";
+                    return java.sql.Time.valueOf(strVal);
+                } catch (Exception e) { return null; }
+            case "toggle": return "true".equalsIgnoreCase(strVal);
+            case "file_upload": try { return Long.parseLong(strVal); } catch (Exception e) { return null; }
+            default:
+                if (f.getSourceTable() != null && !f.getSourceTable().isBlank()) {
+                    if ("checkbox".equals(f.getFieldType())) return strVal;
+                    try { return Long.parseLong(strVal); } catch (Exception e) { return null; }
+                }
+                return strVal;
+        }
     }
 
 

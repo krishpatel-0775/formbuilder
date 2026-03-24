@@ -1,6 +1,5 @@
 package com.example.formBuilder.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -78,4 +77,12 @@ public class FormField {
     @ManyToOne
     @JoinColumn(name = "form_id")
     private Form form;
+
+    /** The version this field belongs to. Null for legacy fields migrated before versioning. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "form_version_id")
+    private FormVersion formVersion;
+
+    @Column(name = "display_order")
+    private Integer displayOrder;
 }

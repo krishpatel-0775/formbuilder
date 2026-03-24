@@ -156,7 +156,7 @@ export default function BuilderPage() {
         setFields(fields.filter((f) => f.id !== id));
         if (activeFieldId === id) setActiveFieldId(null);
     };
-    
+
     const handleNumberInput = (e, id, key) => {
         const value = e.target.value === "" ? "" : Number(e.target.value);
         updateField(id, key, value);
@@ -175,7 +175,7 @@ export default function BuilderPage() {
                     return { name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
                 }
                 if (!field.label) throw new Error("Field label is required");
-                let fd = { name: generateColumnName(field.label), type: field.type, required: field.required,  isReadOnly: field.isReadOnly};
+                let fd = { name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly };
                 if (field.type === "toggle") {
                     fd.defaultValue = field.defaultValue === "true" ? "true" : "false";
                     return fd;
@@ -193,7 +193,7 @@ export default function BuilderPage() {
                     }
                 }
 
-                
+
 
                 if (["text", "textarea", "email", "phone", "url"].includes(field.type)) {
                     if (field.minLength) fd.minLength = Number(field.minLength);
@@ -222,9 +222,9 @@ export default function BuilderPage() {
             const res = await fetch(ENDPOINTS.FORMS, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    formName: formName.trim(), 
-                    fields: formattedFields, 
+                body: JSON.stringify({
+                    formName: formName.trim(),
+                    fields: formattedFields,
                     rules
                 }),
                 credentials: "include"
@@ -251,7 +251,7 @@ export default function BuilderPage() {
 
             <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-40 pointer-events-none" />
-                
+
                 <FormHeader
                     formName={formName}
                     setFormName={setFormName}
