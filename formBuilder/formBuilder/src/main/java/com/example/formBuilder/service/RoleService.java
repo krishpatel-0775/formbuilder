@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ public class RoleService {
         return roleRepository.save(role);
     }
 
-    public Role updateRole(Long id, Role roleDetails) {
+    public Role updateRole(UUID id, Role roleDetails) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
         role.setRoleName(roleDetails.getRoleName());
@@ -29,7 +30,7 @@ public class RoleService {
         return roleRepository.save(role);
     }
 
-    public void deleteRole(Long id) {
+    public void deleteRole(UUID id) {
         roleRepository.deleteById(id);
     }
 }

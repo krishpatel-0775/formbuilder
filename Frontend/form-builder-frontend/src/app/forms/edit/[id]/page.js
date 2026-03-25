@@ -100,7 +100,7 @@ export default function EditFormPage() {
           const isStatic = staticFieldTypes.has(f.fieldType);
           const orderKey = f.fieldName || "";
           return {
-            id: f.id * 1000 + Math.floor(Math.random() * 100),
+            id: f.id,
             _dbId: f.id,
             _orderKey: orderKey,
             label: isStatic ? (f.defaultValue || f.fieldName || "") : (f.fieldName || ""),

@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "form_version")
@@ -16,11 +17,11 @@ import java.util.List;
 public class FormVersion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "form_id", nullable = false)
-    private Long formId;
+    private UUID formId;
 
     @Column(name = "version_number", nullable = false)
     private Integer versionNumber;

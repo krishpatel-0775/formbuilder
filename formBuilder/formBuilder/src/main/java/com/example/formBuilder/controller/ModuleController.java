@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -26,7 +27,7 @@ public class ModuleController {
 
     @PutMapping("/modules/{id}")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
-    public ResponseEntity<ApiResponse<Module>> updateModule(@PathVariable Long id, @RequestBody Module module) {
+    public ResponseEntity<ApiResponse<Module>> updateModule(@PathVariable UUID id, @RequestBody Module module) {
         return ResponseEntity.ok(ApiResponse.success(moduleService.updateModule(id, module)));
     }
 
@@ -49,7 +50,7 @@ public class ModuleController {
     }
 
     @DeleteMapping("/modules/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteModule(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteModule(@PathVariable UUID id) {
         moduleService.deleteModule(id);
         return ResponseEntity.ok(ApiResponse.success("Module deleted successfully"));
     }

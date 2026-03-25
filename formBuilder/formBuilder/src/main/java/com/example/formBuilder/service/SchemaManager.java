@@ -40,7 +40,7 @@ public class SchemaManager {
 
         sql.append("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
-                .append(" (id BIGSERIAL PRIMARY KEY")
+                .append(" (id UUID PRIMARY KEY DEFAULT gen_random_uuid()")
                 .append(", is_deleted BOOLEAN DEFAULT FALSE NOT NULL")
                 .append(", is_draft BOOLEAN DEFAULT FALSE NOT NULL")
                 .append(", submitted_by VARCHAR(100)")
@@ -151,15 +151,13 @@ public class SchemaManager {
 
     /**
      * Maps an application field type (e.g., text, number, date) to its corresponding PostgreSQL data type.
+     * Lookup fields and file_upload now use TEXT to store UUID references.
      */
     private String mapType(FormField field) {
-        // If it's a lookup, store as record ID
+        // If it's a lookup field, store referenced UUID as TEXT.
+        // Checkboxes (multi-select) already use TEXT; radio/select also become TEXT with UUID refs.
         if (field.getSourceTable() != null && !field.getSourceTable().isBlank()) {
-            // Checkboxes are multi-select, so they must store a comma-separated list of IDs in a TEXT column.
-            if ("checkbox".equals(field.getFieldType())) {
-                return "TEXT";
-            }
-            return "BIGINT";
+            return "TEXT"; // UUID stored as text (single or comma-separated for checkbox)
         }
 
         return switch (field.getFieldType()) {
@@ -169,7 +167,7 @@ public class SchemaManager {
             case "time" -> "TIME";
             case "textarea", "checkbox" -> "TEXT";
             case "toggle" -> "BOOLEAN";
-            case "file_upload" -> "BIGINT";
+            case "file_upload" -> "TEXT"; // file UUID stored as text
             // Display-only types should never reach here, but default safely
             default -> "VARCHAR(255)";
         };

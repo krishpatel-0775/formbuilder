@@ -419,7 +419,7 @@ export default function PublicFormPage() {
       const res = await fetch(ENDPOINTS.SUBMISSIONS, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: parseInt(id), values: submissionData }),
+        body: JSON.stringify({ formId: id, values: submissionData }),
         credentials: "include"
       });
 

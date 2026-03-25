@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -43,14 +44,17 @@ public class FormControllerTest {
     private Form form;
     private FormListDto formListDto;
 
+    private static final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String TEST_UUID_STR = TEST_UUID.toString();
+
     @BeforeEach
     void setUp() {
         form = new Form();
-        form.setId(1L);
+        form.setId(TEST_UUID);
         form.setFormName("Test Form");
         form.setStatus(FormStatus.DRAFT);
 
-        formListDto = new FormListDto(1L, "Test Form", FormStatus.DRAFT);
+        formListDto = new FormListDto(TEST_UUID, "Test Form", FormStatus.DRAFT);
     }
 
     @Test
@@ -80,12 +84,12 @@ public class FormControllerTest {
 
     @Test
     void getForm_ShouldReturnForm() throws Exception {
-        when(formService.getFormById(1L)).thenReturn(form);
+        when(formService.getFormById(TEST_UUID)).thenReturn(form);
 
-        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1"))
+        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/" + TEST_UUID_STR))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(1));
+                .andExpect(jsonPath("$.data.id").value(TEST_UUID_STR));
     }
 
     @Test
@@ -94,10 +98,10 @@ public class FormControllerTest {
         mockResponse.put("content", new ArrayList<>());
         mockResponse.put("totalElements", 0);
         
-        when(formService.getAllDataFromTable(eq(1L), anyInt(), anyInt(), anyString(), anyString()))
+        when(formService.getAllDataFromTable(eq(TEST_UUID), isNull(), anyInt(), anyInt(), anyString(), anyString()))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1/data"))
+        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/" + TEST_UUID_STR + "/data"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.totalElements").value(0));
@@ -105,9 +109,9 @@ public class FormControllerTest {
 
     @Test
     void publishForm_ShouldReturnSuccess() throws Exception {
-        when(formService.publishForm(1L)).thenReturn("Form Published Successfully");
+        when(formService.publishForm(TEST_UUID)).thenReturn("Form Published Successfully");
 
-        mockMvc.perform(post(AppConstants.API_BASE_FORMS + "/publish/1"))
+        mockMvc.perform(post(AppConstants.API_BASE_FORMS + "/publish/" + TEST_UUID_STR))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Form Published Successfully"));
@@ -116,15 +120,15 @@ public class FormControllerTest {
     @Test
     void getLookupValues_ShouldReturnList() throws Exception {
         Map<String, Object> val1 = new HashMap<>();
-        val1.put("id", 1L);
+        val1.put("id", TEST_UUID_STR);
         val1.put("value", "Value1");
         Map<String, Object> val2 = new HashMap<>();
-        val2.put("id", 2L);
+        val2.put("id", UUID.randomUUID().toString());
         val2.put("value", "Value2");
         
-        when(formService.getLookupValues(1L, "name")).thenReturn(List.of(val1, val2));
+        when(formService.getLookupValues(TEST_UUID, "name")).thenReturn(List.of(val1, val2));
 
-        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1/lookup/name"))
+        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/" + TEST_UUID_STR + "/lookup/name"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data[0].value").value("Value1"));
@@ -135,9 +139,9 @@ public class FormControllerTest {
         UpdateFormRequest req = new UpdateFormRequest();
         req.setFormName("Updated Name");
 
-        when(formService.updateForm(eq(1L), any(UpdateFormRequest.class))).thenReturn("Form updated successfully");
+        when(formService.updateForm(eq(TEST_UUID), any(UpdateFormRequest.class))).thenReturn("Form updated successfully");
 
-        mockMvc.perform(put(AppConstants.API_BASE_FORMS + "/1")
+        mockMvc.perform(put(AppConstants.API_BASE_FORMS + "/" + TEST_UUID_STR)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
@@ -147,9 +151,9 @@ public class FormControllerTest {
 
     @Test
     void getFormRules_ShouldReturnRules() throws Exception {
-        when(formService.getFormRules(1L)).thenReturn("[]");
+        when(formService.getFormRules(TEST_UUID)).thenReturn("[]");
 
-        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1/rules"))
+        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/" + TEST_UUID_STR + "/rules"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("[]"));
@@ -159,9 +163,9 @@ public class FormControllerTest {
     void saveFormRules_ShouldReturnSuccess() throws Exception {
         List<FormRuleDTO> rules = new ArrayList<>();
         
-        when(formService.saveFormRules(eq(1L), anyList())).thenReturn("Rules saved successfully");
+        when(formService.saveFormRules(eq(TEST_UUID), anyList())).thenReturn("Rules saved successfully");
 
-        mockMvc.perform(post(AppConstants.API_BASE_FORMS + "/1/rules")
+        mockMvc.perform(post(AppConstants.API_BASE_FORMS + "/" + TEST_UUID_STR + "/rules")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rules)))
                 .andExpect(status().isOk())
@@ -171,9 +175,10 @@ public class FormControllerTest {
 
     @Test
     void getForm_NotFound_ShouldReturn404() throws Exception {
-        when(formService.getFormById(99L)).thenThrow(new ResourceNotFoundException("Form not found"));
+        UUID missingId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        when(formService.getFormById(missingId)).thenThrow(new ResourceNotFoundException("Form not found"));
 
-        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/99"))
+        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/" + missingId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("Form not found"));
@@ -194,9 +199,9 @@ public class FormControllerTest {
 
     @Test
     void getLookupValues_InvalidColumn_ShouldReturn400() throws Exception {
-        when(formService.getLookupValues(eq(1L), anyString())).thenThrow(new IllegalArgumentException("Invalid column name"));
+        when(formService.getLookupValues(eq(TEST_UUID), anyString())).thenThrow(new IllegalArgumentException("Invalid column name"));
 
-        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/1/lookup/drop;table"))
+        mockMvc.perform(get(AppConstants.API_BASE_FORMS + "/" + TEST_UUID_STR + "/lookup/drop;table"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("IAE: Invalid column name"));

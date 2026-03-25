@@ -56,7 +56,7 @@ public class FormService {
                 .orElseThrow(() -> new ValidationException("User not found"));
     }
 
-    private Form getFormWithPermission(Long id) {
+    private Form getFormWithPermission(UUID id) {
         Form form = formRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
         
@@ -78,12 +78,17 @@ public class FormService {
                 type.equals("heading") || type.equals("paragraph") || type.equals("divider"));
     }
 
-    public Form getFormById(Long id) {
+    /** Converts a UUID to a safe PostgreSQL table-name suffix (hyphens → underscores). */
+    private static String uuidToTableSuffix(UUID id) {
+        return id.toString().replace("-", "_");
+    }
+
+    public Form getFormById(UUID id) {
         return formRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
     }
 
-    public FormResponseDto getFormResponseById(Long id) {
+    public FormResponseDto getFormResponseById(UUID id) {
         Form form = getFormById(id);
         
         // If form is not published, only the owner can see it
@@ -158,17 +163,17 @@ public class FormService {
                 .build();
     }
 
-    private List<FormField> getFieldsForVersion(Form form, Long versionId) {
+    private List<FormField> getFieldsForVersion(Form form, UUID versionId) {
         if (versionId != null) {
             return fieldRepository.findByFormVersionId(versionId);
         }
         return getActiveFields(form);
     }
 
-    public Map<String, Object> getAllDataFromTable(Long id, Long versionId, int page, int size, String sortBy, String direction) {
+    public Map<String, Object> getAllDataFromTable(UUID id, UUID versionId, int page, int size, String sortBy, String direction) {
         Form form = getFormWithPermission(id);
 
-        String tableName = "form_" + id;
+        String tableName = form.getTableName();
 
         if (!tableName.matches("^[a-zA-Z0-9_]+$")) {
             throw new IllegalArgumentException("Invalid table name");
@@ -208,7 +213,7 @@ public class FormService {
             row.keySet().retainAll(activeFieldNames);
         }
 
-        // STEP: Resolve Lookup IDs to Labels for Display
+        // STEP: Resolve Lookup UUIDs to Labels for Display
         List<FormField> lookupFields = activeFields.stream()
                 .filter(f -> f.getSourceTable() != null && !f.getSourceTable().isBlank())
                 .collect(Collectors.toList());
@@ -216,20 +221,20 @@ public class FormService {
         for (FormField field : lookupFields) {
             String col = field.getFieldName();
             String sourceFormId = field.getSourceTable();
-            String sourceTable = "form_" + sourceFormId; // Convert Form ID to Table Name
+            // sourceTable stores a form UUID or legacy form ID — build table name accordingly
+            String sourceTable = "form_" + sourceFormId.replace("-", "_");
             String sourceCol = field.getSourceColumn();
 
-            // Collect unique IDs from this column in the current page
-            Set<Long> idsToResolve = new HashSet<>();
+            // Collect unique UUID strings from this column in the current page
+            Set<String> idsToResolve = new HashSet<>();
             for (Map<String, Object> row : dataList) {
                 Object val = row.get(col);
                 if (val != null) {
                     String[] parts = val.toString().split(",");
                     for (String part : parts) {
-                        try {
-                            idsToResolve.add(Long.valueOf(part.trim()));
-                        } catch (NumberFormatException e) {
-                            // Skip non-numeric parts
+                        String trimmed = part.trim();
+                        if (!trimmed.isEmpty()) {
+                            idsToResolve.add(trimmed);
                         }
                     }
                 }
@@ -237,15 +242,17 @@ public class FormService {
 
             if (idsToResolve.isEmpty()) continue;
 
-            // Batch fetch labels: Map<ID, Label>
-            String inClause = idsToResolve.stream().map(String::valueOf).collect(Collectors.joining(","));
-            String labelSql = "SELECT id, " + sourceCol + " as label FROM " + sourceTable + " WHERE id IN (" + inClause + ")";
+            // Batch fetch labels: Map<id-string, label>
+            String inClause = idsToResolve.stream()
+                    .map(s -> "'" + s.replace("'", "''") + "'")
+                    .collect(Collectors.joining(","));
+            String labelSql = "SELECT id::text, " + sourceCol + " as label FROM " + sourceTable + " WHERE id::text IN (" + inClause + ")";
             
             try {
-                Map<Long, String> labelMap = jdbcTemplate.query(labelSql, rs -> {
-                    Map<Long, String> map = new HashMap<>();
+                Map<String, String> labelMap = jdbcTemplate.query(labelSql, rs -> {
+                    Map<String, String> map = new HashMap<>();
                     while (rs.next()) {
-                        map.put(rs.getLong("id"), rs.getString("label"));
+                        map.put(rs.getString("id"), rs.getString("label"));
                     }
                     return map;
                 });
@@ -257,12 +264,9 @@ public class FormService {
                         String[] parts = idVal.toString().split(",");
                         List<String> labels = new ArrayList<>();
                         for (String part : parts) {
-                            try {
-                                String label = labelMap.get(Long.valueOf(part.trim()));
-                                labels.add(label != null ? label : part.trim());
-                            } catch (NumberFormatException e) {
-                                labels.add(part.trim());
-                            }
+                            String trimmed = part.trim();
+                            String label = labelMap.get(trimmed);
+                            labels.add(label != null ? label : trimmed);
                         }
                         row.put(col, String.join(", ", labels));
                     }
@@ -300,7 +304,7 @@ public class FormService {
     }
 
 
-    public List<Map<String, Object>> getLookupValues(Long formId, String columnName) {
+    public List<Map<String, Object>> getLookupValues(UUID formId, String columnName) {
         Form form = getFormById(formId);
         String tableName = form.getTableName();
 
@@ -316,13 +320,13 @@ public class FormService {
             throw new IllegalArgumentException("Invalid column name");
         }
 
-        String sql = "SELECT MIN(id) as id, " + columnName + " as value FROM " + tableName +
+        String sql = "SELECT MIN(id::text) as id, " + columnName + " as value FROM " + tableName +
                 " WHERE is_deleted = false AND " + columnName + " IS NOT NULL" +
                 " GROUP BY " + columnName;
         return jdbcTemplate.queryForList(sql);
     }
 
-    public String publishForm(Long id) {
+    public String publishForm(UUID id) {
         Form form = getFormWithPermission(id);
 
         // Find the latest non-active (draft) version for this form
@@ -374,7 +378,8 @@ public class FormService {
         form.setStatus(com.example.formBuilder.enums.FormStatus.DRAFT);
         form = formRepository.save(form);
 
-        String tableName = "form_" + form.getId();
+        // Build table name from UUID (replace hyphens with underscores for PostgreSQL compatibility)
+        String tableName = "form_" + uuidToTableSuffix(form.getId());
         form.setTableName(tableName);
 
         // Serialize rules if provided
@@ -443,7 +448,7 @@ public class FormService {
     }
 
     @Transactional
-    public String updateForm(Long formId, UpdateFormRequest request) {
+    public String updateForm(UUID formId, UpdateFormRequest request) {
 
         Form form = getFormWithPermission(formId);
 
@@ -470,7 +475,7 @@ public class FormService {
 
         List<FormField> existingFields = fieldRepository.findByFormId(formId);
 
-        Set<Long> incomingIds = incoming.stream()
+        Set<UUID> incomingIds = incoming.stream()
                 .filter(f -> f.getId() != null)
                 .map(UpdateFieldRequest::getId)
                 .collect(Collectors.toSet());
@@ -575,12 +580,12 @@ public class FormService {
         return f;
     }
 
-    public String getFormRules(Long formId) {
+    public String getFormRules(UUID formId) {
         Form form = getFormWithPermission(formId);
         return getActiveRules(form);
     }
 
-    public String saveFormRules(Long formId, List<FormRuleDTO> rules) {
+    public String saveFormRules(UUID formId, List<FormRuleDTO> rules) {
         Form form = getFormWithPermission(formId);
         try {
             form.setRules(objectMapper.writeValueAsString(rules));
@@ -592,7 +597,7 @@ public class FormService {
     }
 
     @Transactional
-    public String deleteForm(Long id) {
+    public String deleteForm(UUID id) {
         Form form = getFormWithPermission(id);
         
         // Rule 3.4: Prevent deletion if there are live submissions
@@ -619,7 +624,7 @@ public class FormService {
     }
 
     @Transactional
-    public String updateVisibility(Long formId, VisibilityRequest request) {
+    public String updateVisibility(UUID formId, VisibilityRequest request) {
         Form form = getFormWithPermission(formId);
 
         if (request.getVisibilityType() != null) {

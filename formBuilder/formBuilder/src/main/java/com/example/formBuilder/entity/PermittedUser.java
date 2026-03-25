@@ -3,6 +3,8 @@ package com.example.formBuilder.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 /**
  * Represents a user (by identifier string) who is permitted to access a restricted form.
  * Referenced by FormService.updateVisibility — pending Form entity visibility columns.
@@ -16,8 +18,8 @@ import lombok.*;
 public class PermittedUser {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "identifier")
     private String identifier;

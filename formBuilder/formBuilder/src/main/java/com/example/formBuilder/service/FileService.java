@@ -85,7 +85,7 @@ public class FileService {
         }
     }
 
-    public FileMetadata getFileMetadata(Long id) {
+    public FileMetadata getFileMetadata(UUID id) {
         return fileMetadataRepository.findById(id)
                 .orElseThrow(() -> new ValidationException("File not found"));
     }

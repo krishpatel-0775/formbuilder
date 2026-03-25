@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,7 +44,7 @@ public class FormVersionService {
     /**
      * Returns all versions for a form, ordered ascending (oldest first).
      */
-    public List<FormVersionDto> getVersions(Long formId) {
+    public List<FormVersionDto> getVersions(UUID formId) {
         getFormOrThrow(formId);
         return versionRepository.findByFormIdOrderByVersionNumberAsc(formId)
                 .stream()
@@ -54,7 +55,7 @@ public class FormVersionService {
     /**
      * Returns a specific version with full field list.
      */
-    public FormVersionDto getVersion(Long formId, Long versionId) {
+    public FormVersionDto getVersion(UUID formId, UUID versionId) {
         FormVersion version = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version " + versionId + " not found"));
         if (!version.getFormId().equals(formId)) {
@@ -68,7 +69,7 @@ public class FormVersionService {
      * If no version exists yet, seeds version 1 from the form's current fields/rules.
      */
     @Transactional
-    public FormVersionDto createVersion(Long formId) {
+    public FormVersionDto createVersion(UUID formId) {
         Form form = getFormOrThrow(formId);
         String username = SessionUtil.getCurrentUsername();
 
@@ -110,7 +111,7 @@ public class FormVersionService {
      * Seeds the very first version (v1) for a brand new form.
      */
     @Transactional
-    public FormVersionDto createInitialVersion(Long formId, List<FormField> fields, String rules) {
+    public FormVersionDto createInitialVersion(UUID formId, List<FormField> fields, String rules) {
         Form form = getFormOrThrow(formId);
         String username = SessionUtil.getCurrentUsername();
 
@@ -143,7 +144,7 @@ public class FormVersionService {
      * written against any previously active version.
      */
     @Transactional
-    public FormVersionDto activateVersion(Long formId, Long versionId) {
+    public FormVersionDto activateVersion(UUID formId, UUID versionId) {
         Form form = getFormOrThrow(formId);
 
         FormVersion toActivate = versionRepository.findById(versionId)
@@ -152,15 +153,9 @@ public class FormVersionService {
             throw new ValidationException("Version does not belong to the specified form");
         }
 
-        // Requirement 3: isLatest should NOT change when manually activating an older version.
-        // But we must deactivate all others.
         log.info("Manually activating version {} for form {}", toActivate.getVersionNumber(), formId);
         
         // Rule 8: On every activation, old drafts MUST be deleted.
-        // We delete drafts for ALL versions except the one being activated? 
-        // No, rule says "drafts from the previous version MUST be deleted" when a NEW one becomes active.
-        // And "On every activation: Old drafts MUST be deleted".
-        // This implies we should clear drafts for the form generally when switching.
         discardDraftsForForm(formId);
 
         versionRepository.deactivateAllForForm(formId);
@@ -183,7 +178,7 @@ public class FormVersionService {
      * We use 'versionId' as the source for the NEW version.
      */
     @Transactional
-    public FormVersionDto updateVersionFields(Long versionId, List<UpdateFieldRequest> incoming) {
+    public FormVersionDto updateVersionFields(UUID versionId, List<UpdateFieldRequest> incoming) {
         FormVersion current = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version not found"));
         
@@ -216,7 +211,6 @@ public class FormVersionService {
         int nextNumber = versionRepository.findMaxVersionNumber(current.getFormId()) + 1;
         
         // Rule 4.2: When a NEW version becomes ACTIVE, ALL drafts from the previous version MUST be deleted.
-        // Rule 8: On every activation (or creation of new active version), old drafts MUST be deleted.
         discardDraftsForVersion(current.getFormId(), current.getId());
 
         versionRepository.unsetLatestForForm(current.getFormId());
@@ -257,7 +251,7 @@ public class FormVersionService {
     }
 
     @Transactional
-    public FormVersionDto updateVersionRules(Long versionId, String rulesJson) {
+    public FormVersionDto updateVersionRules(UUID versionId, String rulesJson) {
         FormVersion current = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version not found"));
 
@@ -303,18 +297,18 @@ public class FormVersionService {
         return toDtoWithFields(newVersion);
     }
 
-    private void discardDraftsForVersion(Long formId, Long versionId) {
+    private void discardDraftsForVersion(UUID formId, UUID versionId) {
         Form form = getFormOrThrow(formId);
         String tableName = form.getTableName();
         if (tableName == null) return;
         try {
-            String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE form_version_id = ? AND is_draft = true";
-            int count = jdbcTemplate.update(sql, versionId);
+            String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE form_version_id = ?::uuid AND is_draft = true";
+            int count = jdbcTemplate.update(sql, versionId.toString());
             if (count > 0) log.info("Discarded {} drafts for version {} of form {}", count, versionId, formId);
         } catch (Exception e) { log.warn("Could not discard drafts for version {}: {}", versionId, e.getMessage()); }
     }
 
-    private void discardDraftsForForm(Long formId) {
+    private void discardDraftsForForm(UUID formId) {
         Form form = getFormOrThrow(formId);
         String tableName = form.getTableName();
         if (tableName == null) return;
@@ -325,7 +319,7 @@ public class FormVersionService {
         } catch (Exception e) { log.warn("Could not discard drafts for form {}: {}", formId, e.getMessage()); }
     }
 
-    private void validateFieldConsistency(Long sourceVersionId, List<UpdateFieldRequest> incoming) {
+    private void validateFieldConsistency(UUID sourceVersionId, List<UpdateFieldRequest> incoming) {
         List<FormField> sourceFields = fieldRepository.findByFormVersionId(sourceVersionId);
         java.util.Map<String, String> nameToType = sourceFields.stream()
                 .filter(f -> f.getFieldName() != null)
@@ -370,7 +364,7 @@ public class FormVersionService {
      * we reuse a version if it was created within the last 10 seconds for the same form and user.
      */
     @Transactional
-    public FormVersionDto getOrCreateDraft(Long formId) {
+    public FormVersionDto getOrCreateDraft(UUID formId) {
         java.util.Optional<FormVersion> latestOpt = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(formId);
 
         if (latestOpt.isPresent()) {
@@ -431,7 +425,7 @@ public class FormVersionService {
         fieldRepository.saveAll(legacyFields);
     }
 
-    private FormVersion resolveSourceVersion(Long formId) {
+    private FormVersion resolveSourceVersion(UUID formId) {
         // prefer active version; fall back to the highest numbered version
         return versionRepository.findByFormIdAndIsActiveTrue(formId)
                 .or(() -> versionRepository.findByFormIdOrderByVersionNumberAsc(formId)
@@ -439,7 +433,7 @@ public class FormVersionService {
                 .orElse(null);
     }
 
-    private List<FormField> resolveFieldsToClone(Long formId, FormVersion source) {
+    private List<FormField> resolveFieldsToClone(UUID formId, FormVersion source) {
         if (source == null) {
             // seed from legacy form fields
             return fieldRepository.findByFormId(formId);
@@ -483,32 +477,12 @@ public class FormVersionService {
         return clones;
     }
 
-    private void discardDraftsForVersion(Form form, FormVersion prev) {
-        String tableName = form.getTableName();
-        if (tableName == null) return;
-        try {
-            // Check if is_draft column exists before attempting update
-            String checkSql = "SELECT COUNT(*) FROM information_schema.columns " +
-                    "WHERE table_name = ? AND column_name = 'is_draft'";
-            Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, tableName);
-            if (count != null && count > 0) {
-                String discardSql = "UPDATE " + tableName +
-                        " SET is_deleted = true WHERE form_version_id = ? AND is_draft = true";
-                int discarded = jdbcTemplate.update(discardSql, prev.getId());
-                log.info("Discarded {} drafts from version {} for form {}", discarded, prev.getId(), form.getId());
-            }
-        } catch (Exception e) {
-            log.warn("Could not discard drafts for version {}: {}", prev.getId(), e.getMessage());
-        }
-    }
-
     private void ensureSchemaForVersion(Form form, FormVersion version) {
         String tableName = form.getTableName();
         if (tableName == null) return;
         List<FormField> fields = fieldRepository.findByFormVersionId(version.getId());
 
         // If table doesn't exist yet, create it
-        // Check if table exists via information_schema
         String tableCheckSql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?";
         Integer tableCount = jdbcTemplate.queryForObject(tableCheckSql, Integer.class, tableName);
         
@@ -540,7 +514,8 @@ public class FormVersionService {
 
     private void addMissingCommonColumns(String tableName) {
         try {
-            jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS form_version_id BIGINT");
+            // form_version_id is now UUID (not BIGINT)
+            jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS form_version_id UUID");
             jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS is_draft BOOLEAN DEFAULT FALSE NOT NULL");
             jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE NOT NULL");
             jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS submitted_by VARCHAR(100)");
@@ -555,7 +530,7 @@ public class FormVersionService {
                 || type.equals("paragraph") || type.equals("divider"));
     }
 
-    private Form getFormOrThrow(Long formId) {
+    private Form getFormOrThrow(UUID formId) {
         return formRepository.findById(formId)
                 .orElseThrow(() -> new ResourceNotFoundException("Form " + formId + " not found"));
     }

@@ -101,7 +101,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void updateProfile(Long userId, UpdateUserRequest request, MultipartFile profilePicture) {
+    public void updateProfile(UUID userId, UpdateUserRequest request, MultipartFile profilePicture) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
@@ -182,7 +182,7 @@ public class AuthService {
         SecurityContextHolder.clearContext();
     }
 
-    public Long getCurrentUserId() {
+    public UUID getCurrentUserId() {
         String username = SessionUtil.getCurrentUsername();
         if (username != null) {
             return userRepository.findByUsername(username)

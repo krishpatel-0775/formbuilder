@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         if (!loading) {
             const publicPaths = ["/login", "/register"];
-            const isPublicForm = pathname.match(/^\/forms\/\d+$/);
+            const isPublicForm = pathname.match(/^\/forms\/[a-f0-9-]+$/);
 
             if (!user) {
                 if (!publicPaths.includes(pathname) && !isPublicForm) {
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
                         // Check if user has permission for forms management
                         const hasFormsVaultAccess = user.permissions?.includes("/forms/all");
                         const formsBasePaths = ["/forms/edit/", "/forms/data/", "/forms/create"];
-                        const isVersionsPath = /^\/forms\/\d+\/versions$/.test(path);
+                        const isVersionsPath = /^\/forms\/[a-f0-9-]+\/versions$/.test(path);
                         
                         if (hasFormsVaultAccess && (formsBasePaths.some(bp => path.startsWith(bp)) || isVersionsPath)) {
                             return true;
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
         
         const permissions = user.permissions || [];
         const hasFormsVaultAccess = permissions.includes("/forms/all");
-        const isVersionsPath = /^\/forms\/\d+\/versions$/.test(path);
+        const isVersionsPath = /^\/forms\/[a-f0-9-]+\/versions$/.test(path);
         if (hasFormsVaultAccess && (path.startsWith("/forms/edit/") || path.startsWith("/forms/data/") || path.startsWith("/forms/create") || isVersionsPath)) {
             return true;
         }

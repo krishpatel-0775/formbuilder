@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -41,7 +42,7 @@ public class SubmissionService {
                 .orElseThrow(() -> new ValidationException("User not found"));
     }
 
-    private void checkUserPermission(Long formId) {
+    private void checkUserPermission(UUID formId) {
         Form form = formRepository.findById(formId)
                 .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
         User user = getCurrentUser();
@@ -60,26 +61,32 @@ public class SubmissionService {
     /**
      * Soft-deletes a specific response by marking its 'is_deleted' flag to true.
      */
-    public String deleteResponse(Long formId, Long responseId) {
+    public String deleteResponse(UUID formId, UUID responseId) {
         checkUserPermission(formId);
-        String tableName = "form_" + formId;
-        String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id = ?";
-        jdbcTemplate.update(sql, responseId);
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+        String tableName = form.getTableName();
+        String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id = ?::uuid";
+        jdbcTemplate.update(sql, responseId.toString());
         return "response deleted";
     }
 
     /**
      * Bulk soft-deletes responses by marking their 'is_deleted' flag to true.
      */
-    public String deleteResponses(Long formId, List<Long> responseIds) {
+    public String deleteResponses(UUID formId, List<UUID> responseIds) {
         if (responseIds == null || responseIds.isEmpty()) {
             return "No responses selected";
         }
         checkUserPermission(formId);
-        String tableName = "form_" + formId;
-        String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id IN (" +
-                responseIds.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
-        jdbcTemplate.update(sql, responseIds.toArray());
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+        String tableName = form.getTableName();
+        String inClause = responseIds.stream()
+                .map(id -> "'" + id.toString() + "'::uuid")
+                .collect(Collectors.joining(","));
+        String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE id IN (" + inClause + ")";
+        jdbcTemplate.update(sql);
         return responseIds.size() + " responses deleted";
     }
 
@@ -107,7 +114,7 @@ public class SubmissionService {
         List<FormField> formFields = (targetVersion != null)
                 ? fieldRepository.findByFormVersionId(targetVersion.getId())
                 : form.getFields();
-        Long activeVersionId = targetVersion != null ? targetVersion.getId() : null;
+        UUID activeVersionId = targetVersion != null ? targetVersion.getId() : null;
 
         Map<String, FormField> fieldMap =
                 formFields.stream()
@@ -183,12 +190,12 @@ public class SubmissionService {
 
         // Rule 5.1: Only one draft per user per form.
         // Check if an existing draft exists in this version for this user.
-        Long existingDraftId = null;
+        UUID existingDraftId = null;
         if (activeVersionId != null) {
             try {
                 String checkSql = "SELECT id FROM " + tableName + 
-                                  " WHERE form_version_id = ? AND submitted_by = ? AND is_draft = true AND is_deleted = false LIMIT 1";
-                existingDraftId = jdbcTemplate.queryForObject(checkSql, Long.class, activeVersionId, currentUser);
+                                  " WHERE form_version_id = ?::uuid AND submitted_by = ? AND is_draft = true AND is_deleted = false LIMIT 1";
+                existingDraftId = jdbcTemplate.queryForObject(checkSql, UUID.class, activeVersionId.toString(), currentUser);
             } catch (Exception e) { /* no existing draft */ }
         }
 
@@ -203,18 +210,18 @@ public class SubmissionService {
                     updateValues.add(getSafeValue(f, values.get(f.getFieldName())));
                 }
             }
-            updateSql.append("is_draft = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            updateSql.append("is_draft = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?::uuid");
             updateValues.add(isDraft);
-            updateValues.add(existingDraftId);
+            updateValues.add(existingDraftId.toString());
             jdbcTemplate.update(updateSql.toString(), updateValues.toArray());
         } else {
             // INSERT new record
             if (activeVersionId != null) {
                 sql = "INSERT INTO " + tableName +
-                        " (" + columns + ",form_version_id,is_draft,submitted_by) VALUES (" + placeholders + ",?,?,?)";
+                        " (" + columns + ",form_version_id,is_draft,submitted_by) VALUES (" + placeholders + ",?::uuid,?,?)";
                 Object[] extraValues = new Object[safeValues.length + 3];
                 System.arraycopy(safeValues, 0, extraValues, 0, safeValues.length);
-                extraValues[safeValues.length] = activeVersionId;
+                extraValues[safeValues.length] = activeVersionId.toString();
                 extraValues[safeValues.length + 1] = isDraft;
                 extraValues[safeValues.length + 2] = currentUser;
                 finalValues = extraValues;
@@ -253,11 +260,13 @@ public class SubmissionService {
                     return java.sql.Time.valueOf(strVal);
                 } catch (Exception e) { return null; }
             case "toggle": return "true".equalsIgnoreCase(strVal);
-            case "file_upload": try { return Long.parseLong(strVal); } catch (Exception e) { return null; }
+            case "file_upload":
+                // File UUID stored as text
+                return strVal;
             default:
                 if (f.getSourceTable() != null && !f.getSourceTable().isBlank()) {
-                    if ("checkbox".equals(f.getFieldType())) return strVal;
-                    try { return Long.parseLong(strVal); } catch (Exception e) { return null; }
+                    // Lookup references — store as string (UUID)
+                    return strVal;
                 }
                 return strVal;
         }

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = AppConstants.FRONTEND_URL, allowCredentials = "true")
@@ -36,14 +37,14 @@ public class FormController {
     }
 
     @GetMapping(AppConstants.API_FORM_BY_ID)
-    public ResponseEntity<ApiResponse<FormResponseDto>> getForm(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<FormResponseDto>> getForm(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.getFormResponseById(id)));
     }
 
     @GetMapping("/{id}/data")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getFormData(
-            @PathVariable Long id,
-            @RequestParam(required = false) Long versionId,
+            @PathVariable UUID id,
+            @RequestParam(required = false) UUID versionId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -53,18 +54,18 @@ public class FormController {
     }
 
     @PostMapping(AppConstants.API_FORM_PUBLISH)
-    public ResponseEntity<ApiResponse<String>> publishForm(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> publishForm(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.publishForm(id), null));
     }
 
     @GetMapping(AppConstants.API_FORM_LOOKUP)
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getLookupValues(@PathVariable Long id, @PathVariable String columnName) {
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getLookupValues(@PathVariable UUID id, @PathVariable String columnName) {
         return ResponseEntity.ok(ApiResponse.success(formService.getLookupValues(id, columnName)));
     }
 
     @PutMapping(AppConstants.API_FORM_BY_ID)
     public ResponseEntity<ApiResponse<String>> updateForm(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateFormRequest req) {
         return ResponseEntity.ok(
                 ApiResponse.success(formService.updateForm(id, req), null)
@@ -72,19 +73,19 @@ public class FormController {
     }
 
     @GetMapping(AppConstants.API_FORM_RULES)
-    public ResponseEntity<ApiResponse<String>> getFormRules(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> getFormRules(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.getFormRules(id)));
     }
 
     @PostMapping(AppConstants.API_FORM_RULES)
     public ResponseEntity<ApiResponse<String>> saveFormRules(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody List<@Valid FormRuleDTO> rules) {
         return ResponseEntity.ok(ApiResponse.success(formService.saveFormRules(id, rules), null));
     }
 
     @DeleteMapping(AppConstants.API_FORM_BY_ID)
-    public ResponseEntity<ApiResponse<String>> deleteForm(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteForm(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.deleteForm(id), null));
     }
 }

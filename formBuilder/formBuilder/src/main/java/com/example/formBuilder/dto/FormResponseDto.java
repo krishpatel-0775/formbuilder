@@ -8,13 +8,14 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class FormResponseDto {
-    private Long id;
+    private UUID id;
     private String formName;
     private String tableName;
     private LocalDateTime createdAt;

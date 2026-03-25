@@ -5,9 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
-public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
-    List<UserRole> findByUserId(Long userId);
+public interface UserRoleRepository extends JpaRepository<UserRole, UUID> {
+    List<UserRole> findByUserId(UUID userId);
 
-    Collection<Object> findByRoleId(Long adminRoleId);
+    Collection<Object> findByRoleId(UUID roleId);
 }

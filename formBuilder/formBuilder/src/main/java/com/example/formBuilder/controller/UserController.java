@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -38,7 +39,7 @@ public class UserController {
             map.put("email", user.getEmail());
             map.put("name", user.getName());
             
-            List<Long> roles = userRoleRepository.findByUserId(user.getId())
+            List<UUID> roles = userRoleRepository.findByUserId(user.getId())
                     .stream()
                     .map(UserRole::getRoleId)
                     .collect(Collectors.toList());
@@ -51,7 +52,7 @@ public class UserController {
 
     @PostMapping("/{userId}/roles")
     @Transactional
-    public ResponseEntity<ApiResponse<String>> assignRoles(@PathVariable Long userId, @RequestBody List<Long> roleIds) {
+    public ResponseEntity<ApiResponse<String>> assignRoles(@PathVariable UUID userId, @RequestBody List<UUID> roleIds) {
         // Remove existing roles
         List<UserRole> currentRoles = userRoleRepository.findByUserId(userId);
         userRoleRepository.deleteAll(currentRoles);

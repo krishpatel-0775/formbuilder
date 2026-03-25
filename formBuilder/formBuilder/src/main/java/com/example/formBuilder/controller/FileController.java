@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/files")
@@ -27,9 +28,9 @@ public class FileController {
     private final FormFieldRepository formFieldRepository;
 
     @PostMapping("/upload")
-    public ResponseEntity<ApiResponse<Long>> uploadFile(
+    public ResponseEntity<ApiResponse<UUID>> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("fieldId") Long fieldId) throws IOException {
+            @RequestParam("fieldId") UUID fieldId) throws IOException {
         
         FormField field = formFieldRepository.findById(fieldId)
                 .orElseThrow(() -> new ResourceNotFoundException("Form field not found"));
@@ -39,7 +40,7 @@ public class FileController {
     }
 
     @GetMapping("/view/{id}")
-    public ResponseEntity<Resource> viewFile(@PathVariable Long id) throws IOException {
+    public ResponseEntity<Resource> viewFile(@PathVariable UUID id) throws IOException {
         FileMetadata metadata = fileService.getFileMetadata(id);
         byte[] content = fileService.getFileContent(metadata);
         

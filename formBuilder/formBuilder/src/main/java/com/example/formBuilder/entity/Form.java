@@ -1,6 +1,5 @@
 package com.example.formBuilder.entity;
 
-//import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.PermittedUser;
 import com.example.formBuilder.enums.FormStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -15,6 +14,7 @@ import org.hibernate.annotations.Where;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -26,8 +26,8 @@ import java.util.List;
 public class Form {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     private String formName;
 

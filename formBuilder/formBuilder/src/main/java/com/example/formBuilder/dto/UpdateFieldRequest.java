@@ -1,16 +1,16 @@
 package com.example.formBuilder.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class UpdateFieldRequest {
-    private Long id;            // NULL = new field, non-null = existing field
+    private UUID id;            // NULL = new field, non-null = existing field
     @NotBlank(message = "Field name is required")
     private String name;
     @NotBlank(message = "Field type is required")

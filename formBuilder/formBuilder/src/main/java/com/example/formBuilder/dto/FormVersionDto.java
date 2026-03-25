@@ -7,14 +7,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class FormVersionDto {
-    private Long id;
-    private Long formId;
+    private UUID id;
+    private UUID formId;
     private Integer versionNumber;
     private Boolean isActive;
     private Boolean isLatest;

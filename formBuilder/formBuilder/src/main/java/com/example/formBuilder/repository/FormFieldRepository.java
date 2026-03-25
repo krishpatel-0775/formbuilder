@@ -5,12 +5,13 @@ import com.example.formBuilder.entity.FormField;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.UUID;
 
-public interface FormFieldRepository extends JpaRepository<FormField, Long> {
+public interface FormFieldRepository extends JpaRepository<FormField, UUID> {
 
-    List<FormField> findByFormId(Long formId);
+    List<FormField> findByFormId(UUID formId);
 
-    List<FormField> findByFormVersionId(Long formVersionId);
+    List<FormField> findByFormVersionId(UUID formVersionId);
 
-    void deleteByFormVersionId(Long formVersionId);
+    void deleteByFormVersionId(UUID formVersionId);
 }

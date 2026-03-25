@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -80,7 +81,7 @@ public class DataSeeder implements CommandLineRunner {
                 .build());
 
         // 4. Map Modules to Role
-        for (Long modId : Arrays.asList(formsParent.getId(), adminParent.getId(), formVault.getId(), createForm.getId(), moduleMgmt.getId(), roleMgmt.getId())) {
+        for (UUID modId : Arrays.asList(formsParent.getId(), adminParent.getId(), formVault.getId(), createForm.getId(), moduleMgmt.getId(), roleMgmt.getId())) {
             roleModuleRepository.save(RoleModule.builder()
                     .roleId(adminRole.getId())
                     .moduleId(modId)

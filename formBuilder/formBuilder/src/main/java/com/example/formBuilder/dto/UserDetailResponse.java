@@ -7,13 +7,14 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class UserDetailResponse {
-    private Long id;
+    private UUID id;
     private String username;
     private String fullName;
     private String email;

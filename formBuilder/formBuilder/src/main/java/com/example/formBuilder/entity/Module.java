@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "modules")
 @Getter
@@ -14,8 +16,8 @@ import lombok.*;
 public class Module {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "module_name", nullable = false)
     private String moduleName;
@@ -37,10 +39,10 @@ public class Module {
     private boolean isSubParent;
 
     @Column(name = "parent_module_id")
-    private Long parentId;
+    private UUID parentId;
 
     @Column(name = "sub_parent_module_id")
-    private Long subParentId;
+    private UUID subParentId;
 
     @Column(name = "menu_icon_css")
     private String iconCss;

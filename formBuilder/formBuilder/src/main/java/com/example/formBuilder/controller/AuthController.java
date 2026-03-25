@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.net.MalformedURLException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -41,7 +42,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> updateProfile(
             @RequestPart("request") @Valid UpdateUserRequest request,
             @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
-        Long userId = authService.getCurrentUserId();
+        UUID userId = authService.getCurrentUserId();
         if (userId == null) {
             return ResponseEntity.status(401).body(ApiResponse.error(401, "Not authenticated"));
         }

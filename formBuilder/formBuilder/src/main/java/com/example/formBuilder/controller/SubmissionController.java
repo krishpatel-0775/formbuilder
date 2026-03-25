@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = AppConstants.FRONTEND_URL, allowCredentials = "true")
@@ -33,21 +34,21 @@ public class SubmissionController {
 
     // Soft-deletes a specific submission record from a form's dynamic table.
     @DeleteMapping(AppConstants.API_SUBMISSION_DELETE)
-    public ResponseEntity<ApiResponse<String>> deleteResponse(@PathVariable Long formId, @PathVariable Long responseId) {
+    public ResponseEntity<ApiResponse<String>> deleteResponse(@PathVariable UUID formId, @PathVariable UUID responseId) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponse(formId, responseId), null));
     }
 
 
     // Bulk soft-deletes submission records.
     @PostMapping(AppConstants.API_SUBMISSION_BULK_DELETE)
-    public ResponseEntity<ApiResponse<String>> deleteBulkResponses(@PathVariable Long formId, @RequestBody List<Long> responseIds) {
+    public ResponseEntity<ApiResponse<String>> deleteBulkResponses(@PathVariable UUID formId, @RequestBody List<UUID> responseIds) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponses(formId, responseIds), null));
     }
 
 
     @PostMapping(AppConstants.API_SUBMISSION_VISIBILITY)
     public ResponseEntity<ApiResponse<Map<String, String>>> evaluateVisibility(
-            @RequestParam Long formId,
+            @RequestParam UUID formId,
             @RequestBody Map<String, Object> values) {
         var form = formService.getFormById(formId);
         Map<String, String> visibility = ruleEngineService.evaluateVisibility(form, values);

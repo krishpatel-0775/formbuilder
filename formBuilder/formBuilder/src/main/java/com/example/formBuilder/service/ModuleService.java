@@ -26,7 +26,7 @@ public class ModuleService {
         return moduleRepository.save(module);
     }
 
-    public Module updateModule(Long id, Module moduleDetails) {
+    public Module updateModule(UUID id, Module moduleDetails) {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
         
@@ -50,17 +50,13 @@ public class ModuleService {
 
     private void normalizeModule(Module module) {
         if (module.isParent()) {
-            // Parent modules cannot have parents or sub-parents
             module.setParentId(null);
             module.setSubParentId(null);
             module.setSubParent(false);
         } else if (module.isSubParent()) {
-            // Sub-parent modules cannot have sub-parents (no nesting sub-parents)
             module.setSubParentId(null);
             module.setParent(false);
-            // Must have a parentId set to be a sub-parent
         }
-        // If it's a regular module (not parent or sub-parent), it should stay as is
     }
 
     public List<Module> getAllModules() {
@@ -79,26 +75,25 @@ public class ModuleService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<UserRole> userRoles = userRoleRepository.findByUserId(user.getId());
-        Set<Long> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toSet());
+        Set<UUID> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toSet());
 
-        Set<Long> moduleIds = new HashSet<>();
-        for (Long roleId : roleIds) {
+        Set<UUID> moduleIds = new HashSet<>();
+        for (UUID roleId : roleIds) {
             moduleIds.addAll(roleModuleRepository.findByRoleId(roleId).stream()
                     .map(RoleModule::getModuleId)
                     .collect(Collectors.toSet()));
         }
 
         List<Module> allActiveModules = moduleRepository.findByActive(true);
-        Map<Long, Module> moduleMap = allActiveModules.stream()
+        Map<UUID, Module> moduleMap = allActiveModules.stream()
                 .collect(Collectors.toMap(Module::getId, m -> m));
 
-        Set<Long> finalModuleIds = new HashSet<>(moduleIds);
-        
-        // Ensure parents of all included modules are also included
-        List<Long> toCheck = new ArrayList<>(moduleIds);
+        Set<UUID> finalModuleIds = new HashSet<>(moduleIds);
+
+        List<UUID> toCheck = new ArrayList<>(moduleIds);
         int index = 0;
         while (index < toCheck.size()) {
-            Long mid = toCheck.get(index++);
+            UUID mid = toCheck.get(index++);
             Module m = moduleMap.get(mid);
             if (m != null && m.getParentId() != null) {
                 if (finalModuleIds.add(m.getParentId())) {
@@ -122,7 +117,6 @@ public class ModuleService {
     private List<Map<String, Object>> buildHierarchy(List<Module> modules) {
         List<Map<String, Object>> menu = new ArrayList<>();
         
-        // Find top level parents
         List<Module> parents = modules.stream()
                 .filter(Module::isParent)
                 .collect(Collectors.toList());
@@ -131,7 +125,6 @@ public class ModuleService {
             Map<String, Object> parentNode = mapModule(parent);
             List<Map<String, Object>> subMenus = new ArrayList<>();
 
-            // Find sub parents or direct links under this parent
             List<Module> children = modules.stream()
                     .filter(m -> parent.getId().equals(m.getParentId()))
                     .collect(Collectors.toList());
@@ -153,7 +146,6 @@ public class ModuleService {
             menu.add(parentNode);
         }
 
-        // Add modules without parents appearing as top level (if any)
         List<Module> standalone = modules.stream()
                 .filter(m -> !m.isParent() && m.getParentId() == null)
                 .collect(Collectors.toList());
@@ -186,11 +178,9 @@ public class ModuleService {
 
         List<Module> existing = moduleRepository.findAll();
 
-        // Ensure Parents
         Module formsParent = findOrCreate(existing, "Forms Management", null, "file-text", true);
         Module adminParent = findOrCreate(existing, "System Admin", null, "shield", true);
 
-        // Ensure Main Links
         Module vaultModule = findOrCreate(existing, "Form Vault", "/forms/all", "list", formsParent.getId());
         Module createModule = findOrCreate(existing, "Create New Form", "/", "plus-circle", formsParent.getId());
         
@@ -198,20 +188,16 @@ public class ModuleService {
         findOrCreate(existing, "Role Management", "/admin/roles", "shield", adminParent.getId());
         findOrCreate(existing, "User Management", "/admin/users", "users", adminParent.getId());
 
-        // Refresh existing list to get new IDs
         existing = moduleRepository.findAll();
-        final Long adminRoleId = adminRole.getId();
-        final Long formsManagerRoleId = formsManagerRole.getId();
+        final UUID adminRoleId = adminRole.getId();
+        final UUID formsManagerRoleId = formsManagerRole.getId();
 
-        // Map modules to roles
         for (Module m : existing) {
-            // Admin gets everything
             if (roleModuleRepository.findByRoleId(adminRoleId).stream()
                     .noneMatch(rm -> rm.getModuleId().equals(m.getId()))) {
                 roleModuleRepository.save(RoleModule.builder().roleId(adminRoleId).moduleId(m.getId()).build());
             }
 
-            // Forms Manager only gets forms related modules
             if (m.getId().equals(formsParent.getId()) || m.getId().equals(vaultModule.getId()) || m.getId().equals(createModule.getId())) {
                 if (roleModuleRepository.findByRoleId(formsManagerRoleId).stream()
                         .noneMatch(rm -> rm.getModuleId().equals(m.getId()))) {
@@ -220,13 +206,11 @@ public class ModuleService {
             }
         }
 
-        // Ensure target user has a role if they have none
         if (targetUsername != null) {
             userRepository.findByUsername(targetUsername).ifPresent(user -> {
                 if (userRoleRepository.findByUserId(user.getId()).isEmpty()) {
-                    // If no one is an admin yet, make this user the first admin
                     boolean anyAdminExists = !userRoleRepository.findByRoleId(adminRoleId).isEmpty();
-                    Long roleToAssign = anyAdminExists ? formsManagerRoleId : adminRoleId;
+                    UUID roleToAssign = anyAdminExists ? formsManagerRoleId : adminRoleId;
                     userRoleRepository.save(UserRole.builder().userId(user.getId()).roleId(roleToAssign).build());
                 }
             });
@@ -250,7 +234,7 @@ public class ModuleService {
         return moduleRepository.save(newModule);
     }
 
-    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, Long parentId) {
+    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, UUID parentId) {
         Optional<Module> found = existing.stream()
                 .filter(m -> m.getModuleName().trim().equalsIgnoreCase(name.trim()))
                 .findFirst();
@@ -268,11 +252,10 @@ public class ModuleService {
     }
 
     @Transactional
-    public void deleteModule(Long id) {
+    public void deleteModule(UUID id) {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
-        // Delete sub-modules if this is a parent or sub-parent
         List<Module> children = moduleRepository.findAll().stream()
                 .filter(m -> id.equals(m.getParentId()) || id.equals(m.getSubParentId()))
                 .collect(Collectors.toList());
@@ -281,10 +264,7 @@ public class ModuleService {
             deleteModule(child.getId());
         }
 
-        // Remove role associations
         roleModuleRepository.deleteAll(roleModuleRepository.findByModuleId(id));
-
-        // Delete the module itself
         moduleRepository.delete(module);
     }
 

@@ -3,6 +3,8 @@ package com.example.formBuilder.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "role_modules")
 @Getter
@@ -13,12 +15,12 @@ import lombok.*;
 public class RoleModule {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "role_id", nullable = false)
-    private Long roleId;
+    private UUID roleId;
 
     @Column(name = "module_id", nullable = false)
-    private Long moduleId;
+    private UUID moduleId;
 }

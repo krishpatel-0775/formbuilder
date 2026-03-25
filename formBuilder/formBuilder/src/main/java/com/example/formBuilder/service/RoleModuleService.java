@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,16 +19,16 @@ public class RoleModuleService {
     private final RoleModuleRepository roleModuleRepository;
     private final ModuleRepository moduleRepository;
 
-    public List<Module> getModulesByRole(Long roleId) {
+    public List<Module> getModulesByRole(UUID roleId) {
         List<RoleModule> mappings = roleModuleRepository.findByRoleId(roleId);
-        List<Long> moduleIds = mappings.stream().map(RoleModule::getModuleId).collect(Collectors.toList());
+        List<UUID> moduleIds = mappings.stream().map(RoleModule::getModuleId).collect(Collectors.toList());
         return moduleRepository.findAllById(moduleIds);
     }
 
     @Transactional
-    public void assignModulesToRole(Long roleId, List<Long> moduleIds) {
+    public void assignModulesToRole(UUID roleId, List<UUID> moduleIds) {
         roleModuleRepository.deleteByRoleId(roleId);
-        for (Long moduleId : moduleIds) {
+        for (UUID moduleId : moduleIds) {
             RoleModule mapping = RoleModule.builder()
                     .roleId(roleId)
                     .moduleId(moduleId)
