@@ -22,6 +22,10 @@ export default function FormDataPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  
+  // Version Filtering State
+  const [versions, setVersions] = useState([]);
+  const [selectedVersionId, setSelectedVersionId] = useState("");
 
   // Pagination & Sorting State
   const [page, setPage] = useState(0);
@@ -48,7 +52,19 @@ export default function FormDataPage() {
         throw new Error("Form is either not published or access is restricted.");
       }
 
-      const url = `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+      // Fetch versions list if not already fetched
+      if (versions.length === 0) {
+        const vRes = await fetch(ENDPOINTS.formVersions(id), { credentials: "include" });
+        if (vRes.ok) {
+          const vJson = await vRes.json();
+          setVersions(vJson.data || []);
+        }
+      }
+
+      let url = `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+      if (selectedVersionId) {
+        url += `&versionId=${selectedVersionId}`;
+      }
 
       const res = await fetch(url, { credentials: "include" });
 
@@ -74,13 +90,16 @@ export default function FormDataPage() {
 
   useEffect(() => {
     fetchData();
-  }, [id, page, size, sortBy, direction]);
+  }, [id, page, size, sortBy, direction, selectedVersionId]);
 
   const handleExport = async () => {
     if (!id || data.length === 0) return;
     setExporting(true);
     try {
-      const url = `${ENDPOINTS.FORMS}/${id}/data?page=0&size=${totalElements || 1000}&sortBy=${sortBy}&direction=${direction}`;
+      let url = `${ENDPOINTS.FORMS}/${id}/data?page=0&size=${totalElements || 1000}&sortBy=${sortBy}&direction=${direction}`;
+      if (selectedVersionId) {
+        url += `&versionId=${selectedVersionId}`;
+      }
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json();
       const allData = json.data?.content || [];
@@ -211,8 +230,31 @@ export default function FormDataPage() {
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Form Responses</h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            {selectedIds.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {versions.length > 0 && (
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Version</span>
+                <span className="w-1 h-1 bg-slate-300 rounded-full mx-1"></span>
+                <select
+                  value={selectedVersionId}
+                  onChange={(e) => {
+                    setSelectedVersionId(e.target.value);
+                    setPage(0);
+                  }}
+                  className="bg-transparent text-sm font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="">All Versions</option>
+                  {versions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      v{v.versionNumber} {v.isLatest ? "(Latest)" : ""} {v.isActive ? "[Active]" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              {selectedIds.length > 0 && (
               <button
                 onClick={deleteBulkResponses}
                 disabled={deleting}
@@ -247,6 +289,7 @@ export default function FormDataPage() {
               )}
               {exporting ? "Exporting..." : "Export Excel"}
             </button>
+            </div>
           </div>
         </div>
 

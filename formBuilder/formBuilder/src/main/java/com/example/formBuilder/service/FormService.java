@@ -158,7 +158,14 @@ public class FormService {
                 .build();
     }
 
-    public Map<String, Object> getAllDataFromTable(Long id, int page, int size, String sortBy, String direction) {
+    private List<FormField> getFieldsForVersion(Form form, Long versionId) {
+        if (versionId != null) {
+            return fieldRepository.findByFormVersionId(versionId);
+        }
+        return getActiveFields(form);
+    }
+
+    public Map<String, Object> getAllDataFromTable(Long id, Long versionId, int page, int size, String sortBy, String direction) {
         Form form = getFormWithPermission(id);
 
         String tableName = "form_" + id;
@@ -174,15 +181,22 @@ public class FormService {
 
         int offset = page * size;
 
-        String dataQuery = "SELECT * FROM " + tableName +
-                " WHERE is_deleted = false" +
-                " ORDER BY " + sortBy + " " + direction +
-                " LIMIT ? OFFSET ?";
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM " + tableName + " WHERE is_deleted = false");
+        List<Object> queryParams = new ArrayList<>();
 
-        List<Map<String, Object>> dataList = jdbcTemplate.queryForList(dataQuery, size, offset);
+        if (versionId != null) {
+            queryBuilder.append(" AND form_version_id = ?");
+            queryParams.add(versionId);
+        }
 
-        // Filter columns to only include active fields
-        List<FormField> activeFields = getActiveFields(form);
+        queryBuilder.append(" ORDER BY ").append(sortBy).append(" ").append(direction).append(" LIMIT ? OFFSET ?");
+        queryParams.add(size);
+        queryParams.add(offset);
+
+        List<Map<String, Object>> dataList = jdbcTemplate.queryForList(queryBuilder.toString(), queryParams.toArray());
+
+        // Filter columns to only include active fields for the target version
+        List<FormField> activeFields = getFieldsForVersion(form, versionId);
         Set<String> activeFieldNames = activeFields.stream()
                 .filter(f -> !isDisplayOnly(f.getFieldType()))
                 .map(FormField::getFieldName)
@@ -258,8 +272,13 @@ public class FormService {
             }
         }
 
-        String countQuery = "SELECT COUNT(*) FROM " + tableName + " WHERE is_deleted = false";
-        Integer total = jdbcTemplate.queryForObject(countQuery, Integer.class);
+        StringBuilder countQueryBuilder = new StringBuilder("SELECT COUNT(*) FROM " + tableName + " WHERE is_deleted = false");
+        List<Object> countParams = new ArrayList<>();
+        if (versionId != null) {
+            countQueryBuilder.append(" AND form_version_id = ?");
+            countParams.add(versionId);
+        }
+        Integer total = jdbcTemplate.queryForObject(countQueryBuilder.toString(), Integer.class, countParams.toArray());
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", dataList);
@@ -318,13 +337,14 @@ public class FormService {
             return "Form published via version " + draftVersionOpt.get().getVersionNumber();
         }
 
-        // Legacy fallback: no versions yet — activate using SchemaManager directly
-        String tableName = form.getTableName();
-        List<FormField> fields = fieldRepository.findByFormId(id);
-        schemaManager.createDynamicTable(tableName, fields);
-        form.setStatus(PUBLISHED);
-        formRepository.save(form);
-        return "Form Published Successfully";
+        // If the form has NO versions at all (e.g., just created), generate Version 1 now.
+        if (!versionRepository.existsByFormId(form.getId())) {
+            List<FormField> fields = fieldRepository.findByFormId(id);
+            versionService.createInitialVersion(form.getId(), fields, form.getRules());
+            return "Form Published Successfully";
+        }
+
+        return "Form is already published and has no pending drafts.";
     }
 
     @Transactional
@@ -351,6 +371,7 @@ public class FormService {
         Form form = new Form();
         form.setFormName(request.getFormName());
         form.setUser(user);
+        form.setStatus(com.example.formBuilder.enums.FormStatus.DRAFT);
         form = formRepository.save(form);
 
         String tableName = "form_" + form.getId();
@@ -415,8 +436,8 @@ public class FormService {
             fieldList.add(formField);
         }
 
-        // Create initial version (v1), which also saves the fields and sets status to PUBLISHED
-        versionService.createInitialVersion(form.getId(), fieldList, form.getRules());
+        // Save the fields to the database associated with the form (but no version yet)
+        fieldRepository.saveAll(fieldList);
 
         return "Form Created Successfully";
     }

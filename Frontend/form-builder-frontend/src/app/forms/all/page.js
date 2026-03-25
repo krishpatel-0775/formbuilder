@@ -17,7 +17,8 @@ import {
     ExternalLink,
     Rocket,
     Copy,
-    Check
+    Check,
+    GitBranch
 } from "lucide-react";
 
 export default function FormVaultPage() {
@@ -255,6 +256,15 @@ export default function FormVaultPage() {
                                             </div>
                                         )}
 
+                                        <Link
+                                            href={`/forms/${form.id}/versions`}
+                                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-violet-50 hover:text-violet-600 transition-all shadow-sm"
+                                            title="Version History"
+                                            suppressHydrationWarning={true}
+                                        >
+                                            <GitBranch size={18} strokeWidth={2.5} />
+                                        </Link>
+
                                         <button
                                             onClick={() => handleDelete(form.id)}
                                             className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
@@ -332,6 +342,9 @@ export default function FormVaultPage() {
                                                 <ArrowUpRight size={18} />
                                             </Link>
                                         )}
+                                        <Link href={`/forms/${form.id}/versions`} className="inline-flex p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all" title="Version History">
+                                            <GitBranch size={18} />
+                                        </Link>
                                         <button
                                             onClick={() => handleDelete(form.id)}
                                             className="inline-flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"

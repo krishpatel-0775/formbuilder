@@ -82,13 +82,7 @@ export function FormHeader({
           </button>
         )}
 
-        <NextLink
-          href={formId ? `/forms/${formId}/versions` : "/forms/all"}
-          className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-violet-600 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-500/5 transition-all shadow-sm group"
-          title="Version History"
-        >
-          <GitBranch size={20} className="group-hover:scale-110 transition-transform" />
-        </NextLink>
+
 
         <button
           onClick={onPreview}
