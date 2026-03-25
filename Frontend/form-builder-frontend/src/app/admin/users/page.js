@@ -19,8 +19,8 @@ export default function UsersPage() {
     const fetchData = async () => {
         try {
             const [uRes, rRes] = await Promise.all([
-                fetch("http://localhost:9090/api/users", { credentials: "include" }),
-                fetch("http://localhost:9090/api/roles", { credentials: "include" })
+                fetch("http://localhost:9090/api/v1/users", { credentials: "include" }),
+                fetch("http://localhost:9090/api/v1/roles", { credentials: "include" })
             ]);
             const uData = await uRes.json();
             const rData = await rRes.json();
@@ -48,7 +48,7 @@ export default function UsersPage() {
 
     const handleSaveMapping = async () => {
         try {
-            const res = await fetch(`http://localhost:9090/api/users/${selectedUser.id}/roles`, {
+            const res = await fetch(`http://localhost:9090/api/v1/users/${selectedUser.id}/roles`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",

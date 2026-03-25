@@ -17,6 +17,7 @@ import java.util.UUID;
 public class FormResponseDto {
     private UUID id;
     private String formName;
+    private String code;
     private String tableName;
     private LocalDateTime createdAt;
     private FormStatus status;

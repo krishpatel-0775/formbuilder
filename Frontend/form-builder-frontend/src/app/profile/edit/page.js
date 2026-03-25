@@ -64,7 +64,7 @@ export default function EditProfilePage() {
         }
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+            const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
                 method: "PUT",
                 body: formData,
                 credentials: "include"

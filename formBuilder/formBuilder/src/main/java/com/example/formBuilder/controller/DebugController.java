@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/debug")
+@RequestMapping("/api/v1/debug")
 @RequiredArgsConstructor
 public class DebugController {
 

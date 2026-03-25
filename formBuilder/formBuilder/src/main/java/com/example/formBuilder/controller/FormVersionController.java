@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = AppConstants.FRONTEND_URL, allowCredentials = "true")
-@RequestMapping("/api/forms/{formId}/versions")
+@RequestMapping("/api/v1/forms/{formId}/versions")
 @RequiredArgsConstructor
 public class FormVersionController {
 

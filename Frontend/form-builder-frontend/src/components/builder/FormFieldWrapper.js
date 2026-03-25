@@ -309,7 +309,7 @@ function FileUploadItem({ field, value, onChange, hasError, inputCls }) {
     formData.append("fieldId", field._dbId || field.id);
 
     try {
-      const res = await fetch("http://localhost:9090/api/files/upload", {
+      const res = await fetch("http://localhost:9090/api/v1/files/upload", {
         method: "POST",
         body: formData,
         credentials: "include"

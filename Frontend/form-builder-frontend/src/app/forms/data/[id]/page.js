@@ -390,7 +390,7 @@ export default function FormDataPage() {
                               {val !== null && val !== undefined ? (
                                 isFile ? (
                                   <a 
-                                    href={`http://localhost:9090/api/files/view/${val}`} 
+                                    href={`http://localhost:9090/api/v1/files/view/${val}`} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all text-xs font-black uppercase tracking-widest shadow-sm"

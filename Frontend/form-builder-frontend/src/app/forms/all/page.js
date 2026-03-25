@@ -37,7 +37,7 @@ export default function FormVaultPage() {
 
     const fetchForms = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/forms", {
+            const res = await fetch("http://localhost:9090/api/v1/forms", {
                 credentials: "include"
             });
             const data = await res.json();
@@ -55,7 +55,7 @@ export default function FormVaultPage() {
         if (!window.confirm("Are you sure ? This action is irreversible.")) return;
 
         try {
-            const res = await fetch(`http://localhost:9090/api/forms/${id}`, {
+            const res = await fetch(`http://localhost:9090/api/v1/forms/${id}`, {
                 method: "DELETE",
                 credentials: "include"
             });
@@ -73,7 +73,7 @@ export default function FormVaultPage() {
 
         setPublishingState(prev => ({ ...prev, [id]: true }));
         try {
-            const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
+            const res = await fetch(`http://localhost:9090/api/v1/forms/publish/${id}`, {
                 method: "POST",
                 credentials: "include"
             });

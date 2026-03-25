@@ -31,6 +31,9 @@ public class Form {
 
     private String formName;
 
+    @Column(unique = true, nullable = false, length = 100)
+    private String code;
+ 
     private String tableName;
 
     private LocalDateTime createdAt = LocalDateTime.now();

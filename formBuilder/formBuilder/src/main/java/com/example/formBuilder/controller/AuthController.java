@@ -24,13 +24,16 @@ import java.net.MalformedURLException;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @CrossOrigin(origins = AppConstants.FRONTEND_URL, allowCredentials = "true")
 public class AuthController {
 
     private final AuthService authService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.upload.profile-photo-dir}")
+    private String profilePhotoDir;
+ 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<String>> register(
             @RequestPart("request") @Valid RegisterRequest request,
@@ -53,7 +56,7 @@ public class AuthController {
     @GetMapping("/profile-photo/{fileName:.+}")
     public ResponseEntity<Resource> getProfilePhoto(@PathVariable String fileName) {
         try {
-            Path filePath = Paths.get("C:\\Users\\stadmin\\Desktop\\projects\\formbuilder\\formBuilder\\formBuilder\\profile-photo").resolve(fileName).normalize();
+            Path filePath = Paths.get(profilePhotoDir).resolve(fileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists()) {

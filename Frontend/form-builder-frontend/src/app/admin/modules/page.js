@@ -30,7 +30,7 @@ export default function ModulesPage() {
 
     const fetchModules = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/modules", {
+            const res = await fetch("http://localhost:9090/api/v1/modules", {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include"
             });
@@ -48,8 +48,8 @@ export default function ModulesPage() {
     const handleSave = async (e) => {
         e.preventDefault();
         const url = editingModule 
-            ? `http://localhost:9090/api/modules/${editingModule.id}`
-            : "http://localhost:9090/api/modules";
+            ? `http://localhost:9090/api/v1/modules/${editingModule.id}`
+            : "http://localhost:9090/api/v1/modules";
         const method = editingModule ? "PUT" : "POST";
 
         try {
@@ -74,7 +74,7 @@ export default function ModulesPage() {
         if (!window.confirm("Are you sure you want to delete this module? This will also delete all sub-modules.")) return;
 
         try {
-            const res = await fetch(`http://localhost:9090/api/modules/${id}`, {
+            const res = await fetch(`http://localhost:9090/api/v1/modules/${id}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include"

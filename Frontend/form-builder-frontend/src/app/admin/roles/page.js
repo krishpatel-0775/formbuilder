@@ -24,7 +24,7 @@ export default function RolesPage() {
 
     const fetchRoles = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/roles", { credentials: "include" });
+            const res = await fetch("http://localhost:9090/api/v1/roles", { credentials: "include" });
             const data = await res.json();
             if (data.success) setRoles(data.data);
         } catch (err) { console.error("Error fetching roles:", err); }
@@ -33,7 +33,7 @@ export default function RolesPage() {
 
     const fetchModules = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/modules", { credentials: "include" });
+            const res = await fetch("http://localhost:9090/api/v1/modules", { credentials: "include" });
             const data = await res.json();
             if (data.success) setModules(data.data);
         } catch (err) { console.error("Error fetching modules:", err); }
@@ -41,7 +41,7 @@ export default function RolesPage() {
 
     const handleSaveRole = async (e) => {
         e.preventDefault();
-        const url = editingRole ? `http://localhost:9090/api/roles/${editingRole.id}` : "http://localhost:9090/api/roles";
+        const url = editingRole ? `http://localhost:9090/api/v1/roles/${editingRole.id}` : "http://localhost:9090/api/v1/roles";
         const method = editingRole ? "PUT" : "POST";
 
         try {
@@ -64,7 +64,7 @@ export default function RolesPage() {
     const openMapping = async (role) => {
         setSelectedRole(role);
         try {
-            const res = await fetch(`http://localhost:9090/api/roles/${role.id}/modules`, { credentials: "include" });
+            const res = await fetch(`http://localhost:9090/api/v1/roles/${role.id}/modules`, { credentials: "include" });
             const data = await res.json();
             if (data.success) {
                 setAssignedModuleIds(data.data.map(m => m.id));
@@ -75,7 +75,7 @@ export default function RolesPage() {
 
     const handleSaveMapping = async () => {
         try {
-            const res = await fetch(`http://localhost:9090/api/roles/${selectedRole.id}/modules`, {
+            const res = await fetch(`http://localhost:9090/api/v1/roles/${selectedRole.id}/modules`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",

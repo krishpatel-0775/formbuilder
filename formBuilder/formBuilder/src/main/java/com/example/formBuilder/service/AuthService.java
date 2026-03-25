@@ -9,6 +9,7 @@ import com.example.formBuilder.repository.RoleRepository;
 import com.example.formBuilder.repository.UserRoleRepository;
 import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.security.SessionUtil;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,16 @@ public class AuthService {
     private final UserDetailsService userDetailsService;
     private final ModuleService moduleService;
 
-    private static final String PROFILE_PHOTO_DIR = "C:\\Users\\stadmin\\Desktop\\projects\\formbuilder\\formBuilder\\formBuilder\\profile-photo";
+    @org.springframework.beans.factory.annotation.Value("${app.upload.profile-photo-dir}")
+    private String profilePhotoDir;
+
+    @PostConstruct
+    public void init() {
+        File dir = new File(profilePhotoDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
 
     @Transactional
     public String register(RegisterRequest request, MultipartFile profilePicture) {
@@ -67,18 +77,13 @@ public class AuthService {
 
         if (profilePicture != null && !profilePicture.isEmpty()) {
             try {
-                File dir = new File(PROFILE_PHOTO_DIR);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
                 String originalFileName = profilePicture.getOriginalFilename();
                 String extension = "";
                 if (originalFileName != null && originalFileName.contains(".")) {
                     extension = originalFileName.substring(originalFileName.lastIndexOf("."));
                 }
                 String fileName = UUID.randomUUID().toString() + extension;
-                Path filePath = Paths.get(PROFILE_PHOTO_DIR, fileName);
+                Path filePath = Paths.get(profilePhotoDir, fileName);
                 Files.copy(profilePicture.getInputStream(), filePath);
 
                 // For simplicity, we store the filename. A full URL would depend on how the file is served.
@@ -119,18 +124,13 @@ public class AuthService {
 
         if (profilePicture != null && !profilePicture.isEmpty()) {
             try {
-                File dir = new File(PROFILE_PHOTO_DIR);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
                 String originalFileName = profilePicture.getOriginalFilename();
                 String extension = "";
                 if (originalFileName != null && originalFileName.contains(".")) {
                     extension = originalFileName.substring(originalFileName.lastIndexOf("."));
                 }
                 String fileName = UUID.randomUUID().toString() + extension;
-                Path filePath = Paths.get(PROFILE_PHOTO_DIR, fileName);
+                Path filePath = Paths.get(profilePhotoDir, fileName);
                 Files.copy(profilePicture.getInputStream(), filePath);
 
                 // Update profile picture URL
@@ -221,7 +221,7 @@ public class AuthService {
                 .fullName(user.getName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .profilePictureUrl(user.getProfilePictureUrl() != null ? "/api/auth/profile-photo/" + user.getProfilePictureUrl() : null)
+                .profilePictureUrl(user.getProfilePictureUrl() != null ? "/api/v1/auth/profile-photo/" + user.getProfilePictureUrl() : null)
                 .menu(menu)
                 .permissions(permissions)
                 .roles(roles)

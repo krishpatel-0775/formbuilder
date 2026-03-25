@@ -83,6 +83,25 @@ public class FormService {
         return id.toString().replace("-", "_");
     }
 
+    private String generateRandomCode() {
+        String chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        String code = sb.toString();
+        // Ensure it starts with a letter as per regex ^[a-z][a-z0-9_]*$
+        if (!Character.isLetter(code.charAt(0))) {
+            return generateRandomCode();
+        }
+        // Check uniqueness
+        if (formRepository.findByCode(code).isPresent()) {
+            return generateRandomCode();
+        }
+        return code;
+    }
+
     public Form getFormById(UUID id) {
         return formRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
@@ -126,6 +145,7 @@ public class FormService {
         return FormResponseDto.builder()
                 .id(form.getId())
                 .formName(form.getFormName())
+                .code(form.getCode())
                 .tableName(form.getTableName())
                 .createdAt(form.getCreatedAt())
                 .status(form.getStatus())
@@ -221,8 +241,19 @@ public class FormService {
         for (FormField field : lookupFields) {
             String col = field.getFieldName();
             String sourceFormId = field.getSourceTable();
-            // sourceTable stores a form UUID or legacy form ID — build table name accordingly
-            String sourceTable = "form_" + sourceFormId.replace("-", "_");
+            // Resolve correct table name for lookups
+            String sourceTable;
+            try {
+                Form sourceForm = formRepository.findById(UUID.fromString(sourceFormId)).orElse(null);
+                if (sourceForm == null) {
+                    log.warn("Lookup source form {} not found", sourceFormId);
+                    continue;
+                }
+                sourceTable = sourceForm.getTableName();
+            } catch (Exception e) {
+                log.warn("Invalid sourceFormId UUID: {}", sourceFormId);
+                continue;
+            }
             String sourceCol = field.getSourceColumn();
 
             // Collect unique UUID strings from this column in the current page
@@ -299,7 +330,7 @@ public class FormService {
         List<Form> forms = formRepository.findByUserId(user.getId());
         
         return forms.stream()
-                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus()))
+                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getCode(), form.getStatus()))
                 .collect(Collectors.toList());
     }
 
@@ -376,11 +407,16 @@ public class FormService {
         form.setFormName(request.getFormName());
         form.setUser(user);
         form.setStatus(com.example.formBuilder.enums.FormStatus.DRAFT);
-        form = formRepository.save(form);
-
-        // Build table name from UUID (replace hyphens with underscores for PostgreSQL compatibility)
-        String tableName = "form_" + uuidToTableSuffix(form.getId());
+        
+        // Generate random internal code
+        String code = generateRandomCode();
+        form.setCode(code);
+        
+        // Build table name from code
+        String tableName = "form_data_" + code;
         form.setTableName(tableName);
+        
+        form = formRepository.save(form);
 
         // Serialize rules if provided
         if (request.getRules() != null && !request.getRules().isEmpty()) {

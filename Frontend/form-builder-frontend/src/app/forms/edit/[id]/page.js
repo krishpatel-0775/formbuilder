@@ -152,7 +152,7 @@ export default function EditFormPage() {
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
     if (["select", "radio", "checkbox"].includes(af?.type) && user) {
-      fetch(`http://localhost:9090/api/forms`, { credentials: "include" })
+      fetch(`http://localhost:9090/api/v1/forms`, { credentials: "include" })
         .then(r => r.json())
         .then(r => setAvailableForms(r.data || []))
         .catch(console.error);
@@ -162,7 +162,7 @@ export default function EditFormPage() {
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
     if (["select", "radio", "checkbox"].includes(af?.type) && af?.sourceTable) {
-      fetch(`http://localhost:9090/api/forms/${af.sourceTable}`, { credentials: "include" })
+      fetch(`http://localhost:9090/api/v1/forms/${af.sourceTable}`, { credentials: "include" })
         .then(r => r.json())
         .then(r => setSelectedFormFields(r.data?.fields || []))
         .catch(console.error);
@@ -266,7 +266,7 @@ export default function EditFormPage() {
     setIsPublishing(true);
     try {
       await saveForm();
-      const res = await fetch(`http://localhost:9090/api/forms/publish/${id}`, {
+      const res = await fetch(`http://localhost:9090/api/v1/forms/publish/${id}`, {
         method: "POST",
         credentials: "include"
       });
@@ -388,7 +388,7 @@ export default function EditFormPage() {
     if (!window.confirm("Are you sure you want to delete this form? This action cannot be undone and will preserve the dynamic table data.")) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`http://localhost:9090/api/forms/${id}`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`http://localhost:9090/api/v1/forms/${id}`, { method: "DELETE", credentials: "include" });
       if (!res.ok) { const errorMsg = await res.text(); throw new Error(errorMsg || "Failed to delete form."); }
       setShowSuccess(true);
       setTimeout(() => { setShowSuccess(false); router.push("/forms/all"); }, 1000);

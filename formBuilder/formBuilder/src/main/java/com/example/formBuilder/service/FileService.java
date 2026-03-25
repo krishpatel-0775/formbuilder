@@ -4,6 +4,7 @@ import com.example.formBuilder.entity.FileMetadata;
 import com.example.formBuilder.entity.FormField;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.FileMetadataRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,9 +23,17 @@ import java.util.UUID;
 public class FileService {
 
     private final FileMetadataRepository fileMetadataRepository;
-
-    @Value("${file.upload.dir:C:\\Users\\stadmin\\Desktop\\projects\\formbuilder\\formBuilder\\formBuilder\\files}")
+ 
+    @org.springframework.beans.factory.annotation.Value("${app.upload.form-files-dir:./uploads/form-files}")
     private String uploadDir;
+
+    @PostConstruct
+    public void init() {
+        File dir = new File(uploadDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
 
     public FileMetadata uploadFile(MultipartFile file, FormField field) throws IOException {
         validateFile(file, field);
