@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
             } else {
                 if (publicPaths.includes(pathname)) {
                     // Redirect to the first available permission or profile
-                    const firstPermission = user.permissions?.[0] || "/profile";
+                    const firstPermission = user.permissions?.includes("/dashboard") ? "/dashboard" : (user.permissions?.[0] || "/profile");
                     router.push(firstPermission === "/" ? "/profile" : firstPermission);
                 } else if (!isPublicForm) {
                     // RBAC Check for authenticated users on protected paths
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
 
                     if (!isAuthorized(pathname)) {
                         console.warn(`Access denied for ${pathname}`);
-                        const fallback = user.permissions?.[0] || "/profile";
+                        const fallback = user.permissions?.includes("/dashboard") ? "/dashboard" : (user.permissions?.[0] || "/profile");
                         router.push(fallback === "/" ? "/profile" : fallback);
                     }
                 }

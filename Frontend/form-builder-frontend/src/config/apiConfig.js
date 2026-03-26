@@ -3,6 +3,7 @@ export const API_BASE_URL = "http://localhost:9090";
 export const ENDPOINTS = {
     FORMS: `${API_BASE_URL}/api/v1/forms`,
     SUBMISSIONS: `${API_BASE_URL}/api/v1/submissions`,
+    DASHBOARD_STATS: `${API_BASE_URL}/api/v1/dashboard/stats`,
     VISIBILITY: `${API_BASE_URL}/api/v1/submissions/visibility`,
     // Auth
     AUTH_REGISTER: `${API_BASE_URL}/api/v1/auth/register`,

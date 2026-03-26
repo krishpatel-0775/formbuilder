@@ -27,6 +27,7 @@ public class AppConstants {
     public static final String PHONE_REGEX = "^\\d{7,15}$";
     public static final String VALID_NAME_REGEX = "^[a-zA-Z][a-zA-Z0-9_]*$";
     public static final String FORM_CODE_REGEX = "^[a-z][a-z0-9_]*$";
+    public static final String STRICT_FORM_NAME_REGEX = "^[a-z][a-z0-9_]{2,49}$";
     
     private AppConstants() {
         // Private constructor to prevent instantiation

@@ -33,9 +33,17 @@ export function FormHeader({
             type="text"
             placeholder="Name your masterpiece..."
             value={formName}
-            onChange={(e) => setFormName(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value.toLowerCase().replace(/[\s\-]/g, "_").replace(/[^a-z0-9_]/g, "");
+              setFormName(val);
+            }}
             className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`}
           />
+          {formName && !/^[a-z][a-z0-9_]{2,49}$/.test(formName) && (
+            <span className="text-[10px] font-bold text-amber-500 mt-1">
+              {formName.length < 3 ? "Minimum 3 characters" : !/^[a-z]/.test(formName) ? "Must start with a letter" : "Invalid format"}
+            </span>
+          )}
         </div>
       </div>
 
@@ -101,7 +109,7 @@ export function FormHeader({
             } disabled:opacity-50`}
         >
           {showSuccess ? (
-            <><CheckCircle2 size={18} strokeWidth={3} /> Saved</>
+            <><CheckCircle2 size={18} strokeWidth={3} /> {formStatus === "DRAFT" ? "Form saved as draft" : "New version created"}</> // FIXED: Status-dependent success message
           ) : isSaving ? (
             <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           ) : (

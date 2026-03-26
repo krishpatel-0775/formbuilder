@@ -178,6 +178,7 @@ public class ModuleService {
 
         List<Module> existing = moduleRepository.findAll();
 
+        Module dashboardModule = findOrCreate(existing, "Dashboard", "/dashboard", "LayoutDashboard", null, false);
         Module formsParent = findOrCreate(existing, "Forms Management", null, "file-text", true);
         Module adminParent = findOrCreate(existing, "System Admin", null, "shield", true);
 
@@ -198,7 +199,7 @@ public class ModuleService {
                 roleModuleRepository.save(RoleModule.builder().roleId(adminRoleId).moduleId(m.getId()).build());
             }
 
-            if (m.getId().equals(formsParent.getId()) || m.getId().equals(vaultModule.getId()) || m.getId().equals(createModule.getId())) {
+            if (m.getId().equals(dashboardModule.getId()) || m.getId().equals(formsParent.getId()) || m.getId().equals(vaultModule.getId()) || m.getId().equals(createModule.getId())) {
                 if (roleModuleRepository.findByRoleId(formsManagerRoleId).stream()
                         .noneMatch(rm -> rm.getModuleId().equals(m.getId()))) {
                     roleModuleRepository.save(RoleModule.builder().roleId(formsManagerRoleId).moduleId(m.getId()).build());
@@ -246,6 +247,24 @@ public class ModuleService {
                 .prefix(prefix)
                 .iconCss(icon)
                 .parentId(parentId)
+                .active(true)
+                .build();
+        return moduleRepository.save(newModule);
+    }
+
+    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, UUID parentId, boolean isParent) {
+        Optional<Module> found = existing.stream()
+                .filter(m -> m.getModuleName().trim().equalsIgnoreCase(name.trim()))
+                .findFirst();
+        
+        if (found.isPresent()) return found.get();
+ 
+        Module newModule = Module.builder()
+                .moduleName(name)
+                .prefix(prefix)
+                .iconCss(icon)
+                .parentId(parentId)
+                .isParent(isParent)
                 .active(true)
                 .build();
         return moduleRepository.save(newModule);

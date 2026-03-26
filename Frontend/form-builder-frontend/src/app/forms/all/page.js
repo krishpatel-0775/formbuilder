@@ -60,11 +60,14 @@ export default function FormVaultPage() {
                 credentials: "include"
             });
             const data = await res.json();
-            if (data.success) {
+            if (res.ok && data.success) {
                 setForms(prev => prev.filter(f => f.id !== id));
+            } else {
+                alert(`❌ ${data.message || "Failed to delete form."}`);
             }
         } catch (err) {
             console.error("Error deleting form:", err);
+            alert("❌ An unexpected error occurred while deleting the form.");
         }
     };
 

@@ -2,6 +2,7 @@ package com.example.formBuilder.service;
 
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.entity.FormField;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,21 @@ public class SchemaManager {
     private final JdbcTemplate jdbcTemplate;
 
     private static final Pattern VALID_NAME = Pattern.compile(AppConstants.VALID_NAME_REGEX);
+ 
+    @PostConstruct
+    public void initStaticTables() {
+        String sql = "CREATE TABLE IF NOT EXISTS form_submission_meta (" +
+                "id UUID PRIMARY KEY, " +
+                "form_id UUID NOT NULL, " +
+                "form_version_id UUID, " +
+                "submission_table VARCHAR(100) NOT NULL, " +
+                "submission_row_id UUID NOT NULL, " +
+                "status VARCHAR(50) NOT NULL, " +
+                "submitted_by VARCHAR(100), " +
+                "submitted_at TIMESTAMP, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)";
+        jdbcTemplate.execute(sql);
+    }
 
     /** Field types that are purely visual — they have no database column. */
     private static final java.util.Set<String> DISPLAY_ONLY_TYPES = java.util.Set.of(
@@ -33,6 +49,38 @@ public class SchemaManager {
     );
 
     /**
+     * Builds a safe PostgreSQL table name from a user-provided form name.
+     * Sanitizes by lowercasing, replacing spaces/hyphens with underscores,
+     * and removing non-alphanumeric characters.
+     */
+    public String buildSafeTableName(String formName) {
+        if (formName == null || formName.isBlank()) {
+            throw new IllegalArgumentException("Form name cannot be empty");
+        }
+
+        // 1. Lowercase
+        String sanitized = formName.trim().toLowerCase();
+
+        // 2. Replace spaces and hyphens with underscores
+        sanitized = sanitized.replaceAll("[\\s\\-]", "_");
+
+        // 3. Remove any remaining characters that are not a-z, 0-9, or _
+        sanitized = sanitized.replaceAll("[^a-z0-9_]", "");
+
+        // 4. Ensure it doesn't start with a number (Postgres requirement for unquoted identifiers)
+        if (Character.isDigit(sanitized.charAt(0))) {
+            sanitized = "f_" + sanitized;
+        }
+
+        // 5. Truncate to 50 chars to leave room for the "form_data_" prefix and any suffixes
+        if (sanitized.length() > 50) {
+            sanitized = sanitized.substring(0, 50);
+        }
+
+        return "form_data_" + sanitized;
+    }
+
+    /**
      * Generates and executes the CREATE TABLE SQL statement with constraints for a new form.
      */
     public void createDynamicTable(String tableName, List<FormField> fields) {
@@ -44,6 +92,7 @@ public class SchemaManager {
                 .append(", is_deleted BOOLEAN DEFAULT FALSE NOT NULL")
                 .append(", is_draft BOOLEAN DEFAULT FALSE NOT NULL")
                 .append(", submitted_by VARCHAR(100)")
+                .append(", form_version_id UUID")
                 .append(", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL")
                 .append(", updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL");
 
@@ -57,50 +106,9 @@ public class SchemaManager {
                     .append(field.getFieldName())
                     .append(" ")
                     .append(mapType(field));
-
-            if (TRUE.equals(field.getRequired())) {
-                sql.append(" NOT NULL");
-            }
-
-            if (field.getMinLength() != null) {
-                sql.append(" CHECK (char_length(")
-                        .append(field.getFieldName())
-                        .append(") >= ")
-                        .append(field.getMinLength())
-                        .append(")");
-            }
-
-            if (field.getMaxLength() != null) {
-                sql.append(" CHECK (char_length(")
-                        .append(field.getFieldName())
-                        .append(") <= ")
-                        .append(field.getMaxLength())
-                        .append(")");
-            }
-
-            if (field.getMin() != null) {
-                sql.append(" CHECK (")
-                        .append(field.getFieldName())
-                        .append(" >= ")
-                        .append(field.getMin())
-                        .append(")");
-            }
-
-            if (field.getMax() != null) {
-                sql.append(" CHECK (")
-                        .append(field.getFieldName())
-                        .append(" <= ")
-                        .append(field.getMax())
-                        .append(")");
-            }
-
-            if (field.getPattern() != null) {
-                sql.append(" CHECK (")
-                        .append(field.getFieldName())
-                        .append(" ~ '")
-                        .append(field.getPattern().replace("'", "''"))
-                        .append("')");
-            }
+            
+            // FIXED: Removed NOT NULL and CHECK constraints from DB (minLength, maxLength, min, max, pattern).
+            // All validation is now handled in the backend (SubmissionService) to avoid version conflicts.
         }
 
         sql.append(")");

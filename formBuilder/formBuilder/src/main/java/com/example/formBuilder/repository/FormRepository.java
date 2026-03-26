@@ -11,5 +11,9 @@ import java.util.UUID;
 public interface FormRepository extends JpaRepository<Form, UUID> {
     List<Form> findByUserId(UUID userId);
     Optional<Form> findByIdAndUserId(UUID id, UUID userId);
-    Optional<Form> findByCode(String code);
+    Optional<Form> findByTableName(String tableName);
+ 
+    long countByUserId(UUID userId);
+    long countByUserIdAndStatus(UUID userId, com.example.formBuilder.enums.FormStatus status);
+    List<Form> findTop5ByUserIdOrderByUpdatedAtDesc(UUID userId);
 }

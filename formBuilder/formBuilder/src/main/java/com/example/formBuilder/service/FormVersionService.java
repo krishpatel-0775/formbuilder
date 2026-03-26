@@ -83,7 +83,9 @@ public class FormVersionService {
         FormVersion newVersion = FormVersion.builder()
                 .formId(formId)
                 .versionNumber(nextNumber)
-                .isActive(true)
+                // FIXED: New version of a DRAFT form should be INACTIVE.
+                // It only becomes active when you click Publish.
+                .isActive(form.getStatus() == com.example.formBuilder.enums.FormStatus.PUBLISHED)
                 .isLatest(true)
                 .rules(source != null && source.getRules() != null ? source.getRules() : (form.getRules() != null ? form.getRules() : "[]"))
                 .createdBy(username)
@@ -94,15 +96,17 @@ public class FormVersionService {
         // Clone fields from source version (or from the form's legacy fields)
         List<FormField> sourceFields = resolveFieldsToClone(formId, source);
         List<FormField> clonedFields = cloneFields(sourceFields, newVersion);
+        // FIXED: Ensure no duplicates before saving
+        validateUniqueFields(clonedFields);
         fieldRepository.saveAll(clonedFields);
 
         // Ensure schema is updated for this new active version
         ensureSchemaForVersion(form, newVersion);
         
-        // Sync parent form status
-        form.setStatus(com.example.formBuilder.enums.FormStatus.PUBLISHED);
-        formRepository.save(form);
-
+        // FIXED: Removed form.setStatus(PUBLISHED) from here. 
+        // Versioning and Publishing are now decoupled.
+        // ensureSchemaForVersion(form, newVersion); // Still needed to ensure schema if form is already published
+        
         log.info("Created and activated version {} for form {}", nextNumber, formId);
         return toDtoWithFields(newVersion);
     }
@@ -129,13 +133,16 @@ public class FormVersionService {
         for (FormField f : fields) {
             f.setFormVersion(v1);
         }
+        // FIXED: Final check for unique field names before publication
+        validateUniqueFields(fields);
         fieldRepository.saveAll(fields);
 
-        ensureSchemaForVersion(form, v1);
-        
+        // FIXED: Set status to PUBLISHED BEFORE schema sync so guard allows it
         form.setStatus(com.example.formBuilder.enums.FormStatus.PUBLISHED);
         formRepository.save(form);
-
+        
+        ensureSchemaForVersion(form, v1);
+ 
         return toDtoWithFields(v1);
     }
 
@@ -156,18 +163,26 @@ public class FormVersionService {
         log.info("Manually activating version {} for form {}", toActivate.getVersionNumber(), formId);
         
         // Rule 8: On every activation, old drafts MUST be deleted.
-        discardDraftsForForm(formId);
+        // FIXED: Only discard drafts if the form is already PUBLISHED.
+        // For new draft forms, no submission table exists yet, so this would fail.
+        if (form.getStatus() == com.example.formBuilder.enums.FormStatus.PUBLISHED) {
+            discardDraftsForForm(formId);
+        } else {
+            log.info("Skipping draft cleanup for form {}: currently in {} state", formId, form.getStatus());
+        }
 
         versionRepository.deactivateAllForForm(formId);
         toActivate.setIsActive(true);
         versionRepository.saveAndFlush(toActivate);
 
-        // Ensure DB schema reflects this version's fields
-        ensureSchemaForVersion(form, toActivate);
-
-        // Sync Form status
+        // FIXED: Set status to PUBLISHED BEFORE schema sync so guard allows it
         form.setStatus(com.example.formBuilder.enums.FormStatus.PUBLISHED);
         formRepository.saveAndFlush(form);
+        
+        // Ensure DB schema reflects this version's fields
+        log.info("Activating version {} for form {}. Status is {}. Pre-sync schema check.", 
+                toActivate.getVersionNumber(), formId, form.getStatus());
+        ensureSchemaForVersion(form, toActivate);
 
         log.info("Successfully activated version {} for form {}", toActivate.getVersionNumber(), formId);
         return toDtoWithFields(toActivate);
@@ -184,6 +199,32 @@ public class FormVersionService {
         
         // Rule 5: Once a field is created with a specific type, its type MUST NEVER change.
         validateFieldConsistency(current.getId(), incoming);
+        
+        // FIXED: Ensure all field names are unique within the version to prevent bad SQL grammar
+        validateUniqueFieldNames(incoming);
+
+        Form form = getFormOrThrow(current.getFormId()); // FIXED: Need form to check status
+
+        // FIXED: IF form is DRAFT, update the existing version in-place
+        if (form.getStatus() == com.example.formBuilder.enums.FormStatus.DRAFT) {
+            log.info("Draft Edit: Updating existing draft version v{} for fields. Replacing all fields.", current.getVersionNumber()); // FIXED: Added log
+            fieldRepository.deleteByFormVersionId(current.getId());
+            fieldRepository.flush(); // FIXED: Force flush to ensure old fields are deleted before saveAll
+            
+            List<FormField> newFields = new ArrayList<>();
+            int order = 1;
+            for (UpdateFieldRequest req : incoming) {
+                FormField field = buildFormField(req);
+                field.setFormVersion(current);
+                field.setForm(form);
+                field.setDisplayOrder(order++);
+                newFields.add(field);
+            }
+            fieldRepository.saveAll(newFields);
+            log.info("Successfully saved {} new fields for draft version v{}", newFields.size(), current.getVersionNumber()); // FIXED: Added log
+            // FIXED: Do NOT call ensureSchemaForVersion for DRAFT forms (no table exists yet)
+            return toDtoWithFields(current); // FIXED: Return same version
+        }
 
         // REUSE LOGIC: If the LATEST version for this form is very recent (< 10s) 
         // and was created by the same user, UPDATE it instead of creating another version.
@@ -195,7 +236,6 @@ public class FormVersionService {
             
             List<FormField> newFields = new ArrayList<>();
             int order = 1;
-            Form form = getFormOrThrow(current.getFormId());
             for (UpdateFieldRequest req : incoming) {
                 FormField field = buildFormField(req);
                 field.setFormVersion(latest);
@@ -228,7 +268,6 @@ public class FormVersionService {
         newVersion = versionRepository.save(newVersion);
 
         // Save incoming fields to the NEW version
-        Form form = getFormOrThrow(current.getFormId());
         List<FormField> newFields = new ArrayList<>();
         int order = 1;
         for (UpdateFieldRequest req : incoming) {
@@ -243,8 +282,7 @@ public class FormVersionService {
         // Sync schema
         ensureSchemaForVersion(form, newVersion);
         
-        form.setStatus(com.example.formBuilder.enums.FormStatus.PUBLISHED);
-        formRepository.save(form);
+        // FIXED: Removed form.setStatus(PUBLISHED). Save does not trigger publish.
 
         log.info("Edit session: Created new active version {} for form {}", nextNumber, current.getFormId());
         return toDtoWithFields(newVersion);
@@ -254,6 +292,18 @@ public class FormVersionService {
     public FormVersionDto updateVersionRules(UUID versionId, String rulesJson) {
         FormVersion current = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version not found"));
+
+        Form form = getFormOrThrow(current.getFormId()); // FIXED: Need form to check status
+
+        // FIXED: IF form is DRAFT, update the existing version in-place
+        if (form.getStatus() == com.example.formBuilder.enums.FormStatus.DRAFT) {
+            log.info("Draft Rules Update: Updating existing draft version v{} rules", current.getVersionNumber());
+            current.setRules(rulesJson != null ? rulesJson : "[]");
+            current.setUpdatedAt(LocalDateTime.now());
+            versionRepository.save(current);
+            // FIXED: Do NOT call ensureSchemaForVersion or change form status
+            return toDtoWithFields(current);
+        }
 
         // REUSE LOGIC: Update existing if very recent
         FormVersion latest = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(current.getFormId()).orElse(current);
@@ -289,18 +339,55 @@ public class FormVersionService {
         List<FormField> clonedFields = cloneFields(currentFields, newVersion);
         fieldRepository.saveAll(clonedFields);
         
-        Form form = getFormOrThrow(current.getFormId());
-        form.setStatus(com.example.formBuilder.enums.FormStatus.PUBLISHED);
-        formRepository.save(form);
-
+        // FIXED: Removed form.setStatus(PUBLISHED). Rules update does not trigger publish.
+ 
         log.info("Rules update: Created new active version {} for form {}", nextNumber, current.getFormId());
         return toDtoWithFields(newVersion);
+    }
+
+    private void validateUniqueFields(List<FormField> fields) {
+        if (fields == null) return;
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (FormField f : fields) {
+            if (isDisplayOnly(f.getFieldType())) continue;
+            String name = f.getFieldName();
+            if (name == null || name.isBlank()) continue;
+            String lower = name.toLowerCase();
+            if (seen.contains(lower)) {
+                log.error("CRITICAL: Duplicate field name '{}' detected for Version ID {}", name, f.getFormVersion() != null ? f.getFormVersion().getId() : "NULL");
+                throw new ValidationException("Architectural error: Duplicate field name '" + name + "' found. Please ensure all form labels are unique.");
+            }
+            seen.add(lower);
+        }
+    }
+
+    private void validateUniqueFieldNames(List<UpdateFieldRequest> incoming) {
+        if (incoming == null) return;
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (com.example.formBuilder.dto.UpdateFieldRequest req : incoming) {
+            String name = req.getName();
+            // Skip validation for display-only types since they have no DB column
+            if (isDisplayOnly(req.getType())) continue;
+             
+            if (name == null || name.isBlank()) continue;
+            
+            if (seen.contains(name)) {
+                log.error("Duplicate field name found: {}", name); // FIXED: Log duplicate
+                throw new ValidationException("Duplicate field name: '" + name + "'. Each database-backed field MUST have a unique name.");
+            }
+            seen.add(name);
+        }
     }
 
     private void discardDraftsForVersion(UUID formId, UUID versionId) {
         Form form = getFormOrThrow(formId);
         String tableName = form.getTableName();
         if (tableName == null) return;
+
+        // FIXED: Check if table even exists before trying to UPDATE it. 
+        // For DRAFT forms, the table is only created upon publication.
+        if (!tableExists(tableName)) return;
+
         try {
             String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE form_version_id = ?::uuid AND is_draft = true";
             int count = jdbcTemplate.update(sql, versionId.toString());
@@ -312,6 +399,11 @@ public class FormVersionService {
         Form form = getFormOrThrow(formId);
         String tableName = form.getTableName();
         if (tableName == null) return;
+
+        // FIXED: Check if table even exists before trying to UPDATE it.
+        // Fails previously for edited DRAFT forms where table wasn't created yet.
+        if (!tableExists(tableName)) return;
+
         try {
             String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE is_draft = true";
             int count = jdbcTemplate.update(sql);
@@ -435,8 +527,9 @@ public class FormVersionService {
 
     private List<FormField> resolveFieldsToClone(UUID formId, FormVersion source) {
         if (source == null) {
-            // seed from legacy form fields
-            return fieldRepository.findByFormId(formId);
+            // FIXED: seed from initial/legacy form fields (where version_id is null)
+            // findByFormId was previously returning duplicates (v1 fields + null fields)
+            return fieldRepository.findByFormIdAndFormVersionIsNull(formId);
         }
         return fieldRepository.findByFormVersionId(source.getId());
     }
@@ -477,16 +570,45 @@ public class FormVersionService {
         return clones;
     }
 
-    private void ensureSchemaForVersion(Form form, FormVersion version) {
-        String tableName = form.getTableName();
-        if (tableName == null) return;
-        List<FormField> fields = fieldRepository.findByFormVersionId(version.getId());
+    private boolean tableExists(String tableName) {
+        if (tableName == null) return false;
+        try {
+            // FIXED: Using to_regclass is safer and faster in Postgres
+            String sql = "SELECT to_regclass(?) IS NOT NULL";
+            return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, Boolean.class, tableName));
+        } catch (Exception e) {
+            log.warn("Table existence check failed for {}: {}", tableName, e.getMessage());
+            return false;
+        }
+    }
 
-        // If table doesn't exist yet, create it
-        String tableCheckSql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?";
-        Integer tableCount = jdbcTemplate.queryForObject(tableCheckSql, Integer.class, tableName);
+    private void ensureSchemaForVersion(Form form, FormVersion version) {
+        // FIXED: Do NOT perform schema operations for DRAFT forms. table is created only on publish.
+        if (form.getStatus() != com.example.formBuilder.enums.FormStatus.PUBLISHED) {
+            log.info("Skipping schema sync: form {} is in {} state", form.getId(), form.getStatus()); // FIXED: Changed to info for visibility
+            return;
+        }
+
+        String tableName = form.getTableName();
+        log.info("Ensuring schema for form {} (table: {}) using version {}", form.getId(), tableName, version.getVersionNumber());
         
-        if (tableCount == null || tableCount == 0) {
+        if (tableName == null) {
+            log.warn("Cannot ensure schema: tableName is null for form {}", form.getId());
+            return;
+        }
+        
+        List<FormField> fields = fieldRepository.findByFormVersionId(version.getId());
+        log.info("Found {} fields for version {} of form {}", fields.size(), version.getVersionNumber(), form.getId());
+        
+        // FIXED: Fail early if there are duplicates to prevent Bad SQL Grammar
+        validateUniqueFields(fields);
+        
+        if (fields.isEmpty()) {
+            log.warn("Warning: version {} has NO fields. Table creation might yield an empty form.", version.getVersionNumber());
+        }
+
+        // FIXED: Use helper method
+        if (!tableExists(tableName)) {
             // Table doesn't exist — create it
             schemaManager.createDynamicTable(tableName, fields);
             // Add common columns if not present

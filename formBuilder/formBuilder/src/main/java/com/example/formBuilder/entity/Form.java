@@ -30,13 +30,13 @@ public class Form {
     private UUID id;
 
     private String formName;
-
-    @Column(unique = true, nullable = false, length = 100)
-    private String code;
  
     private String tableName;
 
     private LocalDateTime createdAt = LocalDateTime.now();
+ 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
     private FormStatus status = FormStatus.DRAFT;

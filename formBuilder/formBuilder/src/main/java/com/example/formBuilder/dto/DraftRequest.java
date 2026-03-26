@@ -1,17 +1,19 @@
 package com.example.formBuilder.dto;
  
-import com.example.formBuilder.enums.FormStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
  
+import java.util.Map;
 import java.util.UUID;
  
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FormListDto {
-    private UUID id;
-    private String formName;
-    private FormStatus status;
+public class DraftRequest {
+    private UUID formId;
+    private UUID formVersionId;
+    private Map<String, Object> data;
 }

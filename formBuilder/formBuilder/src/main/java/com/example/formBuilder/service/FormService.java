@@ -83,24 +83,7 @@ public class FormService {
         return id.toString().replace("-", "_");
     }
 
-    private String generateRandomCode() {
-        String chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder sb = new StringBuilder();
-        Random random = new Random();
-        for (int i = 0; i < 10; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        String code = sb.toString();
-        // Ensure it starts with a letter as per regex ^[a-z][a-z0-9_]*$
-        if (!Character.isLetter(code.charAt(0))) {
-            return generateRandomCode();
-        }
-        // Check uniqueness
-        if (formRepository.findByCode(code).isPresent()) {
-            return generateRandomCode();
-        }
-        return code;
-    }
+
 
     public Form getFormById(UUID id) {
         return formRepository.findById(id)
@@ -145,11 +128,13 @@ public class FormService {
         return FormResponseDto.builder()
                 .id(form.getId())
                 .formName(form.getFormName())
-                .code(form.getCode())
                 .tableName(form.getTableName())
                 .createdAt(form.getCreatedAt())
                 .status(form.getStatus())
                 .rules(activeRules)
+                .formVersionId(versionRepository.findByFormIdAndIsActiveTrue(form.getId())
+                        .map(com.example.formBuilder.entity.FormVersion::getId)
+                        .orElse(null))
                 .fields(activeFields.stream()
                         .map(this::mapFieldToResponse)
                         .collect(Collectors.toList()))
@@ -330,7 +315,7 @@ public class FormService {
         List<Form> forms = formRepository.findByUserId(user.getId());
         
         return forms.stream()
-                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getCode(), form.getStatus()))
+                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus()))
                 .collect(Collectors.toList());
     }
 
@@ -369,14 +354,19 @@ public class FormService {
         if (draftVersionOpt.isPresent()) {
             // Activate the draft version through the version service
             versionService.activateVersion(form.getId(), draftVersionOpt.get().getId());
+            form.setUpdatedAt(java.time.LocalDateTime.now());
+            formRepository.save(form);
             return "Form published via version " + draftVersionOpt.get().getVersionNumber();
         }
 
         // If the form has NO versions at all (e.g., just created), generate Version 1 now.
         if (!versionRepository.existsByFormId(form.getId())) {
-            List<FormField> fields = fieldRepository.findByFormId(id);
+            // FIXED: Use findByFormIdAndFormVersionIsNull to avoid picking up unrelated fields
+            List<FormField> fields = fieldRepository.findByFormIdAndFormVersionIsNull(id);
             versionService.createInitialVersion(form.getId(), fields, form.getRules());
-            return "Form Published Successfully";
+            form.setUpdatedAt(java.time.LocalDateTime.now());
+            formRepository.save(form);
+            return "Form published (v1 created)";
         }
 
         return "Form is already published and has no pending drafts.";
@@ -384,6 +374,26 @@ public class FormService {
 
     @Transactional
     public String createForm(FormRequest request) {
+        String formName = request.getFormName();
+        if (formName == null || formName.isBlank()) {
+            throw new ValidationException("Form name cannot be empty");
+        }
+
+        // 1. Strict Backend Validation
+        if (!java.util.regex.Pattern.compile(AppConstants.STRICT_FORM_NAME_REGEX)
+                .matcher(formName.toLowerCase()).matches()) {
+            throw new ValidationException("Invalid form name: Only lowercase letters, numbers, and underscores are allowed. " +
+                    "Must start with a letter and be 3-50 characters long.");
+        }
+
+        // 2. Sanitization fallback (redundant but safe)
+        String tableName = schemaManager.buildSafeTableName(formName);
+
+        // 3. Unique Table Check
+        if (formRepository.findByTableName(tableName).isPresent()) {
+            throw new ValidationException("A form with a similar name already exists. Please choose a different name.");
+        }
+
         // Step 1: Pre-validate all fields before saving anything
         Set<String> fieldNames = new HashSet<>();
         for (FieldRequest field : request.getFields()) {
@@ -404,16 +414,9 @@ public class FormService {
         User user = getCurrentUser();
         
         Form form = new Form();
-        form.setFormName(request.getFormName());
+        form.setFormName(formName);
         form.setUser(user);
         form.setStatus(com.example.formBuilder.enums.FormStatus.DRAFT);
-        
-        // Generate random internal code
-        String code = generateRandomCode();
-        form.setCode(code);
-        
-        // Build table name from code
-        String tableName = "form_data_" + code;
         form.setTableName(tableName);
         
         form = formRepository.save(form);
@@ -492,6 +495,31 @@ public class FormService {
             throw new ValidationException("Cannot edit a published form directly. Please use the version editor.");
         }
 
+        String newFormName = request.getFormName();
+        if (newFormName == null || newFormName.isBlank()) {
+            throw new ValidationException("Form name cannot be empty");
+        }
+
+        // 1. Strict Validation
+        if (!java.util.regex.Pattern.compile(AppConstants.STRICT_FORM_NAME_REGEX)
+                .matcher(newFormName.toLowerCase()).matches()) {
+            throw new ValidationException("Invalid form name: Only lowercase letters, numbers, and underscores are allowed. " +
+                    "Must start with a letter and be 3-50 characters long.");
+        }
+
+        // 2. Build and check new table name
+        String newTableName = schemaManager.buildSafeTableName(newFormName);
+        
+        // If the name changed, check for uniqueness of the NEW table name
+        if (!form.getTableName().equals(newTableName)) {
+            if (formRepository.findByTableName(newTableName).isPresent()) {
+                throw new ValidationException("A form with a similar name already exists. Please choose a different name.");
+            }
+            form.setTableName(newTableName);
+        }
+
+        form.setFormName(newFormName);
+
         List<UpdateFieldRequest> incoming = request.getFields();
 
         // Validate field name uniqueness and keywords
@@ -566,6 +594,7 @@ public class FormService {
             }
         }
 
+        form.setUpdatedAt(java.time.LocalDateTime.now());
         formRepository.save(form);
         return "Form updated successfully";
     }
@@ -579,9 +608,7 @@ public class FormService {
         field.setFieldName(req.getName());
         field.setFieldType(req.getType());
         if (!isDisplayOnly) {
-            if (form.getStatus() == PUBLISHED && Boolean.TRUE.equals(field.getRequired()) && !Boolean.TRUE.equals(req.getRequired())) {
-                schemaManager.makeColumnNullable(form.getTableName(), field.getFieldName());
-            }
+            // FIXED: Redundant makeColumnNullable removed as all columns are now nullable by default.
             field.setRequired(req.getRequired());
             field.setMinLength(req.getMinLength());
             field.setMaxLength(req.getMaxLength());
@@ -637,11 +664,12 @@ public class FormService {
         Form form = getFormWithPermission(id);
         
         // Rule 3.4: Prevent deletion if there are live submissions
-        if (hasLiveSubmissions(form)) {
-            throw new ValidationException("Cannot delete form: It has live submissions. Please clear submissions first or disable the form.");
-        }
+//        if (hasLiveSubmissions(form)) {
+//            throw new ValidationException("Cannot delete form: It has live submissions. Please clear submissions first or disable the form.");
+//        }
         
         form.setIsDeleted(true);
+        form.setUpdatedAt(java.time.LocalDateTime.now());
         formRepository.save(form);
         return "Form deleted successfully";
     }
