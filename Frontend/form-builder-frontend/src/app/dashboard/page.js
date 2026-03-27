@@ -106,9 +106,9 @@ export default function Dashboard() {
             </div>
  
             {/* Main Content Areas */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="w-full">
                 {/* Recent Forms Table */}
-                <div className="xl:col-span-2 bg-white rounded-[3rem] p-8 lg:p-10 shadow-sm border border-slate-100/50 space-y-8">
+                <div className="bg-white rounded-[3rem] p-8 lg:p-10 shadow-sm border border-slate-100/50 space-y-8">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
                             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Recent Activity</h2>
@@ -167,37 +167,6 @@ export default function Dashboard() {
                                 )}
                             </tbody>
                         </table>
-                    </div>
-                </div>
- 
-                {/* Side Cards: Quick Insights/CTA */}
-                <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-primary to-blue-600 rounded-[3rem] p-10 text-white shadow-2xl shadow-primary/20 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                            <TrendingUp size={120} />
-                        </div>
-                        <div className="relative z-10 space-y-6">
-                            <h3 className="text-3xl font-black leading-tight tracking-tight">Unlock Form Potential</h3>
-                            <p className="text-white/80 font-medium text-sm leading-relaxed">
-                                You have {stats?.draftForms} draft forms waiting to be published. Reach your audience faster.
-                            </p>
-                            <NextLink href="/forms/all" className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white text-primary font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">
-                                Manage Drafts <ArrowRight size={14} />
-                            </NextLink>
-                        </div>
-                    </div>
- 
-                    <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
-                        <div className="relative z-10 space-y-6">
-                            <div className="flex items-center gap-3 text-primary font-black uppercase tracking-[0.2em] text-[10px]">
-                                <Clock size={14} />
-                                System Health
-                            </div>
-                            <h3 className="text-2xl font-black tracking-tight">Session Monitoring Active</h3>
-                            <p className="text-slate-400 font-medium text-sm">
-                                Standard 15-minute sliding timeout enforced.
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -93,39 +93,31 @@ export default function FormDataPage() {
   }, [id, page, size, sortBy, direction, selectedVersionId]);
 
   const handleExport = async () => {
-    if (!id || data.length === 0) return;
+    if (!id) return;
     setExporting(true);
     try {
-      let url = `${ENDPOINTS.FORMS}/${id}/data?page=0&size=${totalElements || 1000}&sortBy=${sortBy}&direction=${direction}`;
+      let url = ENDPOINTS.exportCsv(id);
+      const params = new URLSearchParams();
       if (selectedVersionId) {
-        url += `&versionId=${selectedVersionId}`;
+        params.append("versionId", selectedVersionId);
       }
-      const res = await fetch(url, { credentials: "include" });
-      const json = await res.json();
-      const allData = json.data?.content || [];
-
-      if (allData.length === 0) {
-        alert("No data available to export.");
-        return;
+      if (params.toString()) {
+        url += `?${params.toString()}`;
       }
 
-      const exportData = allData.map(({ is_deleted, ...rest }) => {
-        const cleaned = { ...rest };
-        if (cleaned.created_at) {
-          cleaned.created_at = new Date(cleaned.created_at).toLocaleString();
-        }
-        return cleaned;
-      });
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to export data from server");
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Submissions");
-
-      const max_width = exportData.reduce((w, r) => Math.max(w, ...Object.values(r).map(v => (v ? v.toString().length : 0))), 10);
-      worksheet["!cols"] = Object.keys(exportData[0]).map(() => ({ wch: Math.min(max_width, 50) }));
-
-      const filename = `form_resp_${id}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-      XLSX.writeFile(workbook, filename);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.setAttribute('download', `form_export_${id}_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error("Export error:", err);
       alert("Failed to export data: " + err.message);
@@ -133,6 +125,7 @@ export default function FormDataPage() {
       setExporting(false);
     }
   };
+
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -277,18 +270,19 @@ export default function FormDataPage() {
               View Form
             </Link>
 
-            <button
-              onClick={handleExport}
-              disabled={exporting || data.length === 0}
-              className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
-            >
-              {exporting ? (
-                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <FileSpreadsheet size={18} className="text-emerald-600" />
-              )}
-              {exporting ? "Exporting..." : "Export Excel"}
-            </button>
+              <button
+                onClick={handleExport}
+                disabled={exporting || data.length === 0}
+                className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+              >
+                {exporting ? (
+                  <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <FileSpreadsheet size={18} className="text-emerald-600" />
+                )}
+                {exporting ? "Exporting..." : "Export CSV"}
+              </button>
+
             </div>
           </div>
         </div>
@@ -354,7 +348,7 @@ export default function FormDataPage() {
                           className="px-8 py-5 text-[11px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap cursor-pointer hover:bg-slate-100 transition-colors group"
                         >
                           <div className="flex items-center gap-2">
-                            {header.replace(/_/g, " ")}
+                            {header === 'id' ? 'S.NO' : header.replace(/_/g, " ")}
                             <ArrowUpDown size={14} className={`transition-opacity ${sortBy === header ? 'opacity-100 text-indigo-600' : 'opacity-0 group-hover:opacity-30'}`} />
                           </div>
                         </th>
@@ -363,7 +357,7 @@ export default function FormDataPage() {
                     </tr>
                   </thead>
                   <tbody className={`divide-y divide-slate-50 ${loading ? "opacity-40 pointer-events-none transition-opacity" : "transition-opacity"}`}>
-                    {data.map((row) => (
+                    {data.map((row, index) => (
                       <tr
                         key={row.id}
                         className={`hover:bg-indigo-50/20 transition-colors group ${selectedIds.includes(row.id) ? 'bg-indigo-50/40' : ''}`}
@@ -387,7 +381,11 @@ export default function FormDataPage() {
 
                           return (
                             <td key={header} className="px-8 py-5 text-sm text-slate-600 font-medium whitespace-nowrap">
-                              {val !== null && val !== undefined ? (
+                              {header === 'id' ? (
+                                <span className="text-slate-700 font-black">
+                                  {(page * size) + index + 1}
+                                </span>
+                              ) : val !== null && val !== undefined ? (
                                 isFile ? (
                                   <a 
                                     href={`http://localhost:9090/api/v1/files/view/${val}`} 

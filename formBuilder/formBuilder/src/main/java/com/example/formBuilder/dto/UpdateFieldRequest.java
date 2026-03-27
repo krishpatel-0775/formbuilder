@@ -34,4 +34,7 @@ public class UpdateFieldRequest {
     private Integer maxFileSize;
     private String allowedFileTypes;
     private Boolean isReadOnly;
+    @com.fasterxml.jackson.annotation.JsonProperty("isMultiSelect")
+    private Boolean isMultiSelect;
+
 }

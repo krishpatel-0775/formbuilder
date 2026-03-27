@@ -35,6 +35,8 @@ public class SubmissionService {
     private final FormFieldRepository fieldRepository;
     private final FormVersionRepository versionRepository;
     private final FormSubmissionMetaRepository metaRepository;
+    private final SchemaManager schemaManager;
+
 
     private User getCurrentUser() {
         String username = SessionUtil.getCurrentUsername();
@@ -110,11 +112,23 @@ public class SubmissionService {
         }
 
         List<FormField> formFields = (targetVersion != null)
-                ? fieldRepository.findByFormVersionId(targetVersion.getId())
+                ? fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(targetVersion.getId())
                 : form.getFields();
+
         UUID activeVersionId = targetVersion != null ? targetVersion.getId() : null;
 
+        // ── Schema drift check ────────────────────────────────────────────────────
+        List<String> driftedColumns = schemaManager.detectDrift(tableName, formFields);
+        if (!driftedColumns.isEmpty()) {
+            throw new com.example.formBuilder.exception.ValidationException(
+                "Submission blocked: the form's data table is out of sync with its field definitions. " +
+                "Missing columns: " + String.join(", ", driftedColumns) + ". " +
+                "Please contact the form administrator."
+            );
+        }
+
         Map<String, FormField> fieldMap = formFields.stream()
+
                 .collect(Collectors.toMap(FormField::getFieldName, f -> f, (existing, replacement) -> existing));
 
         // Validation for final submission
@@ -218,9 +232,10 @@ public class SubmissionService {
         } catch (Exception e) { /* no draft for this version */ }
 
         List<FormField> fields = (versionId != null) 
-                ? fieldRepository.findByFormVersionId(versionId)
+                ? fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(versionId)
                 // FIXED: Use findByFormIdAndFormVersionIsNull to avoid picking up fields from drafts/versions
-                : fieldRepository.findByFormIdAndFormVersionIsNull(form.getId());
+                : fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(form.getId());
+
         Map<String, FormField> fieldMap = fields.stream()
                 .collect(Collectors.toMap(FormField::getFieldName, f -> f, (existing, replacement) -> existing));
 

@@ -335,7 +335,8 @@ public class FormVersionService {
         newVersion = versionRepository.save(newVersion);
 
         // Clone fields from 'current' to the NEW version
-        List<FormField> currentFields = fieldRepository.findByFormVersionId(versionId);
+        List<FormField> currentFields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(versionId);
+
         List<FormField> clonedFields = cloneFields(currentFields, newVersion);
         fieldRepository.saveAll(clonedFields);
         
@@ -412,7 +413,8 @@ public class FormVersionService {
     }
 
     private void validateFieldConsistency(UUID sourceVersionId, List<UpdateFieldRequest> incoming) {
-        List<FormField> sourceFields = fieldRepository.findByFormVersionId(sourceVersionId);
+        List<FormField> sourceFields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(sourceVersionId);
+
         java.util.Map<String, String> nameToType = sourceFields.stream()
                 .filter(f -> f.getFieldName() != null)
                 .collect(java.util.stream.Collectors.toMap(FormField::getFieldName, FormField::getFieldType, (a, b) -> a));
@@ -442,7 +444,9 @@ public class FormVersionService {
         field.setSourceTable(req.getSourceTable());
         field.setSourceColumn(req.getSourceColumn());
         field.setIsReadOnly(Boolean.TRUE.equals(req.getIsReadOnly()));
+        field.setIsMultiSelect(Boolean.TRUE.equals(req.getIsMultiSelect()));
     }
+
 
     private FormField buildFormField(UpdateFieldRequest req) {
         FormField field = new FormField();
@@ -508,7 +512,8 @@ public class FormVersionService {
         v1 = versionRepository.save(v1);
 
         // Link existing fields to this version
-        List<FormField> legacyFields = fieldRepository.findByFormId(form.getId());
+        List<FormField> legacyFields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(form.getId());
+
         int order = 1;
         for (FormField f : legacyFields) {
             f.setFormVersion(v1);
@@ -529,9 +534,9 @@ public class FormVersionService {
         if (source == null) {
             // FIXED: seed from initial/legacy form fields (where version_id is null)
             // findByFormId was previously returning duplicates (v1 fields + null fields)
-            return fieldRepository.findByFormIdAndFormVersionIsNull(formId);
+            return fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
         }
-        return fieldRepository.findByFormVersionId(source.getId());
+        return fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(source.getId());
     }
 
     private List<FormField> cloneFields(List<FormField> source, FormVersion targetVersion) {
@@ -560,7 +565,9 @@ public class FormVersionService {
             clone.setPlaceholder(f.getPlaceholder());
             clone.setHelperText(f.getHelperText());
             clone.setIsReadOnly(f.getIsReadOnly());
+            clone.setIsMultiSelect(f.getIsMultiSelect());
             clone.setIsDeleted(false);
+
             clone.setForm(f.getForm());
             clone.setFormVersion(targetVersion);
             clone.setDisplayOrder(f.getDisplayOrder() != null ? f.getDisplayOrder() : order);
@@ -597,7 +604,8 @@ public class FormVersionService {
             return;
         }
         
-        List<FormField> fields = fieldRepository.findByFormVersionId(version.getId());
+        List<FormField> fields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(version.getId());
+
         log.info("Found {} fields for version {} of form {}", fields.size(), version.getVersionNumber(), form.getId());
         
         // FIXED: Fail early if there are duplicates to prevent Bad SQL Grammar
@@ -632,7 +640,20 @@ public class FormVersionService {
                 log.warn("Could not check/add column {} to {}: {}", field.getFieldName(), tableName, ex.getMessage());
             }
         }
+
+        // ── Drift verification after schema sync ─────────────────────────────────
+        // All missing columns should have been added above. If drift still exists,
+        // something went wrong — block the publish to prevent broken submissions.
+        List<String> remainingDrift = schemaManager.detectDrift(tableName, fields);
+        if (!remainingDrift.isEmpty()) {
+            throw new com.example.formBuilder.exception.ValidationException(
+                "Publish blocked: schema drift detected after migration attempt. " +
+                "Missing columns in table '" + tableName + "': " +
+                String.join(", ", remainingDrift) + ". Manual database intervention required."
+            );
+        }
     }
+
 
     private void addMissingCommonColumns(String tableName) {
         try {
@@ -676,7 +697,8 @@ public class FormVersionService {
     }
 
     private FormVersionDto toDtoWithFields(FormVersion version) {
-        List<FormField> fields = fieldRepository.findByFormVersionId(version.getId());
+        List<FormField> fields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(version.getId());
+
         List<FormFieldResponseDto> fieldDtos = fields.stream()
                 .filter(f -> !Boolean.TRUE.equals(f.getIsDeleted()))
                 .map(f -> FormFieldResponseDto.builder()
@@ -702,7 +724,9 @@ public class FormVersionService {
                         .maxFileSize(f.getMaxFileSize())
                         .allowedFileTypes(f.getAllowedFileTypes())
                         .isReadOnly(f.getIsReadOnly())
+                        .isMultiSelect(f.getIsMultiSelect())
                         .build())
+
                 .collect(Collectors.toList());
 
         return FormVersionDto.builder()

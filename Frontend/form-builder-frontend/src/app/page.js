@@ -175,7 +175,8 @@ export default function BuilderPage() {
                     return { name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
                 }
                 if (!field.label) throw new Error("Field label is required");
-                let fd = { name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly };
+                let fd = { name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly, isMultiSelect: !!field.isMultiSelect };
+
                 if (field.type === "toggle") {
                     fd.defaultValue = field.defaultValue === "true" ? "true" : "false";
                     return fd;

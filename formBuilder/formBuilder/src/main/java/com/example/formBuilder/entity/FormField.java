@@ -86,4 +86,7 @@ public class FormField {
 
     @Column(name = "display_order")
     private Integer displayOrder;
+
+    @Column(name = "is_multi_select")
+    private Boolean isMultiSelect = false;
 }

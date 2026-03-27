@@ -36,4 +36,7 @@ public class FormFieldResponseDto {
     private Integer maxFileSize;
     private String allowedFileTypes;
     private Boolean isReadOnly;
+    @com.fasterxml.jackson.annotation.JsonProperty("isMultiSelect")
+    private Boolean isMultiSelect;
+
 }

@@ -2,6 +2,7 @@ export const API_BASE_URL = "http://localhost:9090";
 
 export const ENDPOINTS = {
     FORMS: `${API_BASE_URL}/api/v1/forms`,
+    DELETED_FORMS: `${API_BASE_URL}/api/v1/forms/deleted`,
     SUBMISSIONS: `${API_BASE_URL}/api/v1/submissions`,
     DASHBOARD_STATS: `${API_BASE_URL}/api/v1/dashboard/stats`,
     VISIBILITY: `${API_BASE_URL}/api/v1/submissions/visibility`,
@@ -18,5 +19,8 @@ export const ENDPOINTS = {
     formVersionRules: (formId, versionId) => `${API_BASE_URL}/api/v1/forms/${formId}/versions/${versionId}/rules`,
     formDraft: (formId) => `${API_BASE_URL}/api/v1/forms/${formId}/versions/draft`,
     activateVersion: (formId, versionId) => `${API_BASE_URL}/api/v1/forms/${formId}/versions/${versionId}/activate`,
+    exportCsv: (id) => `${API_BASE_URL}/api/v1/forms/${id}/export/csv`,
+    restoreForm: (id) => `${API_BASE_URL}/api/v1/forms/restore/${id}`,
 };
+
 

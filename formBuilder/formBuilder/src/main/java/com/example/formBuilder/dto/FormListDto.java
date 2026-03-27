@@ -14,4 +14,6 @@ public class FormListDto {
     private UUID id;
     private String formName;
     private FormStatus status;
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
 }

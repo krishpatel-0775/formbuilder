@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2, Lock, Sparkles, X } from "lucide-react";
+
+
 
 export function FormFieldWrapper({
   field,
@@ -182,26 +184,109 @@ export function FormFieldWrapper({
         </div>
       )}
 
-      {/* SELECT */}
-      {field.fieldType === "select" && (
-        <div className="relative group/select">
-          <select value={value || ""}
-            onChange={(e) => onChange(field.fieldName, e.target.value)}
-            disabled={field.isReadOnly}
-            className={`${inputCls} appearance-none cursor-pointer pr-16 ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}>
-            <option value="" disabled>Choose an architectural option...</option>
-            {field.options?.map((opt, idx) => {
-              const isObj = typeof opt === "object" && opt !== null;
-              const val = isObj ? opt.id : opt;
-              const label = isObj ? opt.value : opt;
-              return <option key={idx} value={val}>{label}</option>;
-            })}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center text-slate-300 group-hover/select:text-primary transition-colors">
-            <ChevronRight size={24} className="rotate-90" strokeWidth={3} />
+      {/* SELECT (Single/Multi) */}
+      {field.fieldType === "select" && (() => {
+        const [isOpen, setIsOpen] = useState(false);
+        const currentVals = Array.isArray(value)
+          ? value
+          : (value || "").toString().split(",").map(v => v.trim()).filter(Boolean);
+
+        return !field.isMultiSelect ? (
+          <div className="relative group/select">
+            <select value={value || ""}
+              onChange={(e) => onChange(field.fieldName, e.target.value)}
+              disabled={field.isReadOnly}
+              className={`${inputCls} appearance-none cursor-pointer pr-16 ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}>
+              <option value="" disabled>Choose an architectural option...</option>
+              {field.options?.map((opt, idx) => {
+                const isObj = typeof opt === "object" && opt !== null;
+                const val = isObj ? opt.id : opt;
+                const label = isObj ? opt.value : opt;
+                return <option key={idx} value={val}>{label}</option>;
+              })}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center text-slate-300 group-hover/select:text-primary transition-colors">
+              <ChevronRight size={24} className="rotate-90" strokeWidth={3} />
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="relative">
+            <div
+              onClick={() => !field.isReadOnly && setIsOpen(!isOpen)}
+              className={`${inputBase} flex flex-wrap gap-2 min-h-[64px] items-center pr-12 cursor-pointer ${isOpen ? "border-primary ring-8 ring-primary/5 bg-white" : "border-slate-100 bg-slate-50/50"} ${field.isReadOnly ? "opacity-60 cursor-not-allowed" : ""}`}
+            >
+              {currentVals.length === 0 ? (
+                <span className="text-slate-300 font-bold ml-1">Select multiple options...</span>
+              ) : (
+                currentVals.map((val, i) => {
+                  const opt = field.options?.find(o => (typeof o === 'object' ? o.id == val : o == val));
+                  const label = typeof opt === 'object' ? opt.value : opt;
+                  return (
+                    <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/10 rounded-xl text-[11px] font-black uppercase tracking-wider animate-in zoom-in duration-300">
+                      {label}
+                      {!field.isReadOnly && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCheckboxChange(field.fieldName, val);
+                          }}
+                          className="hover:text-slate-900 transition-colors"
+                        >
+                          <X size={12} strokeWidth={3} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-primary transition-colors">
+                <ChevronRight size={20} className={`transition-transform duration-300 ${isOpen ? "rotate-[-90deg]" : "rotate-90"}`} strokeWidth={3} />
+              </div>
+            </div>
+
+            {isOpen && !field.isReadOnly && (
+              <>
+                <div 
+                  className="fixed inset-0 z-[60]" 
+                  onClick={() => setIsOpen(false)} 
+                />
+                <div className="absolute top-full left-0 right-0 mt-3 p-3 bg-white border border-slate-100 rounded-[2.5rem] shadow-[0_30px_80px_rgba(0,0,0,0.1)] z-[70] animate-in slide-in-from-top-4 duration-500 overflow-hidden">
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-1.5 p-1">
+                    {field.options?.map((opt, idx) => {
+                      const isObj = typeof opt === "object" && opt !== null;
+                      const optVal = isObj ? opt.id : opt;
+                      const optLabel = isObj ? opt.value : opt;
+                      const isActive = currentVals.some(v => v == optVal);
+
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => onCheckboxChange(field.fieldName, optVal)}
+                          className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-300 ${isActive
+                            ? "bg-primary/5 text-primary"
+                            : "hover:bg-slate-50 text-slate-600"
+                            }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isActive ? "border-primary bg-primary" : "border-slate-200 bg-white"
+                              }`}>
+                              {isActive && <CheckCircle2 size={12} strokeWidth={4} className="text-white" />}
+                            </div>
+                            <span className="font-black text-sm uppercase tracking-wide">{optLabel}</span>
+                          </div>
+                          {isActive && <Sparkles size={14} className="text-primary/40 animate-in fade-in" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+
 
       {/* TOGGLE */}
       {field.fieldType === "toggle" && (() => {

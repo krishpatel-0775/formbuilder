@@ -1,4 +1,5 @@
-import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListCircle, Code2, CheckCircle2, ShieldCheck } from "lucide-react";
+import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListChecks, Code2, CheckCircle2, ShieldCheck } from "lucide-react";
+
 
 export function DefaultValuePanel({ activeField, updateField }) {
   const textTypes = ["text", "email", "url", "phone", "number"];
@@ -273,7 +274,33 @@ export function SidebarProps({
           </div>
         )}
 
+        {activeField.type === "select" && (
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Selection Mode</label>
+            <div
+              onClick={() => updateField(activeField.id, "isMultiSelect", !activeField.isMultiSelect)}
+              className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer border transition-all duration-500 ${activeField.isMultiSelect
+                  ? "bg-indigo-50/50 border-indigo-200 shadow-xl shadow-indigo-500/5 text-indigo-900"
+                  : "bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-200"
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${activeField.isMultiSelect ? "bg-indigo-500 text-white" : "bg-white text-slate-300 border border-slate-100"
+                  }`}>
+                  <ListChecks size={20} strokeWidth={2.5} />
+                </div>
+
+                <span className="text-[11px] font-black uppercase tracking-widest">Multi-select Mode</span>
+              </div>
+              <div className={`w-12 h-6 rounded-full transition-all relative ${activeField.isMultiSelect ? "bg-indigo-500 shadow-lg shadow-indigo-500/30" : "bg-slate-200"}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-sm ${activeField.isMultiSelect ? "translate-x-7 scale-110" : "translate-x-1"}`} />
+              </div>
+            </div>
+          </div>
+        )}
+
         {(activeField.type === "radio" || activeField.type === "checkbox" || activeField.type === "select") && (
+
           <div className="space-y-6">
             <div className="flex p-1.5 bg-slate-100/50 rounded-2xl">
               <button

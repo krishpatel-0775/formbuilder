@@ -22,12 +22,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -111,9 +113,10 @@ public class FormService {
 
     private List<FormField> getActiveFields(Form form) {
         return versionRepository.findByFormIdAndIsActiveTrue(form.getId())
-                .map(v -> fieldRepository.findByFormVersionId(v.getId()))
+                .map(v -> fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(v.getId()))
                 .orElseGet(form::getFields);
     }
+
 
     private String getActiveRules(Form form) {
         return versionRepository.findByFormIdAndIsActiveTrue(form.getId())
@@ -165,15 +168,18 @@ public class FormService {
                 .maxFileSize(f.getMaxFileSize())
                 .allowedFileTypes(f.getAllowedFileTypes())
                 .isReadOnly(f.getIsReadOnly())
+                .isMultiSelect(f.getIsMultiSelect())
                 .build();
+
     }
 
     private List<FormField> getFieldsForVersion(Form form, UUID versionId) {
         if (versionId != null) {
-            return fieldRepository.findByFormVersionId(versionId);
+            return fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(versionId);
         }
         return getActiveFields(form);
     }
+
 
     public Map<String, Object> getAllDataFromTable(UUID id, UUID versionId, int page, int size, String sortBy, String direction) {
         Form form = getFormWithPermission(id);
@@ -315,8 +321,34 @@ public class FormService {
         List<Form> forms = formRepository.findByUserId(user.getId());
         
         return forms.stream()
-                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus()))
+                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus(), form.getCreatedAt(), form.getUpdatedAt()))
                 .collect(Collectors.toList());
+    }
+
+    public List<FormListDto> getDeletedForms() {
+        User user = getCurrentUser();
+        List<Form> forms = formRepository.findDeletedByUserId(user.getId());
+
+        return forms.stream()
+                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus(), form.getCreatedAt(), form.getUpdatedAt()))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public String restoreForm(UUID id) {
+        // We use a native query to restore because the @Where filter blocks findById for deleted forms
+        User user = getCurrentUser();
+        
+        // Security check: Verify the form exists and belongs to the user (using native query)
+        List<Form> deletedForms = formRepository.findDeletedByUserId(user.getId());
+        boolean existsAndOwned = deletedForms.stream().anyMatch(f -> f.getId().equals(id));
+        
+        if (!existsAndOwned) {
+            throw new ResourceNotFoundException("Deleted form with ID " + id + " not found or access denied");
+        }
+
+        formRepository.restoreFormById(id);
+        return "Form restored successfully";
     }
 
 
@@ -362,8 +394,9 @@ public class FormService {
         // If the form has NO versions at all (e.g., just created), generate Version 1 now.
         if (!versionRepository.existsByFormId(form.getId())) {
             // FIXED: Use findByFormIdAndFormVersionIsNull to avoid picking up unrelated fields
-            List<FormField> fields = fieldRepository.findByFormIdAndFormVersionIsNull(id);
+            List<FormField> fields = fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(id);
             versionService.createInitialVersion(form.getId(), fields, form.getRules());
+
             form.setUpdatedAt(java.time.LocalDateTime.now());
             formRepository.save(form);
             return "Form published (v1 created)";
@@ -433,8 +466,11 @@ public class FormService {
         formRepository.save(form);
 
         List<FormField> fieldList = new ArrayList<>();
+        List<FieldRequest> fieldRequests = request.getFields();
 
-        for (FieldRequest field : request.getFields()) {
+        for (int i = 0; i < fieldRequests.size(); i++) {
+            FieldRequest field = fieldRequests.get(i);
+
 
             // Display-only fields (page_break, heading, paragraph, divider) — persist but never as DB columns
             boolean isDisplayOnlyField = isDisplayOnly(field.getType());
@@ -470,13 +506,17 @@ public class FormService {
                 formField.setSourceTable(field.getSourceTable());
                 formField.setSourceColumn(field.getSourceColumn());
                 formField.setIsReadOnly(field.getIsReadOnly() != null ? field.getIsReadOnly() : false);
+                formField.setIsMultiSelect(field.getIsMultiSelect() != null ? field.getIsMultiSelect() : false);
             } else {
+
                 // For display-only types, store the human-readable label text in defaultValue
                 // so the public form can render it without needing a separate column
                 formField.setDefaultValue(field.getDefaultValue());
             }
 
+            formField.setDisplayOrder(i);
             formField.setForm(form);
+
             fieldList.add(formField);
         }
 
@@ -537,7 +577,8 @@ public class FormService {
             }
         }
 
-        List<FormField> existingFields = fieldRepository.findByFormId(formId);
+        List<FormField> existingFields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(formId);
+
 
         Set<UUID> incomingIds = incoming.stream()
                 .filter(f -> f.getId() != null)
@@ -557,7 +598,8 @@ public class FormService {
         }
         fieldRepository.saveAll(toDelete);
 
-        for (UpdateFieldRequest fieldReq : incoming) {
+        for (int i = 0; i < incoming.size(); i++) {
+            UpdateFieldRequest fieldReq = incoming.get(i);
             boolean isDisplayOnly = isDisplayOnly(fieldReq.getType());
 
             if (fieldReq.getId() != null) {
@@ -573,10 +615,12 @@ public class FormService {
                 }
 
                 applyFieldUpdates(existing, fieldReq, form);
+                existing.setDisplayOrder(i);
                 fieldRepository.save(existing);
 
             } else {
                 FormField newField = buildFormField(fieldReq, form);
+                newField.setDisplayOrder(i);
                 fieldRepository.save(newField);
 
                 // Only add real data fields to the DB table schema
@@ -585,6 +629,7 @@ public class FormService {
                 }
             }
         }
+
 
         if (request.getRules() != null) {
             try {
@@ -628,9 +673,11 @@ public class FormService {
             field.setSourceTable(req.getSourceTable());
             field.setSourceColumn(req.getSourceColumn());
             field.setMaxFileSize(req.getMaxFileSize());
-            field.setAllowedFileTypes(req.getAllowedFileTypes());
             field.setIsReadOnly(req.getIsReadOnly() != null ? req.getIsReadOnly() : false);
+            field.setIsMultiSelect(req.getIsMultiSelect() != null ? req.getIsMultiSelect() : false);
+            field.setAllowedFileTypes(req.getAllowedFileTypes());
         } else {
+
             // Persist label text for display-only elements (heading, paragraph, etc.)
             field.setDefaultValue(req.getDefaultValue());
         }
@@ -711,4 +758,71 @@ public class FormService {
         formRepository.save(form);
         return "Visibility settings updated successfully";
     }
-}
+
+    public void exportCsv(UUID formId, UUID versionId, PrintWriter writer) {
+        Form form = getFormWithPermission(formId);
+        List<FormField> activeFields = getFieldsForVersion(form, versionId);
+
+        List<FormField> exportFields = activeFields.stream()
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
+                .collect(Collectors.toList());
+
+        // Header Row
+        String header = exportFields.stream()
+                .map(f -> escapeCsv(f.getFieldName()))
+                .collect(Collectors.joining(","));
+        writer.println(header + ",submitted_at");
+
+        String tableName = form.getTableName();
+        StringBuilder sql = new StringBuilder("SELECT * FROM " + tableName + " WHERE is_deleted = false");
+        List<Object> params = new ArrayList<>();
+
+        if (versionId != null) {
+            sql.append(" AND form_version_id = ?::uuid");
+            params.add(versionId.toString());
+        }
+        sql.append(" ORDER BY created_at DESC");
+
+        jdbcTemplate.query(sql.toString(), params.toArray(), rs -> {
+            List<String> values = new ArrayList<>();
+            for (FormField field : exportFields) {
+                try {
+                    Object val = rs.getObject(field.getFieldName());
+                    values.add(formatCsvValue(val));
+                } catch (Exception e) {
+                    values.add("");
+                }
+            }
+            
+            Object createdAt = "";
+            try {
+                createdAt = rs.getObject("created_at");
+            } catch (Exception e) {}
+            
+            writer.println(String.join(",", values) + "," + (createdAt != null ? createdAt.toString() : ""));
+        });
+        
+        writer.flush();
+    }
+
+    private String formatCsvValue(Object val) {
+        if (val == null) return "";
+        String str = val.toString();
+
+        // CSV Injection Protection: prefix with ' if starts with =, +, -, @
+        if (str.startsWith("=") || str.startsWith("+") || str.startsWith("-") || str.startsWith("@")) {
+            str = "'" + str;
+        }
+
+        return escapeCsv(str);
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        // If it contains quotes, commas, or newlines, wrap in quotes and escape internal quotes
+        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+}

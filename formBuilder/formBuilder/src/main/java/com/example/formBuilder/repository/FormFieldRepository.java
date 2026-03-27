@@ -9,12 +9,12 @@ import java.util.UUID;
 
 public interface FormFieldRepository extends JpaRepository<FormField, UUID> {
 
-    List<FormField> findByFormId(UUID formId);
+    List<FormField> findByFormIdOrderByDisplayOrderAscIdAsc(UUID formId);
+    
+    List<FormField> findByFormVersionIdOrderByDisplayOrderAscIdAsc(UUID formVersionId);
+    
+    List<FormField> findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(UUID formId);
 
-    List<FormField> findByFormVersionId(UUID formVersionId);
-
-    // FIXED: Find fields that are not yet associated with a version (legacy/initial fields)
-    List<FormField> findByFormIdAndFormVersionIsNull(UUID formId);
 
     // FIXED: Explicitly hard-delete fields by version ID to avoid stale data accumulation or @Where clause interference
     @org.springframework.data.jpa.repository.Modifying

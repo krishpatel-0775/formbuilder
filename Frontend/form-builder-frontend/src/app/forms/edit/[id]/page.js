@@ -116,9 +116,11 @@ export default function EditFormPage() {
             options: f.options?.length > 0 ? f.options : noOpts.includes(f.fieldType) ? [] : ["Option 1", "Option 2"],
             sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
             isReadOnly: f.isReadOnly ?? false,
+            isMultiSelect: f.isMultiSelect ?? false,
             placeholder: f.placeholder ?? "",
             helperText: f.helperText ?? "",
           };
+
         });
 
         let rulesArr = [];
@@ -211,9 +213,11 @@ export default function EditFormPage() {
       options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
       sourceTable: "", sourceColumn: "",
       isReadOnly: false,
+      isMultiSelect: false,
       placeholder: "",
       helperText: "",
     };
+
     setFields([...fields, newField]);
     setActiveFieldId(newField.id);
   };
@@ -296,8 +300,10 @@ export default function EditFormPage() {
           return { id: field._dbId ?? null, name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
         }
         if (!field.label) throw new Error("All fields must have a label.");
-        let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly };
+        let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly, isMultiSelect: !!field.isMultiSelect };
+
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
+
         if (field.placeholder) fd.placeholder = field.placeholder;
         if (field.helperText) fd.helperText = field.helperText;
         if (["radio", "checkbox", "select"].includes(field.type)) {

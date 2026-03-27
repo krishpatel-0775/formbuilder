@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
 import java.util.regex.Pattern;
 
 import static java.lang.Boolean.TRUE;
@@ -40,12 +43,17 @@ public class SchemaManager {
             "page_break", "heading", "paragraph", "divider"
     );
 
-    private static final java.util.Set<String> RESERVED_KEYWORDS = java.util.Set.of(
-            "select", "from", "where", "join", "table", "order",
-            "group", "limit", "offset", "insert", "update",
-            "delete", "index", "primary", "key", "constraint",
-            "id", "is_deleted", "created_at", "form_version_id",
-            "user", "check", "all", "any", "and", "or", "case", "when", "then", "else", "end"
+    private static final Set<String> RESERVED_KEYWORDS = Set.of(
+            "select", "insert", "update", "delete",
+            "from", "where", "join", "inner", "left", "right", "full",
+            "group", "order", "by", "having", "limit", "offset",
+            "union", "distinct",
+            "table", "column", "index", "primary", "foreign", "key", "constraint", "references",
+            "view", "sequence", "trigger",
+            "user", "role", "grant", "revoke",
+            "all", "any", "and", "or",
+            "case", "when", "then", "else", "end",
+            "id", "is_deleted", "created_at", "form_version_id"
     );
 
     /**
@@ -156,6 +164,62 @@ public class SchemaManager {
 
         jdbcTemplate.execute(sql.toString());
     }
+
+    /**
+     * Detects schema drift for a single published form.
+     *
+     * Drift = a field exists in the active form version's field list but its
+     * corresponding column is missing from the physical PostgreSQL table.
+     *
+     * Rules:
+     * - Display-only field types (page_break, heading, paragraph, divider) are
+     *   excluded — they produce no DB columns and are never checked.
+     * - Soft-deleted fields (isDeleted = true) are excluded.
+     * - Extra columns in the table that have no matching field are NOT drift
+     *   (they are preserved for historical data).
+     *
+     * @param tableName the physical PostgreSQL table name from Form.tableName
+     * @param fields    the active FormField list for this form's current version
+     * @return list of field names (lowercased) that are missing from the table.
+     *         Empty list means no drift.
+     */
+    public List<String> detectDrift(String tableName, List<FormField> fields) {
+        if (tableName == null || tableName.isBlank()) {
+            return List.of();
+        }
+
+        // Fetch the actual columns that exist in PostgreSQL right now
+        String sql = "SELECT column_name FROM information_schema.columns WHERE table_name = ?";
+        Set<String> existingColumns;
+        try {
+            existingColumns = jdbcTemplate
+                    .queryForList(sql, String.class, tableName)
+                    .stream()
+                    .map(String::toLowerCase)
+                    .collect(java.util.stream.Collectors.toSet());
+        } catch (Exception e) {
+            // Table does not exist at all — all non-display fields are missing
+            return fields.stream()
+                    .filter(f -> !DISPLAY_ONLY_TYPES.contains(f.getFieldType()))
+                    .filter(f -> !Boolean.TRUE.equals(f.getIsDeleted()))
+                    .map(f -> f.getFieldName().toLowerCase())
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // Find field names present in the definition but absent from the table
+        List<String> missingColumns = new ArrayList<>();
+        for (FormField field : fields) {
+            if (DISPLAY_ONLY_TYPES.contains(field.getFieldType())) continue;
+            if (Boolean.TRUE.equals(field.getIsDeleted())) continue;
+
+            String expectedColumn = field.getFieldName().toLowerCase();
+            if (!existingColumns.contains(expectedColumn)) {
+                missingColumns.add(expectedColumn);
+            }
+        }
+        return missingColumns;
+    }
+
 
     /**
      * Maps an application field type (e.g., text, number, date) to its corresponding PostgreSQL data type.

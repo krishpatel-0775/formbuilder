@@ -13,6 +13,9 @@ public class AppConstants {
     public static final String API_FORM_DATA = "/data/{id}";
     public static final String API_FORM_PUBLISH = "/publish/{id}";
     public static final String API_FORM_LOOKUP = "/{id}/lookup/{columnName}";
+    public static final String API_FORM_RESTORE = "/restore/{id}";
+    public static final String API_FORM_DELETED = "/deleted";
+
 
     // Submission API Sub-Endpoints
     public static final String API_SUBMISSION_DELETE = "/{formId}/response/{responseId}";

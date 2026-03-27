@@ -80,11 +80,25 @@ function getInitialFormData(fields) {
       initialData[field.fieldName] = options.length > 0
         ? defaultVals.filter(v => isOptionValid(v))
         : defaultVals;
-    } else if (["radio", "select"].includes(field.fieldType)) {
+    } else if (field.fieldType === "radio") {
       let v = field.defaultValue ?? "";
       if (v && options.length > 0 && !isOptionValid(v)) v = "";
       initialData[field.fieldName] = v;
+    } else if (field.fieldType === "select") {
+      if (field.isMultiSelect) {
+        const defaultVals = field.defaultValue
+          ? field.defaultValue.toString().split(",").map((v) => v.trim()).filter(Boolean)
+          : [];
+        initialData[field.fieldName] = options.length > 0
+          ? defaultVals.filter(v => isOptionValid(v))
+          : defaultVals;
+      } else {
+        let v = field.defaultValue ?? "";
+        if (v && options.length > 0 && !isOptionValid(v)) v = "";
+        initialData[field.fieldName] = v;
+      }
     } else {
+
       initialData[field.fieldName] = field.defaultValue ?? "";
     }
   });
@@ -629,7 +643,7 @@ export default function PublicFormPage() {
       </div>
 
       <div className="max-w-2xl mx-auto relative z-10">
-        <Link href="/" className="group inline-flex items-center gap-3 text-slate-400 hover:text-primary mb-12 font-black text-[10px] uppercase tracking-[0.2em] transition-all">
+        <Link href="/forms/all" className="group inline-flex items-center gap-3 text-slate-400 hover:text-primary mb-12 font-black text-[10px] uppercase tracking-[0.2em] transition-all">
           <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:border-primary/20 group-hover:shadow-lg transition-all">
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           </div>

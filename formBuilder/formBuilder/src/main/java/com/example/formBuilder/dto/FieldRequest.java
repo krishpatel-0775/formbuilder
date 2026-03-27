@@ -36,4 +36,7 @@ public class FieldRequest {
     private String afterTime;
     private String beforeTime;
     private Boolean isReadOnly;
+    @com.fasterxml.jackson.annotation.JsonProperty("isMultiSelect")
+    private Boolean isMultiSelect;
+
 }

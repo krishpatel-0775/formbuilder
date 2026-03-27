@@ -18,8 +18,14 @@ import {
     Rocket,
     Copy,
     Check,
-    GitBranch
+    GitBranch,
+    History,
+    RefreshCw,
+    AlertCircle,
+    X
 } from "lucide-react";
+import { ENDPOINTS } from "../../../config/apiConfig";
+
 
 export default function FormVaultPage() {
     const [forms, setForms] = useState([]);
@@ -29,6 +35,10 @@ export default function FormVaultPage() {
     const [publishingState, setPublishingState] = useState({}); // { [id]: boolean }
     const [copiedId, setCopiedId] = useState(null);
     const [mounted, setMounted] = useState(false);
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+    const [deletedForms, setDeletedForms] = useState([]);
+    const [fetchingDeleted, setFetchingDeleted] = useState(false);
+
 
     useEffect(() => {
         setMounted(true);
@@ -50,6 +60,44 @@ export default function FormVaultPage() {
             setLoading(false);
         }
     };
+
+    const fetchDeletedForms = async () => {
+        setFetchingDeleted(true);
+        try {
+            const res = await fetch(ENDPOINTS.DELETED_FORMS, {
+                credentials: "include"
+            });
+            const data = await res.json();
+            if (data.success) {
+                setDeletedForms(data.data || []);
+            }
+        } catch (err) {
+            console.error("Error fetching deleted forms:", err);
+        } finally {
+            setFetchingDeleted(false);
+        }
+    };
+
+    const handleRestore = async (id) => {
+        try {
+            const res = await fetch(ENDPOINTS.restoreForm(id), {
+                method: "PUT",
+                credentials: "include"
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setDeletedForms(prev => prev.filter(f => f.id !== id));
+                fetchForms(); // Refresh the main list
+                alert("✅ Form restored successfully!");
+            } else {
+                alert(`❌ ${data.message || "Failed to restore form."}`);
+            }
+        } catch (err) {
+            console.error("Error restoring form:", err);
+            alert("❌ An unexpected error occurred while restoring the form.");
+        }
+    };
+
 
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure ? This action is irreversible.")) return;
@@ -105,9 +153,9 @@ export default function FormVaultPage() {
         });
     };
 
-    const filteredForms = forms.filter(f =>
-        f.formName?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredForms = forms
+        .filter(f => f.formName?.toLowerCase().includes(searchQuery.toLowerCase()))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return (
         <div className="h-full overflow-y-auto p-6 lg:p-10 space-y-8 animate-in fade-in duration-500">
@@ -123,13 +171,25 @@ export default function FormVaultPage() {
                     <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active forms.</p>
                 </div>
 
-                <Link
-                    href="/"
-                    className="flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all w-full md:w-auto"
-                >
-                    <Plus size={20} strokeWidth={3} />
-                    Create New Form
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                    <button
+                        onClick={() => {
+                            setShowRestoreModal(true);
+                            fetchDeletedForms();
+                        }}
+                        className="flex items-center justify-center gap-2 px-6 py-4 bg-white border-2 border-slate-100 text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:border-primary/20 hover:text-primary transition-all w-full sm:w-auto"
+                    >
+                        <History size={20} strokeWidth={3} />
+                        Restore Forms
+                    </button>
+                    <Link
+                        href="/"
+                        className="flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
+                    >
+                        <Plus size={20} strokeWidth={3} />
+                        Create New Form
+                    </Link>
+                </div>
             </div>
 
             {/* Controls Section */}
@@ -310,7 +370,12 @@ export default function FormVaultPage() {
                                             {form.status}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-5 text-xs font-semibold text-slate-500">2 hours ago</td>
+                                    <td className="px-8 py-5 text-xs font-semibold text-slate-500">
+                                        {form.updatedAt ? new Date(form.updatedAt).toLocaleString("en-US", {
+                                            year: 'numeric', month: 'short', day: 'numeric',
+                                            hour: '2-digit', minute: '2-digit'
+                                        }) : "N/A"}
+                                    </td>
                                     <td className="px-8 py-5 text-right space-x-2">
                                         {form.status !== "PUBLISHED" && (
                                             <button
@@ -362,6 +427,88 @@ export default function FormVaultPage() {
                     </table>
                 </div>
             )}
+
+            {/* Restore Modal */}
+            {showRestoreModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div 
+                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+                        onClick={() => setShowRestoreModal(false)}
+                    />
+                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-100">
+                        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                                    <History size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Restore Deleted Forms</h2>
+                                    <p className="text-xs text-slate-500 font-medium">Select a form to recover it to your vault.</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowRestoreModal(false)}
+                                className="p-2 hover:bg-slate-200 rounded-xl text-slate-400 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-8 max-h-[60vh] overflow-y-auto">
+                            {fetchingDeleted ? (
+                                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Scanning Archive...</p>
+                                </div>
+                            ) : deletedForms.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+                                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-200">
+                                        <AlertCircle size={32} />
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-slate-800 tracking-tight uppercase text-sm">No deleted forms found</p>
+                                        <p className="text-xs text-slate-400 mt-1">Your archive is currently empty.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {deletedForms.map(form => (
+                                        <div key={form.id} className="flex items-center justify-between p-5 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-primary/20 hover:bg-white transition-all duration-300 shadow-sm hover:shadow-md">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-inner">
+                                                    <FileText size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-black text-slate-900 tracking-tight">{form.formName}</h4>
+                                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
+                                                        Deleted on {new Date(form.updatedAt).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleRestore(form.id)}
+                                                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg shadow-slate-900/10"
+                                            >
+                                                <RefreshCw size={14} strokeWidth={3} />
+                                                Restore
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-8 border-t border-slate-100 bg-slate-50/30 flex justify-end">
+                            <button
+                                onClick={() => setShowRestoreModal(false)}
+                                className="px-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
-}
+}
