@@ -22,6 +22,9 @@ export const ENDPOINTS = {
     exportCsv: (id) => `${API_BASE_URL}/api/v1/forms/${id}/export/csv`,
     restoreForm: (id) => `${API_BASE_URL}/api/v1/forms/restore/${id}`,
     submissionDetail: (formId, responseId) => `${API_BASE_URL}/api/v1/submissions/${formId}/response/${responseId}`,
+    deletedFormData: (id) => `${API_BASE_URL}/api/v1/forms/${id}/deleted-data`,
+    restoreResponse: (formId, responseId) => `${API_BASE_URL}/api/v1/submissions/${formId}/response/${responseId}/restore`,
+    bulkRestoreResponses: (formId) => `${API_BASE_URL}/api/v1/submissions/${formId}/responses/bulk-restore`,
 };
 
 

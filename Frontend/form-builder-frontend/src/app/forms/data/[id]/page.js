@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square } from "lucide-react";
+import { Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square, RotateCcw, LayoutPanelLeft } from "lucide-react";
 import Link from "next/link";
 import * as XLSX from "xlsx";
 import { ENDPOINTS } from "../../../../config/apiConfig";
@@ -23,6 +23,8 @@ export default function FormDataPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   // Version Filtering State
   const [versions, setVersions] = useState([]);
@@ -70,11 +72,9 @@ export default function FormDataPage() {
       }
 
 
-      let url = `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${selectedVersionId}`;
-      // if (selectedVersionId) {
-      //   url += `&versionId=${formJson.data.formVersionId}`;
-      // }
-
+      let url = showDeleted 
+        ? `${ENDPOINTS.deletedFormData(id)}?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${selectedVersionId}`
+        : `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${selectedVersionId}`;
 
       if (selectedVersionId) {
         const res = await fetch(url, { credentials: "include" });
@@ -106,7 +106,7 @@ export default function FormDataPage() {
 
   useEffect(() => {
     fetchData();
-  }, [id, page, size, sortBy, direction, selectedVersionId]);
+  }, [id, page, size, sortBy, direction, selectedVersionId, showDeleted]);
 
   const handleExport = async () => {
     if (!id) return;
@@ -216,6 +216,55 @@ export default function FormDataPage() {
     }
   };
 
+  const handleRestore = async (responseId) => {
+    if (!confirm("Restore this response?")) return;
+
+    try {
+      const res = await fetch(ENDPOINTS.restoreResponse(id, responseId), {
+        method: "PUT",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        fetchData();
+      } else {
+        const errorMsg = await res.text();
+        alert(`Error: ${errorMsg || "Failed to restore response"}`);
+      }
+    } catch (err) {
+      console.error("Restore error:", err);
+      alert("Error connecting to server");
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Restore ${selectedIds.length} selected responses?`)) return;
+
+    setRestoring(true);
+    try {
+      const res = await fetch(ENDPOINTS.bulkRestoreResponses(id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selectedIds),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        fetchData();
+        setSelectedIds([]);
+      } else {
+        const errorMsg = await res.text();
+        alert(`Error: ${errorMsg || "Failed to restore responses"}`);
+      }
+    } catch (err) {
+      console.error("Bulk restore error:", err);
+      alert("Error connecting to server");
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   if (loading && data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
@@ -278,6 +327,21 @@ export default function FormDataPage() {
                 </button>
               )}
 
+              {showDeleted && selectedIds.length > 0 && (
+                <button
+                  onClick={handleBulkRestore}
+                  disabled={restoring}
+                  className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-100 px-6 py-3 rounded-2xl font-bold hover:bg-emerald-100 transition-all active:scale-95 shadow-sm"
+                >
+                  {restoring ? (
+                    <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <RotateCcw size={18} />
+                  )}
+                  Restore Selected ({selectedIds.length})
+                </button>
+              )}
+
               <Link
                 href={`/forms/${id}`}
                 className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-100 transition-all active:scale-95 shadow-sm"
@@ -285,6 +349,21 @@ export default function FormDataPage() {
                 <ExternalLink size={18} />
                 View Form
               </Link>
+
+              <button
+                onClick={() => {
+                  setShowDeleted(!showDeleted);
+                  setPage(0);
+                }}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all active:scale-95 shadow-sm ${
+                  showDeleted 
+                    ? "bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100" 
+                    : "bg-slate-50 text-slate-700 border border-slate-100 hover:bg-slate-100"
+                }`}
+              >
+                {showDeleted ? <LayoutPanelLeft size={18} /> : <RotateCcw size={18} />}
+                {showDeleted ? "Show Active" : "Restore Responses"}
+              </button>
 
               <button
                 onClick={handleExport}
@@ -431,11 +510,19 @@ export default function FormDataPage() {
                         })}
                         <td className="px-8 py-5 text-right">
                           <button
-                            onClick={(e) => { e.stopPropagation(); deleteResponse(row.id); }}
-                            className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                            title="Delete Response"
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              if (showDeleted) handleRestore(row.id);
+                              else deleteResponse(row.id); 
+                            }}
+                            className={`p-2.5 rounded-xl transition-all ${
+                              showDeleted 
+                                ? "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50" 
+                                : "text-slate-300 hover:text-red-500 hover:bg-red-50"
+                            }`}
+                            title={showDeleted ? "Restore Response" : "Delete Response"}
                           >
-                            <Trash2 size={20} />
+                            {showDeleted ? <RotateCcw size={20} /> : <Trash2 size={20} />}
                           </button>
                         </td>
                       </tr>
