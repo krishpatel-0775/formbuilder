@@ -23,7 +23,7 @@ export default function FormDataPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
-  
+
   // Version Filtering State
   const [versions, setVersions] = useState([]);
   const [selectedVersionId, setSelectedVersionId] = useState("");
@@ -49,6 +49,8 @@ export default function FormDataPage() {
       setFormStatus(status);
       setFields(formJson.data?.fields || []);
 
+      console.log(formJson.data.formVersionId);
+
       if (status !== "PUBLISHED") {
         throw new Error("Form is either not published or access is restricted.");
       }
@@ -59,28 +61,41 @@ export default function FormDataPage() {
         if (vRes.ok) {
           const vJson = await vRes.json();
           setVersions(vJson.data || []);
+          console.log(vJson.data)
         }
       }
 
-      let url = `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+      if (selectedVersionId == "") {
+        setSelectedVersionId(formJson.data.formVersionId);
+      }
+
+
+      let url = `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${selectedVersionId}`;
+      // if (selectedVersionId) {
+      //   url += `&versionId=${formJson.data.formVersionId}`;
+      // }
+
+
       if (selectedVersionId) {
-        url += `&versionId=${selectedVersionId}`;
+        const res = await fetch(url, { credentials: "include" });
+
+
+
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => null);
+          const errText = errJson ? (errJson.message || JSON.stringify(errJson)) : await res.text();
+          throw new Error(errText || `Server returned ${res.status}`);
+        }
+
+        const json = await res.json();
+
+        const responseData = json.data || {};
+        console.log(responseData)
+        setData(responseData.content || []);
+        setTotalPages(responseData.totalPages || 0);
+        setTotalElements(responseData.totalElements || 0);
+        setSelectedIds([]);
       }
-
-      const res = await fetch(url, { credentials: "include" });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        const errText = errJson ? (errJson.message || JSON.stringify(errJson)) : await res.text();
-        throw new Error(errText || `Server returned ${res.status}`);
-      }
-
-      const json = await res.json();
-      const responseData = json.data || {};
-      setData(responseData.content || []);
-      setTotalPages(responseData.totalPages || 0);
-      setTotalElements(responseData.totalElements || 0);
-      setSelectedIds([]);
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err.message);
@@ -237,7 +252,7 @@ export default function FormDataPage() {
                   }}
                   className="bg-transparent text-sm font-semibold text-slate-800 focus:outline-none cursor-pointer"
                 >
-                  <option value="">All Versions</option>
+                  {/* <option value="">All Versions</option> */}
                   {versions.map((v) => (
                     <option key={v.id} value={v.id}>
                       v{v.versionNumber} {v.isLatest ? "(Latest)" : ""} {v.isActive ? "[Active]" : ""}
@@ -249,27 +264,27 @@ export default function FormDataPage() {
 
             <div className="flex items-center gap-3">
               {selectedIds.length > 0 && (
-              <button
-                onClick={deleteBulkResponses}
-                disabled={deleting}
-                className="flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-100 px-6 py-3 rounded-2xl font-bold hover:bg-red-100 transition-all active:scale-95 shadow-sm"
-              >
-                {deleting ? (
-                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <Trash2 size={18} />
-                )}
-                Delete Selected ({selectedIds.length})
-              </button>
-            )}
+                <button
+                  onClick={deleteBulkResponses}
+                  disabled={deleting}
+                  className="flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-100 px-6 py-3 rounded-2xl font-bold hover:bg-red-100 transition-all active:scale-95 shadow-sm"
+                >
+                  {deleting ? (
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Trash2 size={18} />
+                  )}
+                  Delete Selected ({selectedIds.length})
+                </button>
+              )}
 
-            <Link
-              href={`/forms/${id}`}
-              className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-100 transition-all active:scale-95 shadow-sm"
-            >
-              <ExternalLink size={18} />
-              View Form
-            </Link>
+              <Link
+                href={`/forms/${id}`}
+                className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-100 transition-all active:scale-95 shadow-sm"
+              >
+                <ExternalLink size={18} />
+                View Form
+              </Link>
 
               <button
                 onClick={handleExport}
@@ -389,9 +404,9 @@ export default function FormDataPage() {
                                 </span>
                               ) : val !== null && val !== undefined ? (
                                 isFile ? (
-                                  <a 
-                                    href={`http://localhost:9090/api/v1/files/view/${val}`} 
-                                    target="_blank" 
+                                  <a
+                                    href={`http://localhost:9090/api/v1/files/view/${val}`}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all text-xs font-black uppercase tracking-widest shadow-sm"
