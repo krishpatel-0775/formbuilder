@@ -4,6 +4,7 @@ import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.ApiResponse;
 import com.example.formBuilder.dto.DraftRequest;
 import com.example.formBuilder.dto.DraftResponse;
+import com.example.formBuilder.dto.SubmissionDetailDTO;
 import com.example.formBuilder.dto.SubmissionRequest;
 import com.example.formBuilder.service.FormService;
 import com.example.formBuilder.service.RuleEngineService;
@@ -41,6 +42,13 @@ public class SubmissionController {
     @GetMapping("/draft")
     public ResponseEntity<ApiResponse<DraftResponse>> getDraft(@RequestParam UUID formId) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.getDraft(formId)));
+    }
+
+    @GetMapping("/{formId}/response/{responseId}")
+    public ResponseEntity<ApiResponse<SubmissionDetailDTO>> getSubmissionDetail(
+            @PathVariable UUID formId,
+            @PathVariable UUID responseId) {
+        return ResponseEntity.ok(ApiResponse.success(submissionService.getSubmissionDetail(formId, responseId)));
     }
 
 

@@ -466,7 +466,12 @@ export default function PublicFormPage() {
 
       if (res.ok) {
         if (user) {
-          router.push(`/forms/data/${id}`);
+          setIsSubmitted(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+
+          setTimeout(() => {
+            router.push("/forms/all");
+          }, 1200);
         } else {
           setIsSubmitted(true);
           window.scrollTo({ top: 0, behavior: "smooth" });

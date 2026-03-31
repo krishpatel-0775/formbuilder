@@ -21,6 +21,7 @@ export const ENDPOINTS = {
     activateVersion: (formId, versionId) => `${API_BASE_URL}/api/v1/forms/${formId}/versions/${versionId}/activate`,
     exportCsv: (id) => `${API_BASE_URL}/api/v1/forms/${id}/export/csv`,
     restoreForm: (id) => `${API_BASE_URL}/api/v1/forms/restore/${id}`,
+    submissionDetail: (formId, responseId) => `${API_BASE_URL}/api/v1/submissions/${formId}/response/${responseId}`,
 };
 
 

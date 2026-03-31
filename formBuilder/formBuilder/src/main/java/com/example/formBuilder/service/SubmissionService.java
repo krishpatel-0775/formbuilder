@@ -3,6 +3,7 @@ package com.example.formBuilder.service;
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.DraftRequest;
 import com.example.formBuilder.dto.DraftResponse;
+import com.example.formBuilder.dto.SubmissionDetailDTO;
 import com.example.formBuilder.dto.SubmissionRequest;
 import com.example.formBuilder.entity.*;
 import com.example.formBuilder.repository.*;
@@ -59,6 +60,55 @@ public class SubmissionService {
     private static boolean isDisplayOnly(String type) {
         return type != null && (type.equals("page_break") ||
                 type.equals("heading") || type.equals("paragraph") || type.equals("divider"));
+    }
+
+    public SubmissionDetailDTO getSubmissionDetail(UUID formId, UUID responseId) {
+        checkUserPermission(formId);
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+
+        String tableName = form.getTableName();
+
+        // 1. Fetch Metadata
+        FormSubmissionMeta meta = metaRepository.findBySubmissionTableAndSubmissionRowId(tableName, responseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Submission metadata not found"));
+
+        // 2. Fetch Data from dynamic table
+        String sql = "SELECT * FROM " + tableName + " WHERE id = ?::uuid AND is_deleted = false";
+        Map<String, Object> rowData;
+        try {
+            rowData = jdbcTemplate.queryForMap(sql, responseId.toString());
+        } catch (Exception e) {
+            throw new ResourceNotFoundException("Submission data not found");
+        }
+
+        // 3. Fetch Field Labels (currently just using fieldName as based on existing patterns)
+        List<FormField> fields;
+        if (meta.getFormVersionId() != null) {
+            fields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(meta.getFormVersionId());
+        } else {
+            fields = fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
+        }
+
+        Map<String, String> fieldLabels = fields.stream()
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
+                .collect(Collectors.toMap(
+                        FormField::getFieldName,
+                        f -> f.getFieldName().replace("_", " ").toUpperCase(),
+                        (existing, replacement) -> existing
+                ));
+        
+        // Remove internal columns from data
+        rowData.keySet().retainAll(fieldLabels.keySet());
+
+        return SubmissionDetailDTO.builder()
+                .id(responseId)
+                .submittedBy(meta.getSubmittedBy())
+                .submittedAt(meta.getSubmittedAt())
+                .status(meta.getStatus())
+                .data(rowData)
+                .fieldLabels(fieldLabels)
+                .build();
     }
 
     /**

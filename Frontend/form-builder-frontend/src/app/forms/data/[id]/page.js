@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +14,7 @@ import { ENDPOINTS } from "../../../../config/apiConfig";
  */
 export default function FormDataPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formStatus, setFormStatus] = useState("DRAFT");
@@ -360,11 +361,12 @@ export default function FormDataPage() {
                     {data.map((row, index) => (
                       <tr
                         key={row.id}
-                        className={`hover:bg-indigo-50/20 transition-colors group ${selectedIds.includes(row.id) ? 'bg-indigo-50/40' : ''}`}
+                        onClick={() => router.push(`/forms/data/${id}/${row.id}`)}
+                        className={`hover:bg-indigo-50/20 transition-colors group cursor-pointer ${selectedIds.includes(row.id) ? 'bg-indigo-50/40' : ''}`}
                       >
                         <td className="px-8 py-5">
                           <button
-                            onClick={() => toggleSelectRow(row.id)}
+                            onClick={(e) => { e.stopPropagation(); toggleSelectRow(row.id); }}
                             className="text-slate-300 hover:text-indigo-600 transition-colors"
                           >
                             {selectedIds.includes(row.id) ? (
@@ -391,6 +393,7 @@ export default function FormDataPage() {
                                     href={`http://localhost:9090/api/v1/files/view/${val}`} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all text-xs font-black uppercase tracking-widest shadow-sm"
                                   >
                                     <ExternalLink size={14} /> Open Resource
@@ -413,7 +416,7 @@ export default function FormDataPage() {
                         })}
                         <td className="px-8 py-5 text-right">
                           <button
-                            onClick={() => deleteResponse(row.id)}
+                            onClick={(e) => { e.stopPropagation(); deleteResponse(row.id); }}
                             className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                             title="Delete Response"
                           >
