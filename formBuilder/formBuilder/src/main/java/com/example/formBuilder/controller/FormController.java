@@ -58,8 +58,21 @@ public class FormController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction
     ) {
-        return ResponseEntity.ok(ApiResponse.success(formService.getAllDataFromTable(id, versionId, page, size, sortBy, direction)));
+        return ResponseEntity.ok(ApiResponse.success(formService.getAllDataFromTable(id, versionId, page, size, sortBy, direction, false)));
     }
+
+    @GetMapping(AppConstants.API_FORM_DELETED_DATA)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getDeletedFormData(
+            @PathVariable UUID id,
+            @RequestParam(required = false) UUID versionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(formService.getDeletedDataFromTable(id, versionId, page, size, sortBy, direction)));
+    }
+    
 
     @PostMapping(AppConstants.API_FORM_PUBLISH)
     public ResponseEntity<ApiResponse<String>> publishForm(@PathVariable UUID id) {

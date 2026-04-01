@@ -10,7 +10,7 @@ public class AppConstants {
 
     // Form API Sub-Endpoints
     public static final String API_FORM_BY_ID = "/{id}";
-    public static final String API_FORM_DATA = "/data/{id}";
+    public static final String API_FORM_DELETED_DATA = "/{id}/deleted-data";
     public static final String API_FORM_PUBLISH = "/publish/{id}";
     public static final String API_FORM_LOOKUP = "/{id}/lookup/{columnName}";
     public static final String API_FORM_RESTORE = "/restore/{id}";
@@ -19,7 +19,9 @@ public class AppConstants {
 
     // Submission API Sub-Endpoints
     public static final String API_SUBMISSION_DELETE = "/{formId}/response/{responseId}";
+    public static final String API_SUBMISSION_RESTORE = "/{formId}/response/{responseId}/restore";
     public static final String API_SUBMISSION_BULK_DELETE = "/{formId}/responses/bulk-delete";
+    public static final String API_SUBMISSION_BULK_RESTORE = "/{formId}/responses/bulk-restore";
     public static final String API_SUBMISSION_VISIBILITY = "/visibility";
 
     // Form Rules Sub-Endpoints

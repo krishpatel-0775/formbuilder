@@ -23,14 +23,14 @@ public class GlobalExceptionHandler {
         log.error("Runtime exception caught: {}", ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "RE: " + ex.getMessage()));
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(ValidationException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "VE: " + ex.getMessage()));
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "IAE: " + ex.getMessage()));
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
@@ -93,6 +93,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "GE: " + ex.getMessage()));
+                .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage()));
     }
 }

@@ -74,12 +74,16 @@ public class SubmissionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Submission metadata not found"));
 
         // 2. Fetch Data from dynamic table
-        String sql = "SELECT * FROM " + tableName + " WHERE id = ?::uuid AND is_deleted = false";
+        String sql = "SELECT * FROM " + tableName + " WHERE id = ?::uuid";
         Map<String, Object> rowData;
         try {
             rowData = jdbcTemplate.queryForMap(sql, responseId.toString());
         } catch (Exception e) {
             throw new ResourceNotFoundException("Submission data not found");
+        }
+
+        if (Boolean.TRUE.equals(rowData.get("is_deleted"))) {
+            throw new ValidationException("if you want to see detail of this response plze restore form first.");
         }
 
         // 3. Fetch Field Labels (currently just using fieldName as based on existing patterns)
@@ -143,6 +147,38 @@ public class SubmissionService {
         return responseIds.size() + " responses deleted";
     }
 
+    /**
+     * Restores a soft-deleted response by marking its 'is_deleted' flag back to false.
+     */
+    public String restoreResponse(UUID formId, UUID responseId) {
+        checkUserPermission(formId);
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+        String tableName = form.getTableName();
+        String sql = "UPDATE " + tableName + " SET is_deleted = false WHERE id = ?::uuid";
+        jdbcTemplate.update(sql, responseId.toString());
+        return "response restored";
+    }
+
+    /**
+     * Bulk restores soft-deleted responses by marking their 'is_deleted' flag back to false.
+     */
+    public String restoreResponses(UUID formId, List<UUID> responseIds) {
+        if (responseIds == null || responseIds.isEmpty()) {
+            return "No responses selected";
+        }
+        checkUserPermission(formId);
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+        String tableName = form.getTableName();
+        String inClause = responseIds.stream()
+                .map(id -> "'" + id.toString() + "'::uuid")
+                .collect(Collectors.joining(","));
+        String sql = "UPDATE " + tableName + " SET is_deleted = false WHERE id IN (" + inClause + ")";
+        jdbcTemplate.update(sql);
+        return responseIds.size() + " responses restored";
+    }
+
     @Transactional
     public String submitForm(SubmissionRequest request) {
         Form form = formRepository.findById(request.getFormId())
@@ -152,20 +188,28 @@ public class SubmissionService {
         Map<String, Object> values = request.getValues();
         String currentUser = SessionUtil.getCurrentUsername();
 
-        // Resolve target version
-        FormVersion targetVersion = null;
+        // Resolve target version and validate against the currently active one
+        FormVersion activeVersion = versionRepository.findByFormIdAndIsActiveTrue(form.getId()).orElse(null);
+        UUID activeVersionId = (activeVersion != null) ? activeVersion.getId() : null;
+        FormVersion targetVersion;
+
         if (request.getVersionId() != null) {
-            targetVersion = versionRepository.findById(request.getVersionId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Version " + request.getVersionId() + " not found"));
+            // Version specified in request — must match the active version
+            if (activeVersionId == null || !request.getVersionId().equals(activeVersionId)) {
+                throw new ValidationException("This form version is old. Please refresh the page to load the latest version.");
+            }
+            targetVersion = activeVersion;
         } else {
-            targetVersion = versionRepository.findByFormIdAndIsActiveTrue(form.getId()).orElse(null);
+            // No version specified — only allowed if no version is active
+            if (activeVersionId != null) {
+                throw new ValidationException("This form version is outdated. Please refresh the page to load the latest version.");
+            }
+            targetVersion = null;
         }
 
         List<FormField> formFields = (targetVersion != null)
                 ? fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(targetVersion.getId())
                 : form.getFields();
-
-        UUID activeVersionId = targetVersion != null ? targetVersion.getId() : null;
 
         // ── Schema drift check ────────────────────────────────────────────────────
         List<String> driftedColumns = schemaManager.detectDrift(tableName, formFields);

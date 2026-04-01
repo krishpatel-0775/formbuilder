@@ -58,11 +58,20 @@ public class SubmissionController {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponse(formId, responseId), null));
     }
 
+    @PutMapping(AppConstants.API_SUBMISSION_RESTORE)
+    public ResponseEntity<ApiResponse<String>> restoreResponse(@PathVariable UUID formId, @PathVariable UUID responseId) {
+        return ResponseEntity.ok(ApiResponse.success(submissionService.restoreResponse(formId, responseId), null));
+    }
 
     // Bulk soft-deletes submission records.
     @PostMapping(AppConstants.API_SUBMISSION_BULK_DELETE)
     public ResponseEntity<ApiResponse<String>> deleteBulkResponses(@PathVariable UUID formId, @RequestBody List<UUID> responseIds) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponses(formId, responseIds), null));
+    }
+
+    @PostMapping(AppConstants.API_SUBMISSION_BULK_RESTORE)
+    public ResponseEntity<ApiResponse<String>> restoreBulkResponses(@PathVariable UUID formId, @RequestBody List<UUID> responseIds) {
+        return ResponseEntity.ok(ApiResponse.success(submissionService.restoreResponses(formId, responseIds), null));
     }
 
 

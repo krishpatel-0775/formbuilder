@@ -181,7 +181,7 @@ public class FormService {
     }
 
 
-    public Map<String, Object> getAllDataFromTable(UUID id, UUID versionId, int page, int size, String sortBy, String direction) {
+    public Map<String, Object> getAllDataFromTable(UUID id, UUID versionId, int page, int size, String sortBy, String direction, boolean deletedOnly) {
         Form form = getFormWithPermission(id);
 
         String tableName = form.getTableName();
@@ -197,7 +197,8 @@ public class FormService {
 
         int offset = page * size;
 
-        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM " + tableName + " WHERE is_deleted = false");
+        String condition = deletedOnly ? "is_deleted = true" : "is_deleted = false";
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM " + tableName + " WHERE " + condition);
         List<Object> queryParams = new ArrayList<>();
 
         if (versionId != null) {
@@ -298,7 +299,8 @@ public class FormService {
             }
         }
 
-        StringBuilder countQueryBuilder = new StringBuilder("SELECT COUNT(*) FROM " + tableName + " WHERE is_deleted = false");
+        String countCondition = deletedOnly ? "is_deleted = true" : "is_deleted = false";
+        StringBuilder countQueryBuilder = new StringBuilder("SELECT COUNT(*) FROM " + tableName + " WHERE " + countCondition);
         List<Object> countParams = new ArrayList<>();
         if (versionId != null) {
             countQueryBuilder.append(" AND form_version_id = ?");
@@ -314,6 +316,10 @@ public class FormService {
         response.put("totalPages", (int) Math.ceil((double) total / size));
 
         return response;
+    }
+
+    public Map<String, Object> getDeletedDataFromTable(UUID id, UUID versionId, int page, int size, String sortBy, String direction) {
+        return getAllDataFromTable(id, versionId, page, size, sortBy, direction, true);
     }
 
     public List<FormListDto> getAllForms() {

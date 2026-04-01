@@ -46,7 +46,9 @@ export default function SubmissionDetailPage() {
         const json = await res.json();
         setSubmission(json.data);
       } catch (err) {
-        console.error("Fetch error:", err);
+        if (!err.message.includes("please restore form first")) {
+          console.error("Fetch error:", err);
+        }
         setError(err.message);
       } finally {
         setLoading(false);
@@ -75,7 +77,9 @@ export default function SubmissionDetailPage() {
           <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
             <AlertCircle size={40} />
           </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Access Denied</h2>
+          <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">
+            {error?.includes("plze restore form first") ? "Restore Required" : "Access Denied"}
+          </h2>
           <p className="text-slate-500 font-medium mb-8 leading-relaxed">
             {error || "The requested submission record could not be found or you do not have permission to view it."}
           </p>
