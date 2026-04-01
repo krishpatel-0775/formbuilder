@@ -46,10 +46,16 @@ public class FormService {
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final FormVersionRepository versionRepository;
+    private final FormVersionService versionService;
 
-    
-    @Autowired
-    private FormVersionService versionService;
+    @org.springframework.beans.factory.annotation.Value("${app.limits.max-fields-per-form:50}")
+    private int maxFields;
+
+    @org.springframework.beans.factory.annotation.Value("${app.limits.max-validations-per-form:100}")
+    private int maxValidations;
+
+    @org.springframework.beans.factory.annotation.Value("${app.limits.max-pages-per-form:10}")
+    private int maxPages;
 
     private User getCurrentUser() {
         String username = SessionUtil.getCurrentUsername();
@@ -411,6 +417,85 @@ public class FormService {
         return "Form is already published and has no pending drafts.";
     }
 
+    private void validateFormLimits(String formName, List<?> fields, List<FormRuleDTO> rules) {
+        if (fields == null) return;
+        
+        // 1. Max Fields
+        if (fields.size() > maxFields) {
+            throw new ValidationException("Form '" + formName + "' exceeds the maximum limit of " + maxFields + " fields.");
+        }
+
+        int pageCount = 1; // Start with 1 page
+        int validationCount = (rules != null) ? rules.size() : 0;
+
+        for (Object fieldObj : fields) {
+            String type = null;
+            Boolean required = null;
+            Integer minLength = null, maxLength = null, min = null, max = null, maxFileSize = null;
+            String pattern = null, beforeDate = null, afterDate = null, afterTime = null, beforeTime = null, allowedFileTypes = null;
+
+            if (fieldObj instanceof FieldRequest f) {
+                type = f.getType();
+                required = f.getRequired();
+                minLength = f.getMinLength();
+                maxLength = f.getMaxLength();
+                min = f.getMin();
+                max = f.getMax();
+                pattern = f.getPattern();
+                beforeDate = f.getBeforeDate();
+                afterDate = f.getAfterDate();
+                afterTime = f.getAfterTime();
+                beforeTime = f.getBeforeTime();
+                maxFileSize = f.getMaxFileSize();
+                allowedFileTypes = f.getAllowedFileTypes();
+            } else if (fieldObj instanceof UpdateFieldRequest f) {
+                type = f.getType();
+                required = f.getRequired();
+                minLength = f.getMinLength();
+                maxLength = f.getMaxLength();
+                min = f.getMin();
+                max = f.getMax();
+                pattern = f.getPattern();
+                beforeDate = f.getBeforeDate();
+                afterDate = f.getAfterDate();
+                afterTime = f.getAfterTime();
+                beforeTime = f.getBeforeTime();
+                maxFileSize = f.getMaxFileSize();
+                allowedFileTypes = f.getAllowedFileTypes();
+            }
+
+            if ("page_break".equals(type)) {
+                pageCount++;
+            }
+
+            if (!isDisplayOnly(type)) {
+                // Count constraints: 1 for each present validation constraint
+                if (Boolean.TRUE.equals(required)) validationCount++;
+                if (minLength != null) validationCount++;
+                if (maxLength != null) validationCount++;
+                if (min != null) validationCount++;
+                if (max != null) validationCount++;
+                if (pattern != null && !pattern.isBlank()) validationCount++;
+                if (beforeDate != null && !beforeDate.isBlank()) validationCount++;
+                if (afterDate != null && !afterDate.isBlank()) validationCount++;
+                if (afterTime != null && !afterTime.isBlank()) validationCount++;
+                if (beforeTime != null && !beforeTime.isBlank()) validationCount++;
+                if (maxFileSize != null) validationCount++;
+                if (allowedFileTypes != null && !allowedFileTypes.isBlank()) validationCount++;
+            }
+        }
+
+        // 2. Max Pages
+        if (pageCount > maxPages) {
+            throw new ValidationException("Form '" + formName + "' exceeds the maximum limit of " + maxPages + " pages.");
+        }
+
+        // 3. Max Validations
+        if (validationCount > maxValidations) {
+            throw new ValidationException("Form '" + formName + "' exceeds the maximum limit of " + maxValidations + " validations (current: " + validationCount + ").");
+        }
+    }
+
     @Transactional
     public String createForm(FormRequest request) {
         String formName = request.getFormName();
@@ -432,6 +517,9 @@ public class FormService {
         if (formRepository.findByTableName(tableName).isPresent()) {
             throw new ValidationException("A form with a similar name already exists. Please choose a different name.");
         }
+
+        // Apply Guardrails
+        validateFormLimits(formName, request.getFields(), request.getRules());
 
         // Step 1: Pre-validate all fields before saving anything
         Set<String> fieldNames = new HashSet<>();
@@ -563,6 +651,9 @@ public class FormService {
             }
             form.setTableName(newTableName);
         }
+
+        // Apply Guardrails
+        validateFormLimits(newFormName, request.getFields(), request.getRules());
 
         form.setFormName(newFormName);
 
@@ -703,6 +794,31 @@ public class FormService {
 
     public String saveFormRules(UUID formId, List<FormRuleDTO> rules) {
         Form form = getFormWithPermission(formId);
+        
+        // Count existing field validations + new rules
+        List<FormField> fields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(formId);
+        int validationCount = (rules != null) ? rules.size() : 0;
+        for (FormField f : fields) {
+            if (!isDisplayOnly(f.getFieldType())) {
+                if (Boolean.TRUE.equals(f.getRequired())) validationCount++;
+                if (f.getMinLength() != null) validationCount++;
+                if (f.getMaxLength() != null) validationCount++;
+                if (f.getMin() != null) validationCount++;
+                if (f.getMax() != null) validationCount++;
+                if (f.getPattern() != null && !f.getPattern().isBlank()) validationCount++;
+                if (f.getBeforeDate() != null) validationCount++; // LocalDate is not string here
+                if (f.getAfterDate() != null) validationCount++;
+                if (f.getAfterTime() != null && !f.getAfterTime().isBlank()) validationCount++;
+                if (f.getBeforeTime() != null && !f.getBeforeTime().isBlank()) validationCount++;
+                if (f.getMaxFileSize() != null) validationCount++;
+                if (f.getAllowedFileTypes() != null && !f.getAllowedFileTypes().isBlank()) validationCount++;
+            }
+        }
+        
+        if (validationCount > maxValidations) {
+            throw new ValidationException("Saving rules would exceed the maximum limit of " + maxValidations + " validations.");
+        }
+
         try {
             form.setRules(objectMapper.writeValueAsString(rules));
             formRepository.save(form);

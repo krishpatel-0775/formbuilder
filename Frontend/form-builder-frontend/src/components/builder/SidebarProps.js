@@ -482,7 +482,6 @@ export function SidebarProps({
               >
                 <option value="2">2 MB (Standard)</option>
                 <option value="5">5 MB (Aggregated)</option>
-                <option value="10">10 MB (Heavy Payload)</option>
               </select>
             </div>
 

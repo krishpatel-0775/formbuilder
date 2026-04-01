@@ -27,6 +27,9 @@ public class FileService {
     @org.springframework.beans.factory.annotation.Value("${app.upload.form-files-dir:./uploads/form-files}")
     private String uploadDir;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.servlet.multipart.max-file-size:5MB}")
+    private String maxFileSizeProperty;
+
     @PostConstruct
     public void init() {
         File dir = new File(uploadDir);
@@ -70,10 +73,16 @@ public class FileService {
         }
 
         // Validate Size
+        long globalMaxSizeInBytes = parseSize(maxFileSizeProperty);
+        
+        if (file.getSize() > globalMaxSizeInBytes) {
+            throw new ValidationException("File size exceeds global system limit of " + maxFileSizeProperty);
+        }
+
         if (field.getMaxFileSize() != null) {
             long maxSizeInBytes = (long) field.getMaxFileSize() * 1024 * 1024;
             if (file.getSize() > maxSizeInBytes) {
-                throw new ValidationException("File size exceeds maximum limit of " + field.getMaxFileSize() + "MB");
+                throw new ValidationException("File size exceeds field-specific limit of " + field.getMaxFileSize() + "MB");
             }
         }
 
@@ -101,5 +110,22 @@ public class FileService {
 
     public byte[] getFileContent(FileMetadata metadata) throws IOException {
         return Files.readAllBytes(Paths.get(metadata.getFilePath()));
+    }
+
+    private long parseSize(String size) {
+        if (size == null || size.isBlank()) return 5 * 1024 * 1024; // Default 5MB
+        String upper = size.toUpperCase();
+        if (upper.endsWith("MB")) {
+            return Long.parseLong(upper.replace("MB", "").trim()) * 1024 * 1024;
+        } else if (upper.endsWith("KB")) {
+            return Long.parseLong(upper.replace("KB", "").trim()) * 1024;
+        } else if (upper.endsWith("B")) {
+            return Long.parseLong(upper.replace("B", "").trim());
+        }
+        try {
+            return Long.parseLong(upper.trim());
+        } catch (NumberFormatException e) {
+            return 5 * 1024 * 1024;
+        }
     }
 }
