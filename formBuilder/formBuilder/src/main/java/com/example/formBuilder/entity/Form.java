@@ -30,7 +30,12 @@ public class Form {
     private UUID id;
 
     private String formName;
- 
+
+    // Internal code derived from formName on creation.
+    // Used as the table name suffix. Never changes after creation.
+    @Column(name = "form_code", unique = true)
+    private String formCode;
+
     private String tableName;
 
     private LocalDateTime createdAt = LocalDateTime.now();

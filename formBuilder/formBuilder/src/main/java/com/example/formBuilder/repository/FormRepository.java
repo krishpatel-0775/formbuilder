@@ -15,6 +15,7 @@ public interface FormRepository extends JpaRepository<Form, UUID> {
     List<Form> findByUserId(UUID userId);
     Optional<Form> findByIdAndUserId(UUID id, UUID userId);
     Optional<Form> findByTableName(String tableName);
+    Optional<Form> findByFormCode(String formCode);
  
     long countByUserId(UUID userId);
     long countByUserIdAndStatus(UUID userId, com.example.formBuilder.enums.FormStatus status);

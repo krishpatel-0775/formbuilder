@@ -165,7 +165,9 @@ export default function BuilderPage() {
     const generateColumnName = (label) => label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 
     const saveForm = async () => {
-        if (!formName.trim()) return alert("Please name your form.");
+        if (!formName.trim() || formName.trim().length < 3) {
+            return alert("Please give your form a name (at least 3 characters).");
+        }
         const realFields = fields.filter(f => !isDisplayOnly(f.type));
         if (realFields.length === 0) return alert("Add at least one input field.");
         setIsPublishing(true);

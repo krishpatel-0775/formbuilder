@@ -1,6 +1,20 @@
 import { ArrowLeft, Trash2, CheckCircle2, Save, Send, Rocket, ShieldCheck, Eye, GitBranch } from "lucide-react";
 import NextLink from "next/link";
 
+const generateFormCode = (displayName) => {
+  if (!displayName) return "";
+  let code = displayName.trim().toLowerCase();
+  code = code.replace(/[\s\-]+/g, "_");
+  code = code.replace(/[^a-z0-9_]/g, "");
+  code = code.replace(/_+/g, "_");
+  code = code.replace(/^_+|_+$/g, "");
+  if (!code) return "";
+  if (/^\d/.test(code)) code = "f_" + code;
+  return code.substring(0, 50);
+};
+
+export { generateFormCode };
+
 export function FormHeader({
   formName,
   setFormName,
@@ -33,15 +47,13 @@ export function FormHeader({
             type="text"
             placeholder="Name your masterpiece..."
             value={formName}
-            onChange={(e) => {
-              const val = e.target.value.toLowerCase().replace(/[\s\-]/g, "_").replace(/[^a-z0-9_]/g, "");
-              setFormName(val);
-            }}
+            onChange={(e) => setFormName(e.target.value)}
             className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`}
           />
-          {formName && !/^[a-z][a-z0-9_]{2,49}$/.test(formName) && (
+
+          {formName && formName.trim().length > 0 && formName.trim().length < 3 && (
             <span className="text-[10px] font-bold text-amber-500 mt-1">
-              {formName.length < 3 ? "Minimum 3 characters" : !/^[a-z]/.test(formName) ? "Must start with a letter" : "Invalid format"}
+              Minimum 3 characters
             </span>
           )}
         </div>

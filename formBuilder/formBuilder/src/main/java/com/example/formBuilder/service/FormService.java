@@ -91,6 +91,25 @@ public class FormService {
         return id.toString().replace("-", "_");
     }
 
+    /**
+     * Generates a safe, PostgreSQL-compatible form code from a free-form display name.
+     * Rules: lowercase, spaces and hyphens become underscores, all other
+     * non-alphanumeric characters are stripped, must start with a letter.
+     * Truncated to 50 characters max.
+     */
+    private String generateFormCode(String displayName) {
+        if (displayName == null) return null;
+        String code = displayName.trim().toLowerCase();
+        code = code.replaceAll("[\\s\\-]+", "_");         // spaces/hyphens → underscore
+        code = code.replaceAll("[^a-z0-9_]", "");          // strip everything else
+        code = code.replaceAll("_+", "_");                 // collapse multiple underscores
+        code = code.replaceAll("^_+|_+$", "");             // trim leading/trailing underscores
+        if (code.isEmpty()) return null;
+        if (Character.isDigit(code.charAt(0))) code = "f_" + code;  // must start with letter
+        if (code.length() > 50) code = code.substring(0, 50);
+        return code;
+    }
+
 
 
     public Form getFormById(UUID id) {
@@ -503,19 +522,26 @@ public class FormService {
             throw new ValidationException("Form name cannot be empty");
         }
 
-        // 1. Strict Backend Validation
-        if (!java.util.regex.Pattern.compile(AppConstants.STRICT_FORM_NAME_REGEX)
-                .matcher(formName.toLowerCase()).matches()) {
-            throw new ValidationException("Invalid form name: Only lowercase letters, numbers, and underscores are allowed. " +
-                    "Must start with a letter and be 3-50 characters long.");
+        // Generate the internal formCode from the display name.
+        // This is the ONLY place formCode is generated — never changes after creation.
+        String formCode = generateFormCode(formName);
+
+        // Validate the generated code is usable
+        if (formCode == null || formCode.length() < 3) {
+            throw new ValidationException(
+                "Form name '" + formName + "' produces a code that is too short. " +
+                "Please include at least 3 letters or numbers."
+            );
         }
 
-        // 2. Sanitization fallback (redundant but safe)
-        String tableName = schemaManager.buildSafeTableName(formName);
+        // Build the full table name from the code
+        String tableName = "form_data_" + formCode;
 
-        // 3. Unique Table Check
-        if (formRepository.findByTableName(tableName).isPresent()) {
-            throw new ValidationException("A form with a similar name already exists. Please choose a different name.");
+        // Check uniqueness against formCode, not formName
+        if (formRepository.findByFormCode(formCode).isPresent()) {
+            throw new ValidationException(
+                "A form with a similar name already exists. Please choose a different name."
+            );
         }
 
         // Apply Guardrails
@@ -541,7 +567,8 @@ public class FormService {
         User user = getCurrentUser();
         
         Form form = new Form();
-        form.setFormName(formName);
+        form.setFormName(formName);       // store the display name exactly as given
+        form.setFormCode(formCode);       // store the generated code
         form.setUser(user);
         form.setStatus(com.example.formBuilder.enums.FormStatus.DRAFT);
         form.setTableName(tableName);
@@ -634,23 +661,8 @@ public class FormService {
             throw new ValidationException("Form name cannot be empty");
         }
 
-        // 1. Strict Validation
-        if (!java.util.regex.Pattern.compile(AppConstants.STRICT_FORM_NAME_REGEX)
-                .matcher(newFormName.toLowerCase()).matches()) {
-            throw new ValidationException("Invalid form name: Only lowercase letters, numbers, and underscores are allowed. " +
-                    "Must start with a letter and be 3-50 characters long.");
-        }
-
-        // 2. Build and check new table name
-        String newTableName = schemaManager.buildSafeTableName(newFormName);
-        
-        // If the name changed, check for uniqueness of the NEW table name
-        if (!form.getTableName().equals(newTableName)) {
-            if (formRepository.findByTableName(newTableName).isPresent()) {
-                throw new ValidationException("A form with a similar name already exists. Please choose a different name.");
-            }
-            form.setTableName(newTableName);
-        }
+        // formCode and tableName do NOT change when the display name is edited.
+        // Only update the display name.
 
         // Apply Guardrails
         validateFormLimits(newFormName, request.getFields(), request.getRules());
