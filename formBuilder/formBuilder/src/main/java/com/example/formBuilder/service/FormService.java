@@ -7,6 +7,7 @@ import com.example.formBuilder.entity.FormVersion;
 import com.example.formBuilder.entity.PermittedUser;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.FormField;
+import com.example.formBuilder.enums.FormStatus;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.UserRepository;
@@ -86,17 +87,11 @@ public class FormService {
                 type.equals("heading") || type.equals("paragraph") || type.equals("divider"));
     }
 
-    /** Converts a UUID to a safe PostgreSQL table-name suffix (hyphens → underscores). */
-    private static String uuidToTableSuffix(UUID id) {
-        return id.toString().replace("-", "_");
-    }
+    //private static String uuidToTableSuffix(UUID id) {
+    //    return id.toString().replace("-", "_");
+    //}
 
-    /**
-     * Generates a safe, PostgreSQL-compatible form code from a free-form display name.
-     * Rules: lowercase, spaces and hyphens become underscores, all other
-     * non-alphanumeric characters are stripped, must start with a letter.
-     * Truncated to 50 characters max.
-     */
+
     private String generateFormCode(String displayName) {
         if (displayName == null) return null;
         String code = displayName.trim().toLowerCase();
@@ -522,8 +517,6 @@ public class FormService {
             throw new ValidationException("Form name cannot be empty");
         }
 
-        // Generate the internal formCode from the display name.
-        // This is the ONLY place formCode is generated — never changes after creation.
         String formCode = generateFormCode(formName);
 
         // Validate the generated code is usable
@@ -570,7 +563,7 @@ public class FormService {
         form.setFormName(formName);       // store the display name exactly as given
         form.setFormCode(formCode);       // store the generated code
         form.setUser(user);
-        form.setStatus(com.example.formBuilder.enums.FormStatus.DRAFT);
+        form.setStatus(FormStatus.DRAFT);
         form.setTableName(tableName);
         
         form = formRepository.save(form);
@@ -959,4 +952,4 @@ public class FormService {
         }
         return value;
     }
-}
+}

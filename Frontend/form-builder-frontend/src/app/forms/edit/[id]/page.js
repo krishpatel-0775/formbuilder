@@ -459,6 +459,7 @@ export default function EditFormPage() {
         <FormHeader
           formName={formName}
           setFormName={setFormName}
+          canEditName={false}
           formStatus={formStatus}
           saveForm={saveForm}
           publishForm={publishForm}

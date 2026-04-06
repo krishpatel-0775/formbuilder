@@ -1,5 +1,6 @@
 package com.example.formBuilder.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,7 +37,8 @@ public class FieldRequest {
     private String afterTime;
     private String beforeTime;
     private Boolean isReadOnly;
-    @com.fasterxml.jackson.annotation.JsonProperty("isMultiSelect")
+
+    @JsonProperty("isMultiSelect")
     private Boolean isMultiSelect;
 
 }

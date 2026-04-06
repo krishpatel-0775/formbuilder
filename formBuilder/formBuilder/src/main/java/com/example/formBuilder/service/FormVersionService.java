@@ -6,6 +6,7 @@ import com.example.formBuilder.dto.UpdateFieldRequest;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormField;
 import com.example.formBuilder.entity.FormVersion;
+import com.example.formBuilder.enums.FormStatus;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.FormFieldRepository;
@@ -19,11 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,9 +34,6 @@ public class FormVersionService {
     private final JdbcTemplate jdbcTemplate;
     private final SchemaManager schemaManager;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // PUBLIC API
-    // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * Returns all versions for a form, ordered ascending (oldest first).
@@ -112,7 +106,7 @@ public class FormVersionService {
     }
 
     /**
-     * Seeds the very first version (v1) for a brand new form.
+     * Seeds the very first version (v1) for a new form.
      */
     @Transactional
     public FormVersionDto createInitialVersion(UUID formId, List<FormField> fields, String rules) {
@@ -137,8 +131,7 @@ public class FormVersionService {
         validateUniqueFields(fields);
         fieldRepository.saveAll(fields);
 
-        // FIXED: Set status to PUBLISHED BEFORE schema sync so guard allows it
-        form.setStatus(com.example.formBuilder.enums.FormStatus.PUBLISHED);
+        form.setStatus(FormStatus.PUBLISHED);
         formRepository.save(form);
         
         ensureSchemaForVersion(form, v1);
@@ -188,10 +181,7 @@ public class FormVersionService {
         return toDtoWithFields(toActivate);
     }
 
-    /**
-     * Requirement 2: Do NOT update the existing form record. Create a new form record as a new version.
-     * We use 'versionId' as the source for the NEW version.
-     */
+
     @Transactional
     public FormVersionDto updateVersionFields(UUID versionId, List<UpdateFieldRequest> incoming) {
         FormVersion current = versionRepository.findById(versionId)
@@ -348,7 +338,7 @@ public class FormVersionService {
 
     private void validateUniqueFields(List<FormField> fields) {
         if (fields == null) return;
-        java.util.Set<String> seen = new java.util.HashSet<>();
+        Set<String> seen = new java.util.HashSet<>();
         for (FormField f : fields) {
             if (isDisplayOnly(f.getFieldType())) continue;
             String name = f.getFieldName();
@@ -415,9 +405,9 @@ public class FormVersionService {
     private void validateFieldConsistency(UUID sourceVersionId, List<UpdateFieldRequest> incoming) {
         List<FormField> sourceFields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(sourceVersionId);
 
-        java.util.Map<String, String> nameToType = sourceFields.stream()
+        Map<String, String> nameToType = sourceFields.stream()
                 .filter(f -> f.getFieldName() != null)
-                .collect(java.util.stream.Collectors.toMap(FormField::getFieldName, FormField::getFieldType, (a, b) -> a));
+                .collect(Collectors.toMap(FormField::getFieldName, FormField::getFieldType, (a, b) -> a));
         
         for (UpdateFieldRequest req : incoming) {
             String oldType = nameToType.get(req.getName());
@@ -591,7 +581,7 @@ public class FormVersionService {
 
     private void ensureSchemaForVersion(Form form, FormVersion version) {
         // FIXED: Do NOT perform schema operations for DRAFT forms. table is created only on publish.
-        if (form.getStatus() != com.example.formBuilder.enums.FormStatus.PUBLISHED) {
+        if (form.getStatus() != FormStatus.PUBLISHED) {
             log.info("Skipping schema sync: form {} is in {} state", form.getId(), form.getStatus()); // FIXED: Changed to info for visibility
             return;
         }

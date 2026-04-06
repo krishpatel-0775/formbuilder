@@ -18,6 +18,7 @@ export { generateFormCode };
 export function FormHeader({
   formName,
   setFormName,
+  canEditName = true,
   formStatus = "DRAFT",
   deleteForm,
   saveForm,
@@ -43,13 +44,19 @@ export function FormHeader({
           <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1 ml-1 truncate">
             {isPublished ? "Immutable Protocol" : "Architectural Draft"}
           </span>
-          <input
-            type="text"
-            placeholder="Name your masterpiece..."
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`}
-          />
+          {canEditName ? (
+            <input
+              type="text"
+              placeholder="Name your masterpiece..."
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`}
+            />
+          ) : (
+            <h1 className="text-xl font-black tracking-tight text-slate-900 truncate">
+              {formName || "Untitled Form"}
+            </h1>
+          )}
 
           {formName && formName.trim().length > 0 && formName.trim().length < 3 && (
             <span className="text-[10px] font-bold text-amber-500 mt-1">
