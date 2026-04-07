@@ -13,6 +13,7 @@ public class UpdateFieldRequest {
     private UUID id;            // NULL = new field, non-null = existing field
     @NotBlank(message = "Field name is required")
     private String name;
+    private String fieldKey;
     @NotBlank(message = "Field type is required")
     private String type;
     private Boolean required;

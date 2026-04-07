@@ -24,6 +24,8 @@ public class FormField {
     private UUID id;
 
     private String fieldName;
+    @Column(name = "field_key")
+    private String fieldKey;
     private String fieldType;
 
     private Boolean required;

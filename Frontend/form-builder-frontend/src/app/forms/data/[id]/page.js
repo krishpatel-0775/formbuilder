@@ -274,7 +274,20 @@ export default function FormDataPage() {
     );
   }
 
-  const headers = data.length > 0 ? Object.keys(data[0]).filter(key => key !== 'is_deleted') : [];
+  const headers = fields
+      .filter(f => !["heading", "paragraph", "divider", "page_break"].includes(f.fieldType))
+      .map(f => ({
+        key: f.fieldKey || f.fieldName,
+        label: f.fieldName
+      }));
+
+  // Add system headers
+  const systemHeaders = [
+    { key: 'id', label: 'S.NO' },
+    { key: 'created_at', label: 'SUBMISSION DATE' }
+  ];
+
+  const allHeaders = [...systemHeaders, ...headers];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10">
@@ -436,15 +449,15 @@ export default function FormDataPage() {
                           )}
                         </button>
                       </th>
-                      {headers.map((header) => (
+                      {allHeaders.map((header) => (
                         <th
-                          key={header}
-                          onClick={() => handleSort(header)}
+                          key={header.key}
+                          onClick={() => handleSort(header.key)}
                           className="px-8 py-5 text-[11px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap cursor-pointer hover:bg-slate-100 transition-colors group"
                         >
                           <div className="flex items-center gap-2">
-                            {header === 'id' ? 'S.NO' : header.replace(/_/g, " ")}
-                            <ArrowUpDown size={14} className={`transition-opacity ${sortBy === header ? 'opacity-100 text-indigo-600' : 'opacity-0 group-hover:opacity-30'}`} />
+                            {header.label}
+                            <ArrowUpDown size={14} className={`transition-opacity ${sortBy === header.key ? 'opacity-100 text-indigo-600' : 'opacity-0 group-hover:opacity-30'}`} />
                           </div>
                         </th>
                       ))}
@@ -470,14 +483,14 @@ export default function FormDataPage() {
                             )}
                           </button>
                         </td>
-                        {headers.map((header) => {
-                          const field = fields.find(f => f.fieldName === header);
+                        {allHeaders.map((header) => {
+                          const field = fields.find(f => (f.fieldKey || f.fieldName) === header.key);
                           const isFile = field?.fieldType === "file_upload";
-                          const val = row[header];
-
+                          const val = row[header.key];
+ 
                           return (
-                            <td key={header} className="px-8 py-5 text-sm text-slate-600 font-medium whitespace-nowrap">
-                              {header === 'id' ? (
+                            <td key={header.key} className="px-8 py-5 text-sm text-slate-600 font-medium whitespace-nowrap">
+                              {header.key === 'id' ? (
                                 <span className="text-slate-700 font-black">
                                   {(page * size) + index + 1}
                                 </span>
@@ -494,7 +507,7 @@ export default function FormDataPage() {
                                   </a>
                                 ) : (
                                   <span className="text-slate-700">
-                                    {header === "created_at" && typeof val === "string"
+                                    {header.key === "created_at" && typeof val === "string"
                                       ? new Date(val).toLocaleString("en-US", {
                                         year: 'numeric', month: 'short', day: 'numeric',
                                         hour: '2-digit', minute: '2-digit'

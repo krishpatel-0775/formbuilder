@@ -34,8 +34,7 @@ public class FormVersionController {
     /** POST /api/forms/{formId}/versions — create a new version (clone from latest) */
     @PostMapping
     public ResponseEntity<ApiResponse<FormVersionDto>> createVersion(
-            @PathVariable UUID formId,
-            @RequestBody(required = false) CreateVersionRequest req) {
+            @PathVariable UUID formId) {
         return ResponseEntity.ok(ApiResponse.success(versionService.createVersion(formId)));
     }
 

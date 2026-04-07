@@ -16,6 +16,7 @@ import java.util.UUID;
 public class FormFieldResponseDto {
     private UUID id;
     private String fieldName;
+    private String fieldKey;
     private String fieldType;
     private Boolean required;
     private Integer minLength;

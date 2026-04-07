@@ -4,7 +4,6 @@ import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.entity.FormVersion;
-import com.example.formBuilder.entity.PermittedUser;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.FormField;
 import com.example.formBuilder.enums.FormStatus;
@@ -20,6 +19,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -49,13 +49,13 @@ public class FormService {
     private final FormVersionRepository versionRepository;
     private final FormVersionService versionService;
 
-    @org.springframework.beans.factory.annotation.Value("${app.limits.max-fields-per-form:50}")
+    @Value("${app.limits.max-fields-per-form:50}")
     private int maxFields;
 
-    @org.springframework.beans.factory.annotation.Value("${app.limits.max-validations-per-form:100}")
+    @Value("${app.limits.max-validations-per-form:100}")
     private int maxValidations;
 
-    @org.springframework.beans.factory.annotation.Value("${app.limits.max-pages-per-form:10}")
+    @Value("${app.limits.max-pages-per-form:10}")
     private int maxPages;
 
     private User getCurrentUser() {
@@ -168,6 +168,7 @@ public class FormService {
         return FormFieldResponseDto.builder()
                 .id(f.getId())
                 .fieldName(f.getFieldName())
+                .fieldKey(f.getFieldKey())
                 .fieldType(f.getFieldType())
                 .required(f.getRequired())
                 .minLength(f.getMinLength())
@@ -236,7 +237,7 @@ public class FormService {
         List<FormField> activeFields = getFieldsForVersion(form, versionId);
         Set<String> activeFieldNames = activeFields.stream()
                 .filter(f -> !isDisplayOnly(f.getFieldType()))
-                .map(FormField::getFieldName)
+                .map(f -> f.getFieldKey() != null ? f.getFieldKey() : f.getFieldName())
                 .collect(Collectors.toSet());
         activeFieldNames.add("id");
         activeFieldNames.add("created_at");
@@ -251,7 +252,7 @@ public class FormService {
                 .collect(Collectors.toList());
 
         for (FormField field : lookupFields) {
-            String col = field.getFieldName();
+            String col = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
             String sourceFormId = field.getSourceTable();
             // Resolve correct table name for lookups
             String sourceTable;
@@ -548,12 +549,16 @@ public class FormService {
                 if (name == null || name.isBlank()) {
                     throw new ValidationException("Field name cannot be empty");
                 }
-                schemaManager.validateColumnName(name); // Throws if reserved or invalid
-                String lowerName = name.toLowerCase();
-                if (fieldNames.contains(lowerName)) {
-                    throw new ValidationException("Duplicate field name found: " + name + ". Each field must have a unique name.");
+                String key = field.getFieldKey();
+                if (key == null || key.isBlank()) {
+                    key = AppConstants.sanitizeKey(name);
                 }
-                fieldNames.add(lowerName);
+                schemaManager.validateColumnName(key); // Throws if reserved or invalid
+                String lowerKey = key.toLowerCase();
+                if (fieldNames.contains(lowerKey)) {
+                    throw new ValidationException("Duplicate field identifier: " + key + ". Each field must have a unique name.");
+                }
+                fieldNames.add(lowerKey);
             }
         }
 
@@ -592,6 +597,11 @@ public class FormService {
             FormField formField = new FormField();
 
             formField.setFieldName(field.getName());
+            String key = field.getFieldKey();
+            if (key == null || key.isBlank()) {
+                key = AppConstants.sanitizeKey(field.getName());
+            }
+            formField.setFieldKey(key);
             formField.setFieldType(field.getType());
 
             if (!isDisplayOnlyField) {
@@ -640,157 +650,155 @@ public class FormService {
         return "Form Created Successfully";
     }
 
-    @Transactional
-    public String updateForm(UUID formId, UpdateFormRequest request) {
-
-        Form form = getFormWithPermission(formId);
-
-        if (form.getStatus() == PUBLISHED) {
-            throw new ValidationException("Cannot edit a published form directly. Please use the version editor.");
-        }
-
-        String newFormName = request.getFormName();
-        if (newFormName == null || newFormName.isBlank()) {
-            throw new ValidationException("Form name cannot be empty");
-        }
-
-        // formCode and tableName do NOT change when the display name is edited.
-        // Only update the display name.
-
-        // Apply Guardrails
-        validateFormLimits(newFormName, request.getFields(), request.getRules());
-
-        form.setFormName(newFormName);
-
-        List<UpdateFieldRequest> incoming = request.getFields();
-
-        // Validate field name uniqueness and keywords
-        Set<String> fieldNames = new HashSet<>();
-        for (UpdateFieldRequest fieldReq : incoming) {
-            if (!isDisplayOnly(fieldReq.getType())) {
-                String name = fieldReq.getName();
-                schemaManager.validateColumnName(name); // Throws if invalid or reserved
-                
-                String lowerName = name.toLowerCase();
-                if (fieldNames.contains(lowerName)) {
-                    throw new ValidationException("Duplicate field name found: " + name);
-                }
-                fieldNames.add(lowerName);
-            }
-        }
-
-        List<FormField> existingFields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(formId);
-
-
-        Set<UUID> incomingIds = incoming.stream()
-                .filter(f -> f.getId() != null)
-                .map(UpdateFieldRequest::getId)
-                .collect(Collectors.toSet());
-
-        List<FormField> toDelete = existingFields.stream()
-                .filter(f -> !incomingIds.contains(f.getId()))
-                .toList();
-
-        for (FormField deleted : toDelete) {
-            deleted.setIsDeleted(true);
-            // Relax database constraint if field was required
-            if (!isDisplayOnly(deleted.getFieldType()) && form.getStatus() == PUBLISHED) {
-                schemaManager.makeColumnNullable(form.getTableName(), deleted.getFieldName());
-            }
-        }
-        fieldRepository.saveAll(toDelete);
-
-        for (int i = 0; i < incoming.size(); i++) {
-            UpdateFieldRequest fieldReq = incoming.get(i);
-            boolean isDisplayOnly = isDisplayOnly(fieldReq.getType());
-
-            if (fieldReq.getId() != null) {
-                FormField existing = fieldRepository.findById(fieldReq.getId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Field with ID " + fieldReq.getId() + " not found"));
-
-                String oldName = existing.getFieldName();
-                String newName = fieldReq.getName();
-
-                if (!isDisplayOnly && form.getStatus() == PUBLISHED
-                        && !oldName.equals(newName)) {
-                    schemaManager.renameColumn(form.getTableName(), oldName, newName);
-                }
-
-                applyFieldUpdates(existing, fieldReq, form);
-                existing.setDisplayOrder(i);
-                fieldRepository.save(existing);
-
-            } else {
-                FormField newField = buildFormField(fieldReq, form);
-                newField.setDisplayOrder(i);
-                fieldRepository.save(newField);
-
-                // Only add real data fields to the DB table schema
-                if (!isDisplayOnly && form.getStatus() == PUBLISHED) {
-                    schemaManager.addColumn(form.getTableName(), newField);
-                }
-            }
-        }
-
-
-        if (request.getRules() != null) {
-            try {
-                form.setRules(objectMapper.writeValueAsString(request.getRules()));
-            } catch (Exception e) {
-                log.warn("Failed to serialize updated rules: {}", e.getMessage());
-            }
-        }
-
-        form.setUpdatedAt(java.time.LocalDateTime.now());
-        formRepository.save(form);
-        return "Form updated successfully";
-    }
-
-    private void applyFieldUpdates(FormField field, UpdateFieldRequest req, Form form) {
-        boolean isDisplayOnly = isDisplayOnly(req.getType());
-        // Display-only fields don't need column-name validation since they're never DB columns
-        if (!isDisplayOnly) {
-            schemaManager.validateColumnName(req.getName());
-        }
-        field.setFieldName(req.getName());
-        field.setFieldType(req.getType());
-        if (!isDisplayOnly) {
-            // FIXED: Redundant makeColumnNullable removed as all columns are now nullable by default.
-            field.setRequired(req.getRequired());
-            field.setMinLength(req.getMinLength());
-            field.setMaxLength(req.getMaxLength());
-            field.setMin(req.getMin());
-            field.setMax(req.getMax());
-            field.setPattern(req.getPattern());
-            field.setDefaultValue(req.getDefaultValue());
-            field.setBeforeDate(req.getBeforeDate() != null
-                    ? LocalDate.parse(req.getBeforeDate()) : null);
-            field.setAfterDate(req.getAfterDate() != null
-                    ? LocalDate.parse(req.getAfterDate()) : null);
-            field.setOptions(req.getOptions());
-            field.setPlaceholder(req.getPlaceholder());
-            field.setHelperText(req.getHelperText());
-            field.setAfterTime(req.getAfterTime());
-            field.setBeforeTime(req.getBeforeTime());
-            field.setSourceTable(req.getSourceTable());
-            field.setSourceColumn(req.getSourceColumn());
-            field.setMaxFileSize(req.getMaxFileSize());
-            field.setIsReadOnly(req.getIsReadOnly() != null ? req.getIsReadOnly() : false);
-            field.setIsMultiSelect(req.getIsMultiSelect() != null ? req.getIsMultiSelect() : false);
-            field.setAllowedFileTypes(req.getAllowedFileTypes());
-        } else {
-
-            // Persist label text for display-only elements (heading, paragraph, etc.)
-            field.setDefaultValue(req.getDefaultValue());
-        }
-    }
-
-    private FormField buildFormField(UpdateFieldRequest req, Form form) {
-        FormField f = new FormField();
-        applyFieldUpdates(f, req, form);
-        f.setForm(form);
-        return f;
-    }
+//    @Transactional
+//    public String updateForm(UUID formId, UpdateFormRequest request) {
+//
+//        Form form = getFormWithPermission(formId);
+//
+//        if (form.getStatus() == PUBLISHED) {
+//            throw new ValidationException("Cannot edit a published form directly. Please use the version editor.");
+//        }
+//
+//        String newFormName = request.getFormName();
+//        if (newFormName == null || newFormName.isBlank()) {
+//            throw new ValidationException("Form name cannot be empty");
+//        }
+//
+//        // formCode and tableName do NOT change when the display name is edited.
+//        // Only update the display name.
+//
+//        // Apply Guardrails
+//        validateFormLimits(newFormName, request.getFields(), request.getRules());
+//
+//        form.setFormName(newFormName);
+//
+//        List<UpdateFieldRequest> incoming = request.getFields();
+//
+//        // Validate field name uniqueness and keywords
+//        Set<String> fieldNames = new HashSet<>();
+//        for (UpdateFieldRequest fieldReq : incoming) {
+//            if (!isDisplayOnly(fieldReq.getType())) {
+//                String name = fieldReq.getName();
+//                schemaManager.validateColumnName(name); // Throws if invalid or reserved
+//
+//                String lowerName = name.toLowerCase();
+//                if (fieldNames.contains(lowerName)) {
+//                    throw new ValidationException("Duplicate field name found: " + name);
+//                }
+//                fieldNames.add(lowerName);
+//            }
+//        }
+//
+//        List<FormField> existingFields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(formId);
+//
+//
+//        Set<UUID> incomingIds = incoming.stream()
+//                .filter(f -> f.getId() != null)
+//                .map(UpdateFieldRequest::getId)
+//                .collect(Collectors.toSet());
+//
+//        List<FormField> toDelete = existingFields.stream()
+//                .filter(f -> !incomingIds.contains(f.getId()))
+//                .toList();
+//
+//        for (FormField deleted : toDelete) {
+//            deleted.setIsDeleted(true);
+//            // Relax database constraint if field was required
+//            if (!isDisplayOnly(deleted.getFieldType()) && form.getStatus() == PUBLISHED) {
+//                schemaManager.makeColumnNullable(form.getTableName(), deleted.getFieldName());
+//            }
+//        }
+//        fieldRepository.saveAll(toDelete);
+//
+//        for (int i = 0; i < incoming.size(); i++) {
+//            UpdateFieldRequest fieldReq = incoming.get(i);
+//            boolean isDisplayOnly = isDisplayOnly(fieldReq.getType());
+//
+//            if (fieldReq.getId() != null) {
+//                FormField existing = fieldRepository.findById(fieldReq.getId())
+//                        .orElseThrow(() -> new ResourceNotFoundException("Field with ID " + fieldReq.getId() + " not found"));
+//
+//                String oldName = existing.getFieldName();
+//                String newName = fieldReq.getName();
+//
+//                if (!isDisplayOnly && form.getStatus() == PUBLISHED
+//                        && !oldName.equals(newName)) {
+//                    schemaManager.renameColumn(form.getTableName(), oldName, newName);
+//                }
+//
+//                applyFieldUpdates(existing, fieldReq, form);
+//                existing.setDisplayOrder(i);
+//                fieldRepository.save(existing);
+//
+//            } else {
+//                FormField newField = buildFormField(fieldReq, form);
+//                newField.setDisplayOrder(i);
+//                fieldRepository.save(newField);
+//
+//                // Only add real data fields to the DB table schema
+//                if (!isDisplayOnly && form.getStatus() == PUBLISHED) {
+//                    schemaManager.addColumn(form.getTableName(), newField);
+//                }
+//            }
+//        }
+//
+//
+//        if (request.getRules() != null) {
+//            try {
+//                form.setRules(objectMapper.writeValueAsString(request.getRules()));
+//            } catch (Exception e) {
+//                log.warn("Failed to serialize updated rules: {}", e.getMessage());
+//            }
+//        }
+//
+//        form.setUpdatedAt(java.time.LocalDateTime.now());
+//        formRepository.save(form);
+//        return "Form updated successfully";
+//    }
+//    private void applyFieldUpdates(FormField field, UpdateFieldRequest req, Form form) {
+//        boolean isDisplayOnly = isDisplayOnly(req.getType());
+//        // Display-only fields don't need column-name validation since they're never DB columns
+//        if (!isDisplayOnly) {
+//            schemaManager.validateColumnName(req.getName());
+//        }
+//        field.setFieldName(req.getName());
+//        field.setFieldType(req.getType());
+//        if (!isDisplayOnly) {
+//            // FIXED: Redundant makeColumnNullable removed as all columns are now nullable by default.
+//            field.setRequired(req.getRequired());
+//            field.setMinLength(req.getMinLength());
+//            field.setMaxLength(req.getMaxLength());
+//            field.setMin(req.getMin());
+//            field.setMax(req.getMax());
+//            field.setPattern(req.getPattern());
+//            field.setDefaultValue(req.getDefaultValue());
+//            field.setBeforeDate(req.getBeforeDate() != null
+//                    ? LocalDate.parse(req.getBeforeDate()) : null);
+//            field.setAfterDate(req.getAfterDate() != null
+//                    ? LocalDate.parse(req.getAfterDate()) : null);
+//            field.setOptions(req.getOptions());
+//            field.setPlaceholder(req.getPlaceholder());
+//            field.setHelperText(req.getHelperText());
+//            field.setAfterTime(req.getAfterTime());
+//            field.setBeforeTime(req.getBeforeTime());
+//            field.setSourceTable(req.getSourceTable());
+//            field.setSourceColumn(req.getSourceColumn());
+//            field.setMaxFileSize(req.getMaxFileSize());
+//            field.setIsReadOnly(req.getIsReadOnly() != null ? req.getIsReadOnly() : false);
+//            field.setIsMultiSelect(req.getIsMultiSelect() != null ? req.getIsMultiSelect() : false);
+//            field.setAllowedFileTypes(req.getAllowedFileTypes());
+//        } else {
+//
+//            // Persist label text for display-only elements (heading, paragraph, etc.)
+//            field.setDefaultValue(req.getDefaultValue());
+//        }
+//    }
+//    private FormField buildFormField(UpdateFieldRequest req, Form form) {
+//        FormField f = new FormField();
+//        applyFieldUpdates(f, req, form);
+//        f.setForm(form);
+//        return f;
+//    }
 
     public String getFormRules(UUID formId) {
         Form form = getFormWithPermission(formId);
@@ -837,54 +845,24 @@ public class FormService {
     public String deleteForm(UUID id) {
         Form form = getFormWithPermission(id);
         
-        // Rule 3.4: Prevent deletion if there are live submissions
-//        if (hasLiveSubmissions(form)) {
-//            throw new ValidationException("Cannot delete form: It has live submissions. Please clear submissions first or disable the form.");
-//        }
-        
         form.setIsDeleted(true);
         form.setUpdatedAt(java.time.LocalDateTime.now());
         formRepository.save(form);
         return "Form deleted successfully";
     }
 
-    private boolean hasLiveSubmissions(Form form) {
-        if (form.getTableName() == null) return false;
-        try {
-            // "Live Submission" = active SUBMITTED row (not draft, not deleted)
-            String sql = "SELECT COUNT(*) FROM " + form.getTableName() + " WHERE is_deleted = false AND is_draft = false";
-            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
-            return count != null && count > 0;
-        } catch (Exception e) {
-            log.warn("Could not check live submissions for form {}: {}", form.getId(), e.getMessage());
-            return false;
-        }
-    }
-
-    @Transactional
-    public String updateVisibility(UUID formId, VisibilityRequest request) {
-        Form form = getFormWithPermission(formId);
-
-        if (request.getVisibilityType() != null) {
-            form.setVisibilityType(request.getVisibilityType());
-        }
-
-        if (request.getPermittedUsers() != null) {
-            form.getPermittedUsers().clear();
-            final Form f = form;
-            List<PermittedUser> puList = request.getPermittedUsers().stream()
-                    .map(identifier -> {
-                        PermittedUser pu = new PermittedUser();
-                        pu.setIdentifier(identifier);
-                        pu.setForm(f);
-                        return pu;
-                    }).collect(Collectors.toList());
-            form.getPermittedUsers().addAll(puList);
-        }
-
-        formRepository.save(form);
-        return "Visibility settings updated successfully";
-    }
+//    private boolean hasLiveSubmissions(Form form) {
+//        if (form.getTableName() == null) return false;
+//        try {
+//            // "Live Submission" = active SUBMITTED row (not draft, not deleted)
+//            String sql = "SELECT COUNT(*) FROM " + form.getTableName() + " WHERE is_deleted = false AND is_draft = false";
+//            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+//            return count != null && count > 0;
+//        } catch (Exception e) {
+//            log.warn("Could not check live submissions for form {}: {}", form.getId(), e.getMessage());
+//            return false;
+//        }
+//    }
 
     public void exportCsv(UUID formId, UUID versionId, PrintWriter writer) {
         Form form = getFormWithPermission(formId);

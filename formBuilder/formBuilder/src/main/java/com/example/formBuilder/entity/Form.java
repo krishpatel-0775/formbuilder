@@ -1,6 +1,5 @@
 package com.example.formBuilder.entity;
 
-import com.example.formBuilder.entity.PermittedUser;
 import com.example.formBuilder.enums.FormStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -65,9 +64,4 @@ public class Form {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "visibility_type")
-    private String visibilityType;
-
-    @OneToMany(mappedBy = "form", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PermittedUser> permittedUsers = new ArrayList<>();
 }

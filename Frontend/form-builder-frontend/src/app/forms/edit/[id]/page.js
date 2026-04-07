@@ -119,6 +119,7 @@ export default function EditFormPage() {
             isMultiSelect: f.isMultiSelect ?? false,
             placeholder: f.placeholder ?? "",
             helperText: f.helperText ?? "",
+            key: f.fieldKey || (f.fieldName ? generateColumnName(f.fieldName) : ""),
           };
 
         });
@@ -216,6 +217,7 @@ export default function EditFormPage() {
       isMultiSelect: false,
       placeholder: "",
       helperText: "",
+      key: "",
     };
 
     setFields([...fields, newField]);
@@ -255,7 +257,7 @@ export default function EditFormPage() {
             }));
           }
         }
-        return p.map((f) => (f.id === id ? { ...f, [key]: value } : f));
+        return p.map((f) => (f.id === id ? { ...f, [key]: value, key: key === "label" && (!f.key || f.key === generateColumnName(f.label)) ? generateColumnName(value) : f.key } : f));
       });
     } else {
       setFields((p) => p.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
@@ -300,7 +302,15 @@ export default function EditFormPage() {
           return { id: field._dbId ?? null, name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
         }
         if (!field.label) throw new Error("All fields must have a label.");
-        let fd = { id: field._dbId ?? null, name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly, isMultiSelect: !!field.isMultiSelect };
+        let fd = { 
+          id: field._dbId ?? null, 
+          name: field.label, 
+          fieldKey: field.key || generateColumnName(field.label), 
+          type: field.type, 
+          required: field.required, 
+          isReadOnly: field.isReadOnly, 
+          isMultiSelect: !!field.isMultiSelect 
+        };
 
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
 
@@ -364,7 +374,7 @@ export default function EditFormPage() {
 
         const currentOrderList = fields.map((f, idx) => {
           if (isDisplayOnly(f.type)) return `${f.type}_${idx}`;
-          return f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+          return f.key || (f.label ? generateColumnName(f.label) : "");
         }).filter(Boolean).join(",");
 
         cleanRules.push({ action: { type: "SHOW", targetField: "__FIELD_ORDER__", message: currentOrderList } });

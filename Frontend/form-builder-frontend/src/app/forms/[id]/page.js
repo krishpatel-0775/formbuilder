@@ -77,29 +77,29 @@ function getInitialFormData(fields) {
       const defaultVals = field.defaultValue
         ? field.defaultValue.toString().split(",").map((v) => v.trim()).filter(Boolean)
         : [];
-      initialData[field.fieldName] = options.length > 0
+      initialData[field.fieldKey || field.fieldName] = options.length > 0
         ? defaultVals.filter(v => isOptionValid(v))
         : defaultVals;
     } else if (field.fieldType === "radio") {
       let v = field.defaultValue ?? "";
       if (v && options.length > 0 && !isOptionValid(v)) v = "";
-      initialData[field.fieldName] = v;
+      initialData[field.fieldKey || field.fieldName] = v;
     } else if (field.fieldType === "select") {
       if (field.isMultiSelect) {
         const defaultVals = field.defaultValue
           ? field.defaultValue.toString().split(",").map((v) => v.trim()).filter(Boolean)
           : [];
-        initialData[field.fieldName] = options.length > 0
+        initialData[field.fieldKey || field.fieldName] = options.length > 0
           ? defaultVals.filter(v => isOptionValid(v))
           : defaultVals;
       } else {
         let v = field.defaultValue ?? "";
         if (v && options.length > 0 && !isOptionValid(v)) v = "";
-        initialData[field.fieldName] = v;
+        initialData[field.fieldKey || field.fieldName] = v;
       }
     } else {
 
-      initialData[field.fieldName] = field.defaultValue ?? "";
+      initialData[field.fieldKey || field.fieldName] = field.defaultValue ?? "";
     }
   });
   return initialData;
@@ -275,8 +275,8 @@ export default function PublicFormPage() {
       if (fieldVisibility[field.fieldName] === "HIDE") return;
       if (showTargetFields.has(field.fieldName) && fieldVisibility[field.fieldName] !== "SHOW") return;
 
-      const value = formData[field.fieldName];
-      const name = field.fieldName;
+      const value = formData[field.fieldKey || field.fieldName];
+      const name = field.fieldKey || field.fieldName;
 
       if (field.required || dynamicRequiredFields.has(field.fieldName)) {
         if (field.fieldType === "checkbox") {
@@ -578,13 +578,14 @@ export default function PublicFormPage() {
       <FormFieldWrapper
         key={field.id}
         field={field}
-        value={formData[field.fieldName]}
+        label={field.fieldName}
+        value={formData[field.fieldKey || field.fieldName]}
         onChange={handleInputChange}
         onCheckboxChange={handleCheckboxChange}
-        errors={errors[field.fieldName]}
-        visibility={fieldVisibility[field.fieldName] || (showTargetFields.has(field.fieldName) ? "HIDE" : "SHOW")}
-        isShowControlled={showTargetFields.has(field.fieldName)}
-        isRuleRequired={dynamicRequiredFields.has(field.fieldName)}
+        errors={errors[field.fieldKey || field.fieldName]}
+        visibility={fieldVisibility[field.fieldKey || field.fieldName] || (showTargetFields.has(field.fieldKey || field.fieldName) ? "HIDE" : "SHOW")}
+        isShowControlled={showTargetFields.has(field.fieldKey || field.fieldName)}
+        isRuleRequired={dynamicRequiredFields.has(field.fieldKey || field.fieldName)}
       />
     );
   };

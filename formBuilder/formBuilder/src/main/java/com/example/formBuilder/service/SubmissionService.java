@@ -97,8 +97,8 @@ public class SubmissionService {
         Map<String, String> fieldLabels = fields.stream()
                 .filter(f -> !isDisplayOnly(f.getFieldType()))
                 .collect(Collectors.toMap(
-                        FormField::getFieldName,
-                        f -> f.getFieldName().replace("_", " ").toUpperCase(),
+                        f -> f.getFieldKey() != null ? f.getFieldKey() : f.getFieldName(),
+                        f -> f.getFieldName() != null ? f.getFieldName() : "",
                         (existing, replacement) -> existing
                 ));
         
@@ -222,8 +222,10 @@ public class SubmissionService {
         }
 
         Map<String, FormField> fieldMap = formFields.stream()
-
-                .collect(Collectors.toMap(FormField::getFieldName, f -> f, (existing, replacement) -> existing));
+                .collect(Collectors.toMap(
+                        f -> f.getFieldKey() != null ? f.getFieldKey() : f.getFieldName(),
+                        f -> f,
+                        (existing, replacement) -> existing));
 
         // Validation for final submission
         List<String> validationErrors = new ArrayList<>();
@@ -233,7 +235,7 @@ public class SubmissionService {
 
         for (FormField field : formFields) {
             if (isDisplayOnly(field.getFieldType())) continue;
-            Object value = values.get(field.getFieldName());
+            Object value = values.get(field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName());
             if (Boolean.TRUE.equals(field.getRequired()) && (value == null || value.toString().trim().isEmpty())) {
                 validationErrors.add(field.getFieldName() + " is required");
                 continue;
@@ -263,9 +265,9 @@ public class SubmissionService {
             StringBuilder updateSql = new StringBuilder("UPDATE " + tableName + " SET ");
             List<Object> updateValues = new ArrayList<>();
             for (FormField f : formFields) {
-                if (!isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldName())) {
-                    updateSql.append(f.getFieldName()).append(" = ?, ");
-                    updateValues.add(getSafeValue(f, values.get(f.getFieldName())));
+                if (!isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldKey())) {
+                    updateSql.append(f.getFieldKey()).append(" = ?, ");
+                    updateValues.add(getSafeValue(f, values.get(f.getFieldKey())));
                 }
             }
             updateSql.append("is_draft = false, form_version_id = ?::uuid, updated_at = CURRENT_TIMESTAMP WHERE id = ?::uuid");
@@ -275,14 +277,14 @@ public class SubmissionService {
         } else {
             // New submission
             String columns = formFields.stream()
-                    .filter(f -> !isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldName()))
-                    .map(FormField::getFieldName).collect(Collectors.joining(","));
+                    .filter(f -> !isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldKey()))
+                    .map(FormField::getFieldKey).collect(Collectors.joining(","));
             String placeholders = formFields.stream()
-                    .filter(f -> !isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldName()))
+                    .filter(f -> !isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldKey()))
                     .map(f -> "?").collect(Collectors.joining(","));
             Object[] safeValues = formFields.stream()
-                    .filter(f -> !isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldName()))
-                    .map(f -> getSafeValue(f, values.get(f.getFieldName()))).toArray();
+                    .filter(f -> !isDisplayOnly(f.getFieldType()) && values.containsKey(f.getFieldKey()))
+                    .map(f -> getSafeValue(f, values.get(f.getFieldKey()))).toArray();
 
             String sql = "INSERT INTO " + tableName + " (" + columns + ",form_version_id,is_draft,submitted_by) VALUES (" + placeholders + ",?::uuid,false,?) RETURNING id";
             Object[] finalValues = new Object[safeValues.length + 2];
@@ -331,7 +333,7 @@ public class SubmissionService {
                 : fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(form.getId());
 
         Map<String, FormField> fieldMap = fields.stream()
-                .collect(Collectors.toMap(FormField::getFieldName, f -> f, (existing, replacement) -> existing));
+                .collect(Collectors.toMap(FormField::getFieldKey, f -> f, (existing, replacement) -> existing));
 
         if (submissionId != null) {
             // Update existing

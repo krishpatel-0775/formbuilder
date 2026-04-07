@@ -97,7 +97,7 @@ export default function BuilderPage() {
         }
 
         const newField = {
-            id: Date.now(), label: "", type: type.toLowerCase(), required: false,
+            id: Date.now(), label: "", key: "", type: type.toLowerCase(), required: false,
             defaultValue: type === "toggle" ? "false" : "",
             minLength: "", maxLength: "", min: "", max: "", pattern: "",
             beforeDate: "", afterDate: "", afterTime: "", beforeTime: "",
@@ -145,7 +145,11 @@ export default function BuilderPage() {
                         }));
                     }
                 }
-                return p.map((f) => f.id === id ? { ...f, [key]: value } : f);
+                return p.map((f) => f.id === id ? { 
+                    ...f, 
+                    [key]: value, 
+                    key: key === "label" && (!f.key || f.key === generateColumnName(f.label)) ? generateColumnName(value) : f.key 
+                } : f);
             });
         } else {
             setFields((p) => p.map((f) => f.id === id ? { ...f, [key]: value } : f));
@@ -177,7 +181,14 @@ export default function BuilderPage() {
                     return { name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
                 }
                 if (!field.label) throw new Error("Field label is required");
-                let fd = { name: generateColumnName(field.label), type: field.type, required: field.required, isReadOnly: field.isReadOnly, isMultiSelect: !!field.isMultiSelect };
+                let fd = { 
+                    name: field.label, 
+                    fieldKey: field.key || generateColumnName(field.label),
+                    type: field.type, 
+                    required: field.required, 
+                    isReadOnly: field.isReadOnly, 
+                    isMultiSelect: !!field.isMultiSelect 
+                };
 
                 if (field.type === "toggle") {
                     fd.defaultValue = field.defaultValue === "true" ? "true" : "false";

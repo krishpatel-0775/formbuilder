@@ -5,7 +5,6 @@ export const ENDPOINTS = {
     DELETED_FORMS: `${API_BASE_URL}/api/v1/forms/deleted`,
     SUBMISSIONS: `${API_BASE_URL}/api/v1/submissions`,
     DASHBOARD_STATS: `${API_BASE_URL}/api/v1/dashboard/stats`,
-    VISIBILITY: `${API_BASE_URL}/api/v1/submissions/visibility`,
     // Auth
     AUTH_REGISTER: `${API_BASE_URL}/api/v1/auth/register`,
     AUTH_LOGIN: `${API_BASE_URL}/api/v1/auth/login`,

@@ -33,7 +33,7 @@ export function SortableFieldItem({
           <div className="flex-1 border-t-2 border-dashed border-primary/20" />
           <div className="flex items-center gap-3 px-6 py-2.5 bg-white border border-primary/10 rounded-2xl shadow-xl shadow-primary/5 flex-shrink-0 group-hover:scale-105 transition-transform">
             <Sparkles size={14} className="text-primary animate-pulse" />
-            <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
+            <span className="text-[10px] font-black text-slate-600 tracking-[0.2em]">
               {field.label || `Page ${idx + 1}`}
             </span>
           </div>

@@ -22,7 +22,6 @@ public class AppConstants {
     public static final String API_SUBMISSION_RESTORE = "/{formId}/response/{responseId}/restore";
     public static final String API_SUBMISSION_BULK_DELETE = "/{formId}/responses/bulk-delete";
     public static final String API_SUBMISSION_BULK_RESTORE = "/{formId}/responses/bulk-restore";
-    public static final String API_SUBMISSION_VISIBILITY = "/visibility";
 
     // Form Rules Sub-Endpoints
     public static final String API_FORM_RULES = "/{id}/rules";
@@ -36,6 +35,14 @@ public class AppConstants {
 
     // Display name: any printable characters, 3–100 chars, at least one non-space character
     public static final String FORM_DISPLAY_NAME_REGEX = "^.{3,100}$";
+
+    public static String sanitizeKey(String input) {
+        if (input == null) return null;
+        return input.trim().toLowerCase()
+                .replaceAll("[\\s\\-]", "_")
+                .replaceAll("[^a-z0-9_]", "")
+                .replaceAll("^\\d+", "f_$0");
+    }
     
     private AppConstants() {
         // Private constructor to prevent instantiation

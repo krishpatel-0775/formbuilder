@@ -158,7 +158,7 @@ public class FormVersionService {
         // Rule 8: On every activation, old drafts MUST be deleted.
         // FIXED: Only discard drafts if the form is already PUBLISHED.
         // For new draft forms, no submission table exists yet, so this would fail.
-        if (form.getStatus() == com.example.formBuilder.enums.FormStatus.PUBLISHED) {
+        if (form.getStatus() == FormStatus.PUBLISHED) {
             discardDraftsForForm(formId);
         } else {
             log.info("Skipping draft cleanup for form {}: currently in {} state", formId, form.getStatus());
@@ -169,7 +169,7 @@ public class FormVersionService {
         versionRepository.saveAndFlush(toActivate);
 
         // FIXED: Set status to PUBLISHED BEFORE schema sync so guard allows it
-        form.setStatus(com.example.formBuilder.enums.FormStatus.PUBLISHED);
+        form.setStatus(FormStatus.PUBLISHED);
         formRepository.saveAndFlush(form);
         
         // Ensure DB schema reflects this version's fields
@@ -196,7 +196,7 @@ public class FormVersionService {
         Form form = getFormOrThrow(current.getFormId()); // FIXED: Need form to check status
 
         // FIXED: IF form is DRAFT, update the existing version in-place
-        if (form.getStatus() == com.example.formBuilder.enums.FormStatus.DRAFT) {
+        if (form.getStatus() == FormStatus.DRAFT) {
             log.info("Draft Edit: Updating existing draft version v{} for fields. Replacing all fields.", current.getVersionNumber()); // FIXED: Added log
             fieldRepository.deleteByFormVersionId(current.getId());
             fieldRepository.flush(); // FIXED: Force flush to ensure old fields are deleted before saveAll
@@ -341,12 +341,12 @@ public class FormVersionService {
         Set<String> seen = new java.util.HashSet<>();
         for (FormField f : fields) {
             if (isDisplayOnly(f.getFieldType())) continue;
-            String name = f.getFieldName();
-            if (name == null || name.isBlank()) continue;
-            String lower = name.toLowerCase();
+            String key = f.getFieldKey();
+            if (key == null || key.isBlank()) continue;
+            String lower = key.toLowerCase();
             if (seen.contains(lower)) {
-                log.error("CRITICAL: Duplicate field name '{}' detected for Version ID {}", name, f.getFormVersion() != null ? f.getFormVersion().getId() : "NULL");
-                throw new ValidationException("Architectural error: Duplicate field name '" + name + "' found. Please ensure all form labels are unique.");
+                log.error("CRITICAL: Duplicate field key '{}' detected for Version ID {}", key, f.getFormVersion() != null ? f.getFormVersion().getId() : "NULL");
+                throw new ValidationException("Architectural error: Duplicate field key '" + key + "' found. Please ensure all form labels result in unique keys.");
             }
             seen.add(lower);
         }
@@ -357,16 +357,23 @@ public class FormVersionService {
         java.util.Set<String> seen = new java.util.HashSet<>();
         for (com.example.formBuilder.dto.UpdateFieldRequest req : incoming) {
             String name = req.getName();
+            String key = req.getFieldKey();
+            if (key == null || key.isBlank()) {
+                key = com.example.formBuilder.constants.AppConstants.sanitizeKey(name);
+            }
             // Skip validation for display-only types since they have no DB column
             if (isDisplayOnly(req.getType())) continue;
              
-            if (name == null || name.isBlank()) continue;
+            if (key == null || key.isBlank()) continue;
             
-            if (seen.contains(name)) {
-                log.error("Duplicate field name found: {}", name); // FIXED: Log duplicate
-                throw new ValidationException("Duplicate field name: '" + name + "'. Each database-backed field MUST have a unique name.");
+            // NEW: Validate the key for SQL safety (no spaces, starts with letter)
+            schemaManager.validateColumnName(key);
+            
+            if (seen.contains(key)) {
+                log.error("Duplicate field key found: {}", key); // FIXED: Log duplicate
+                throw new ValidationException("Duplicate field identifier: '" + key + "'. Each database-backed field MUST have a unique generated key.");
             }
-            seen.add(name);
+            seen.add(key);
         }
     }
 
@@ -420,6 +427,11 @@ public class FormVersionService {
 
     private void applyFieldUpdates(FormField field, UpdateFieldRequest req) {
         field.setFieldName(req.getName());
+        String key = req.getFieldKey();
+        if (key == null || key.isBlank()) {
+            key = com.example.formBuilder.constants.AppConstants.sanitizeKey(req.getName());
+        }
+        field.setFieldKey(key);
         field.setFieldType(req.getType());
         field.setRequired(req.getRequired());
         field.setMinLength(req.getMinLength());
@@ -466,7 +478,7 @@ public class FormVersionService {
         if (v == null || v.getCreatedAt() == null) return false;
         LocalDateTime now = LocalDateTime.now();
         return v.getCreatedAt().isAfter(now.minusSeconds(10)) &&
-               java.util.Objects.equals(v.getCreatedBy(), SessionUtil.getCurrentUsername());
+               Objects.equals(v.getCreatedBy(), SessionUtil.getCurrentUsername());
     }
 
     /**
@@ -476,6 +488,16 @@ public class FormVersionService {
      */
     @Transactional
     public void migrateExistingForms() {
+        // Step 1: Populate field_key for all fields that don't have one
+        List<FormField> fieldsToMigrate = fieldRepository.findAll();
+        for (FormField f : fieldsToMigrate) {
+            if (f.getFieldKey() == null || f.getFieldKey().isBlank()) {
+                f.setFieldKey(com.example.formBuilder.constants.AppConstants.sanitizeKey(f.getFieldName()));
+            }
+        }
+        fieldRepository.saveAll(fieldsToMigrate);
+
+        // Step 2: Existing logic for version migration
         List<Form> allForms = formRepository.findAll();
         for (Form form : allForms) {
             if (!versionRepository.existsByFormId(form.getId())) {
@@ -535,6 +557,7 @@ public class FormVersionService {
         for (FormField f : source) {
             FormField clone = new FormField();
             clone.setFieldName(f.getFieldName());
+            clone.setFieldKey(f.getFieldKey());
             clone.setFieldType(f.getFieldType());
             clone.setRequired(f.getRequired());
             clone.setMinLength(f.getMinLength());
@@ -622,12 +645,12 @@ public class FormVersionService {
                 String colCheck = "SELECT COUNT(*) FROM information_schema.columns " +
                         "WHERE table_name = ? AND column_name = ?";
                 Integer colCount = jdbcTemplate.queryForObject(colCheck, Integer.class,
-                        tableName, field.getFieldName());
+                        tableName, field.getFieldKey());
                 if (colCount == null || colCount == 0) {
                     schemaManager.addColumn(tableName, field);
                 }
             } catch (Exception ex) {
-                log.warn("Could not check/add column {} to {}: {}", field.getFieldName(), tableName, ex.getMessage());
+                log.warn("Could not check/add column {} to {}: {}", field.getFieldKey(), tableName, ex.getMessage());
             }
         }
 
@@ -694,6 +717,7 @@ public class FormVersionService {
                 .map(f -> FormFieldResponseDto.builder()
                         .id(f.getId())
                         .fieldName(f.getFieldName())
+                        .fieldKey(f.getFieldKey())
                         .fieldType(f.getFieldType())
                         .required(f.getRequired())
                         .minLength(f.getMinLength())

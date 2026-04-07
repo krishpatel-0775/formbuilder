@@ -84,14 +84,14 @@ public class FormController {
         return ResponseEntity.ok(ApiResponse.success(formService.getLookupValues(id, columnName)));
     }
 
-    @PutMapping(AppConstants.API_FORM_BY_ID)
-    public ResponseEntity<ApiResponse<String>> updateForm(
-            @PathVariable UUID id,
-            @Valid @RequestBody UpdateFormRequest req) {
-        return ResponseEntity.ok(
-                ApiResponse.success(formService.updateForm(id, req), null)
-        );
-    }
+//    @PutMapping(AppConstants.API_FORM_BY_ID)
+//    public ResponseEntity<ApiResponse<String>> updateForm(
+//            @PathVariable UUID id,
+//            @Valid @RequestBody UpdateFormRequest req) {
+//        return ResponseEntity.ok(
+//                ApiResponse.success(formService.updateForm(id, req), null)
+//        );
+//    }
 
     @GetMapping(AppConstants.API_FORM_RULES)
     public ResponseEntity<ApiResponse<String>> getFormRules(@PathVariable UUID id) {
@@ -125,4 +125,4 @@ public class FormController {
         response.setHeader("Content-Disposition", "attachment; filename=\"form_export_" + id + ".csv\"");
         formService.exportCsv(id, versionId, response.getWriter());
     }
-}
+}

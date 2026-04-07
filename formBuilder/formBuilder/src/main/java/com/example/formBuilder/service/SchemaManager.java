@@ -108,10 +108,10 @@ public class SchemaManager {
             // Display-only elements (page_break, heading, paragraph, divider) have no DB column
             if (DISPLAY_ONLY_TYPES.contains(field.getFieldType())) continue;
 
-            validateColumnName(field.getFieldName());
+            validateColumnName(field.getFieldKey());
 
             sql.append(", ")
-                    .append(field.getFieldName())
+                    .append(field.getFieldKey())
                     .append(" ")
                     .append(mapType(field));
             
@@ -156,10 +156,10 @@ public class SchemaManager {
      * Adds a new column to the specified dynamic table.
      */
     public void addColumn(String tableName, FormField field) {
-        validateColumnName(field.getFieldName());
+        validateColumnName(field.getFieldKey());
         StringBuilder sql = new StringBuilder();
         sql.append("ALTER TABLE ").append(tableName)
-                .append(" ADD COLUMN ").append(field.getFieldName())
+                .append(" ADD COLUMN ").append(field.getFieldKey())
                 .append(" ").append(mapType(field));
 
         jdbcTemplate.execute(sql.toString());
@@ -202,7 +202,7 @@ public class SchemaManager {
             return fields.stream()
                     .filter(f -> !DISPLAY_ONLY_TYPES.contains(f.getFieldType()))
                     .filter(f -> !Boolean.TRUE.equals(f.getIsDeleted()))
-                    .map(f -> f.getFieldName().toLowerCase())
+                    .map(f -> f.getFieldKey().toLowerCase())
                     .collect(java.util.stream.Collectors.toList());
         }
 
@@ -212,7 +212,7 @@ public class SchemaManager {
             if (DISPLAY_ONLY_TYPES.contains(field.getFieldType())) continue;
             if (Boolean.TRUE.equals(field.getIsDeleted())) continue;
 
-            String expectedColumn = field.getFieldName().toLowerCase();
+            String expectedColumn = field.getFieldKey().toLowerCase();
             if (!existingColumns.contains(expectedColumn)) {
                 missingColumns.add(expectedColumn);
             }

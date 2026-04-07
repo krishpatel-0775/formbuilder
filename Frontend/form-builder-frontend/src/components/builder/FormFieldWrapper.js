@@ -13,8 +13,12 @@ export function FormFieldWrapper({
   visibility = "SHOW",
   isShowControlled = false,
   isRuleRequired = false,
-  onCheckboxChange
+  onCheckboxChange,
+  label // Added label prop for display
 }) {
+  const fieldIdentifier = field.fieldKey || field.fieldName;
+  const displayLabel = label || field.fieldName;
+
   if (visibility === "HIDE") return null;
   if (isShowControlled && visibility !== "SHOW") return null;
 
@@ -30,7 +34,7 @@ export function FormFieldWrapper({
     return (
       <div className="pt-8 pb-4">
         <h2 className="text-3xl font-black text-slate-900 leading-tight tracking-tight">
-          {field.defaultValue || field.fieldName}
+          {field.defaultValue || displayLabel}
         </h2>
         <div className="w-12 h-1.5 bg-primary rounded-full mt-4" />
       </div>
@@ -39,7 +43,7 @@ export function FormFieldWrapper({
   if (field.fieldType === "paragraph") {
     return (
       <p className="text-[15px] text-slate-500 leading-relaxed font-medium bg-slate-50/30 p-6 rounded-[2rem] border border-slate-100/50 italic">
-        {field.defaultValue || field.fieldName}
+        {field.defaultValue || displayLabel}
       </p>
     );
   }
@@ -65,7 +69,7 @@ export function FormFieldWrapper({
         </div>
         <div className="relative flex justify-center">
           <div className="bg-slate-50 border border-slate-100 px-6 py-2 rounded-full shadow-sm">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{field.label || "Page Break"}</span>
+            <span className="text-[10px] font-black text-slate-400 tracking-[0.2em]">{field.label || "Page Break"}</span>
           </div>
         </div>
       </div>
@@ -73,11 +77,11 @@ export function FormFieldWrapper({
   }
 
   return (
-    <div id={`field-${field.fieldName}`} className="space-y-4 group animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div id={`field-${fieldIdentifier}`} className="space-y-4 group animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Label Area */}
       <div className="flex items-center justify-between px-1">
-        <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-          <span>{field.fieldName}</span>
+        <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] flex items-center gap-2">
+          <span>{displayLabel}</span>
           {(field.required || isRuleRequired) && <span className="text-red-500 text-lg leading-none mt-1">*</span>}
         </label>
         <div className="flex gap-2">
@@ -104,8 +108,8 @@ export function FormFieldWrapper({
         <textarea
           rows={5}
           value={value || ""}
-          onChange={(e) => onChange(field.fieldName, e.target.value)}
-          placeholder={field.placeholder || `Enter your ${field.fieldName.toLowerCase()} details...`}
+          onChange={(e) => onChange(fieldIdentifier, e.target.value)}
+          placeholder={field.placeholder || `Enter your ${displayLabel.toLowerCase()} details...`}
           className={`${inputCls} resize-none leading-relaxed ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}
           readOnly={field.isReadOnly}
         />
@@ -136,8 +140,8 @@ export function FormFieldWrapper({
                   <span className="font-black text-[15px]">{optLabel}</span>
                 </div>
                 {isActive && <CheckCircle2 size={18} strokeWidth={3} className="animate-in slide-in-from-right-2 fade-in" />}
-                <input type="radio" name={field.fieldName} value={optVal} checked={isActive}
-                  onChange={() => !field.isReadOnly && onChange(field.fieldName, optVal)}
+                <input type="radio" name={fieldIdentifier} value={optVal} checked={isActive}
+                  onChange={() => !field.isReadOnly && onChange(fieldIdentifier, optVal)}
                   disabled={field.isReadOnly}
                   className="hidden" />
               </label>
@@ -175,7 +179,7 @@ export function FormFieldWrapper({
                   <span className="font-black text-[15px]">{optLabel}</span>
                 </div>
                 <input type="checkbox" checked={isActive}
-                  onChange={() => !field.isReadOnly && onCheckboxChange(field.fieldName, optVal)}
+                  onChange={() => !field.isReadOnly && onCheckboxChange(fieldIdentifier, optVal)}
                   disabled={field.isReadOnly}
                   className="hidden" />
               </label>
@@ -194,7 +198,7 @@ export function FormFieldWrapper({
         return !field.isMultiSelect ? (
           <div className="relative group/select">
             <select value={value || ""}
-              onChange={(e) => onChange(field.fieldName, e.target.value)}
+              onChange={(e) => onChange(fieldIdentifier, e.target.value)}
               disabled={field.isReadOnly}
               className={`${inputCls} appearance-none cursor-pointer pr-16 ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}>
               <option value="" disabled>Choose an architectural option...</option>
@@ -228,7 +232,7 @@ export function FormFieldWrapper({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onCheckboxChange(field.fieldName, val);
+                            onCheckboxChange(fieldIdentifier, val);
                           }}
                           className="hover:text-slate-900 transition-colors"
                         >
@@ -261,7 +265,7 @@ export function FormFieldWrapper({
                       return (
                         <div
                           key={idx}
-                          onClick={() => onCheckboxChange(field.fieldName, optVal)}
+                          onClick={() => onCheckboxChange(fieldIdentifier, optVal)}
                           className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-300 ${isActive
                             ? "bg-primary/5 text-primary"
                             : "hover:bg-slate-50 text-slate-600"
@@ -293,7 +297,7 @@ export function FormFieldWrapper({
         const isOn = (value ?? field.defaultValue) === "true";
         return (
           <div
-            onClick={() => !field.isReadOnly && onChange(field.fieldName, isOn ? "false" : "true")}
+            onClick={() => !field.isReadOnly && onChange(fieldIdentifier, isOn ? "false" : "true")}
             className={`flex items-center justify-between p-6 rounded-[2rem] border-2 transition-all duration-700 select-none ${isOn
               ? "bg-emerald-50 border-emerald-300 shadow-xl shadow-emerald-500/5 text-emerald-900"
               : hasError
@@ -325,8 +329,8 @@ export function FormFieldWrapper({
         <input
           type={field.fieldType === "phone" ? "tel" : field.fieldType}
           value={value || ""}
-          onChange={(e) => onChange(field.fieldName, e.target.value)}
-          placeholder={field.placeholder || `Enter sequence for ${field.fieldName.toLowerCase()}...`}
+          onChange={(e) => onChange(fieldIdentifier, e.target.value)}
+          placeholder={field.placeholder || `Enter sequence for ${displayLabel.toLowerCase()}...`}
           className={`${inputCls} ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}
           readOnly={field.isReadOnly}
         />
@@ -402,7 +406,7 @@ function FileUploadItem({ field, value, onChange, hasError, inputCls }) {
 
       if (res.ok) {
         const json = await res.json();
-        onChange(field.fieldName, json.data.toString());
+        onChange(fieldIdentifier, json.data.toString());
       } else {
         const err = await res.json();
         setUploadError(err.message || "Upload failed");
@@ -433,7 +437,7 @@ function FileUploadItem({ field, value, onChange, hasError, inputCls }) {
           )}
           <div>
             <p className="text-sm font-black text-slate-800 tracking-tight">
-              {uploading ? "Synchronizing Payload..." : value ? "Data Securely Ingested" : `Upload ${field.fieldName}`}
+              {uploading ? "Synchronizing Payload..." : value ? "Data Securely Ingested" : `Upload ${displayLabel}`}
             </p>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
               {localFile ? localFile.name : `Max Size: ${field.maxFileSize || 5}MB | ${field.allowedFileTypes || 'All Types'}`}

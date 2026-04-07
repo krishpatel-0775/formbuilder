@@ -73,35 +73,6 @@ public class RuleEngineService {
     }
 
 
-    public Map<String, String> evaluateVisibility(Form form, Map<String, Object> values) {
-        List<FormRuleDTO> rules = parseRules(form.getRules());
-        Map<String, String> visibility = new LinkedHashMap<>();
-
-        for (FormRuleDTO rule : rules) {
-            if (rule.getCondition() == null || rule.getAction() == null) {
-                continue;
-            }
-
-            RuleActionDTO action = rule.getAction();
-            if (action.getType() != ActionType.SHOW && action.getType() != ActionType.HIDE) {
-                continue;
-            }
-
-            String targetField = action.getTargetField();
-            if (targetField == null || targetField.isBlank()) {
-                continue;
-            }
-
-            boolean conditionMet = evaluateCondition(rule.getCondition(), values);
-            if (conditionMet) {
-                visibility.put(targetField, action.getType().name());
-            }
-        }
-
-        return visibility;
-    }
-
-
     public void executePostSubmissionWorkflows(Form form, Map<String, Object> values) {
         List<FormRuleDTO> rules = parseRules(form.getRules());
         if (rules.isEmpty()) {

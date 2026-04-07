@@ -73,14 +73,4 @@ public class SubmissionController {
     public ResponseEntity<ApiResponse<String>> restoreBulkResponses(@PathVariable UUID formId, @RequestBody List<UUID> responseIds) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.restoreResponses(formId, responseIds), null));
     }
-
-
-    @PostMapping(AppConstants.API_SUBMISSION_VISIBILITY)
-    public ResponseEntity<ApiResponse<Map<String, String>>> evaluateVisibility(
-            @RequestParam UUID formId,
-            @RequestBody Map<String, Object> values) {
-        var form = formService.getFormById(formId);
-        Map<String, String> visibility = ruleEngineService.evaluateVisibility(form, values);
-        return ResponseEntity.ok(ApiResponse.success(visibility));
-    }
 }

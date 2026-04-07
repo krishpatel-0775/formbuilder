@@ -15,6 +15,8 @@ public class FieldRequest {
     @NotBlank(message = "Field name is required")
     private String name;
 
+    private String fieldKey;
+
     @NotBlank(message = "Field type is required")
     private String type;
 
