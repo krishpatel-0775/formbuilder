@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         if (!loading) {
-            const publicPaths = ["/login", "/register"];
+            const publicPaths = ["/login", "/register", "/docs"];
             const isPublicForm = pathname.match(/^\/forms\/[a-f0-9-]+$/);
 
             if (!user) {
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
                     router.push("/login");
                 }
             } else {
-                if (publicPaths.includes(pathname)) {
+                if (pathname === "/login" || pathname === "/register") {
                     // Redirect to the first available permission or profile
                     const firstPermission = user.permissions?.includes("/dashboard") ? "/dashboard" : (user.permissions?.[0] || "/profile");
                     router.push(firstPermission === "/" ? "/profile" : firstPermission);
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
                     // RBAC Check for authenticated users on protected paths
                     const isAuthorized = (path) => {
                         // These paths are usually allowed for everyone who is logged in
-                        if (path.startsWith("/profile")) return true;
+                        if (path.startsWith("/profile") || path === "/docs") return true;
                         
                         // Check if user has permission for forms management
                         const hasFormsVaultAccess = user.permissions?.includes("/forms/all");
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
 
     const hasPermission = (path) => {
         if (!user) return false;
-        if (path === "/" || path.startsWith("/profile")) return true;
+        if (path === "/" || path.startsWith("/profile") || path === "/docs") return true;
         
         const permissions = user.permissions || [];
         const hasFormsVaultAccess = permissions.includes("/forms/all");

@@ -22,7 +22,12 @@ import {
     History,
     RefreshCw,
     AlertCircle,
-    X
+    Share2,
+    Code,
+    Globe,
+    Send,
+    X,
+    Grid
 } from "lucide-react";
 import { ENDPOINTS } from "../../../config/apiConfig";
 
@@ -38,6 +43,11 @@ export default function FormVaultPage() {
     const [showRestoreModal, setShowRestoreModal] = useState(false);
     const [deletedForms, setDeletedForms] = useState([]);
     const [fetchingDeleted, setFetchingDeleted] = useState(false);
+    
+    // API Links Modal State
+    const [showApiModal, setShowApiModal] = useState(false);
+    const [selectedFormForLinks, setSelectedFormForLinks] = useState(null);
+    const [copiedLinkType, setCopiedLinkType] = useState(null); // 'metadata' | 'submission' | 'json'
 
 
     useEffect(() => {
@@ -150,6 +160,42 @@ export default function FormVaultPage() {
             setTimeout(() => setCopiedId(null), 2000);
         }).catch(err => {
             console.error("Failed to copy link:", err);
+        });
+    };
+
+    const handleOpenApiModal = (form) => {
+        setSelectedFormForLinks(form);
+        setShowApiModal(true);
+    };
+
+    const handleCopyApiLink = (text, type) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setCopiedLinkType(type);
+            setTimeout(() => setCopiedLinkType(null), 2000);
+        }).catch(err => {
+            console.error("Failed to copy API link:", err);
+        });
+    };
+
+    const handleCopyJson = () => {
+        if (!selectedFormForLinks) return;
+        
+        const json = {
+            formId: selectedFormForLinks.id,
+            versionId: selectedFormForLinks.formVersionId || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            isDraft: true,
+            values: {
+                field_key_1: "Value 1",
+                field_key_2: "Value 2",
+                field_key_3: "Value 3"
+            }
+        };
+        
+        navigator.clipboard.writeText(JSON.stringify(json, null, 2)).then(() => {
+            setCopiedLinkType('json');
+            setTimeout(() => setCopiedLinkType(null), 2000);
+        }).catch(err => {
+            console.error("Failed to copy JSON:", err);
         });
     };
 
@@ -313,13 +359,13 @@ export default function FormVaultPage() {
                                                     >
                                                         <ExternalLink size={18} strokeWidth={2.5} />
                                                     </Link>
-                                                    <Link
-                                                        href={`/forms/data/${form.id}`}
-                                                        className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-emerald-50 hover:text-emerald-500 transition-all shadow-sm"
-                                                        title="View Live Data"
+                                                    <button
+                                                        onClick={() => handleOpenApiModal(form)}
+                                                        className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm"
+                                                        title="API Endpoints"
                                                     >
-                                                        <ArrowUpRight size={18} strokeWidth={2.5} />
-                                                    </Link>
+                                                        <Share2 size={18} strokeWidth={2.5} />
+                                                    </button>
                                                 </div>
                                             )}
 
@@ -414,6 +460,13 @@ export default function FormVaultPage() {
                                                     <ArrowUpRight size={18} />
                                                 </Link>
                                             )}
+                                            <button
+                                                onClick={() => handleOpenApiModal(form)}
+                                                className="inline-flex p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                title="API Endpoints"
+                                            >
+                                                <Share2 size={18} />
+                                            </button>
                                             <Link href={`/forms/${form.id}/versions`} className="inline-flex p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all" title="Version History">
                                                 <GitBranch size={18} />
                                             </Link>
@@ -435,7 +488,7 @@ export default function FormVaultPage() {
 
             {/* Restore Modal */}
             {showRestoreModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4">
                     <div 
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
                         onClick={() => setShowRestoreModal(false)}
@@ -509,6 +562,147 @@ export default function FormVaultPage() {
                                 className="px-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Developer Blueprint Modal */}
+            {showApiModal && selectedFormForLinks && (
+                <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+                    <div 
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
+                        onClick={() => setShowApiModal(false)}
+                    />
+                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-400 border border-slate-100">
+                        {/* Modal Header */}
+                        <div className="p-8 pb-6 border-b border-slate-50 flex items-center justify-between bg-slate-900 text-white">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
+                                    <Code size={22} className="text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black tracking-tight uppercase">Developer Blueprint</h2>
+                                    <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase opacity-80">External API Integration V1.0</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowApiModal(false)}
+                                className="p-2 hover:bg-white/10 rounded-xl transition-all duration-300"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar no-scrollbar">
+                            
+                            {/* Architecture Badge */}
+                            <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-3xl flex items-start gap-4">
+                                <div className="p-3 bg-white rounded-2xl text-blue-600 shadow-sm">
+                                    <Grid size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-black text-slate-900 text-sm tracking-tight">External Frontend Architecture</h4>
+                                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
+                                        To correctly implement <span className="text-blue-600 font-bold">Conditional Visibility Rules</span>, fetch the schema first to follow the logic engine's instructions.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Step 1 */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-7 h-7 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px] font-black">1</div>
+                                        <h4 className="font-black text-slate-900 text-sm tracking-tight">Fetch Definition & Logic Rules</h4>
+                                    </div>
+                                    <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest border border-amber-100">Rule Engine Logic</span>
+                                </div>
+                                <div className="relative group">
+                                    <div className="w-full pl-6 pr-20 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-600 font-mono break-all leading-relaxed">
+                                        <span className="text-amber-600 mr-2">GET</span> {`http://localhost:9090/api/v1/forms/${selectedFormForLinks.id}`}
+                                    </div>
+                                    <button 
+                                        onClick={() => handleCopyApiLink(`http://localhost:9090/api/v1/forms/${selectedFormForLinks.id}`, 'metadata')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-primary hover:border-primary/20 transition-all shadow-sm"
+                                    >
+                                        {copiedLinkType === 'metadata' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-7 h-7 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px] font-black">2</div>
+                                    <h4 className="font-black text-slate-900 text-sm tracking-tight">Final Submission</h4>
+                                </div>
+                                <div className="relative group">
+                                    <div className="w-full pl-6 pr-20 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-600 font-mono break-all leading-relaxed">
+                                        <span className="text-emerald-600 mr-2">POST</span> http://localhost:9090/api/v1/submissions
+                                    </div>
+                                    <button 
+                                        onClick={() => handleCopyApiLink("http://localhost:9090/api/v1/submissions", 'submission')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-primary hover:border-primary/20 transition-all shadow-sm"
+                                    >
+                                        {copiedLinkType === 'submission' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                    </button>
+                                </div>
+
+                                {/* Payload Architecture */}
+                                <div className="mt-6 space-y-3">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Payload Architecture</p>
+                                    <div className="relative rounded-3xl overflow-hidden border border-slate-100">
+                                        <div className="bg-slate-50 px-6 py-3 border-b border-slate-100 flex items-center justify-between">
+                                            <div className="flex gap-1.5">
+                                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                            </div>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Request_Payload.json</span>
+                                        </div>
+                                        <pre className="p-6 bg-slate-50/50 text-[11px] font-bold text-slate-600 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
+{`{
+  "formId": "${selectedFormForLinks.id}",
+  "versionId": "${selectedFormForLinks.formVersionId || "3fa85f64-5717-4562-b3fc-2c963f66afa6"}",
+  "isDraft": true,
+  "values": {
+    "field_key_1": "Your Value",
+    "field_key_2": "Your Value",
+    "field_key_3": "Your Value"
+  }
+}`}
+                                        </pre>
+                                        <div className="absolute right-4 bottom-4">
+                                            <button 
+                                                onClick={handleCopyJson}
+                                                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl ${
+                                                    copiedLinkType === 'json' 
+                                                    ? "bg-emerald-500 text-white shadow-emerald-200" 
+                                                    : "bg-primary text-white hover:bg-slate-900 shadow-primary/20"
+                                                }`}
+                                            >
+                                                {copiedLinkType === 'json' ? (
+                                                    <><Check size={14} strokeWidth={3} /> Copied</>
+                                                ) : (
+                                                    <><Copy size={14} strokeWidth={3} /> Copy JSON</>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex justify-end">
+                            <button
+                                onClick={() => setShowApiModal(false)}
+                                className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10 active:scale-95"
+                            >
+                                Close Blueprint
                             </button>
                         </div>
                     </div>

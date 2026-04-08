@@ -14,10 +14,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.List;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,6 +30,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,93 +60,43 @@ public class AuthService {
         }
     }
 
+    // ================= REGISTER =================
     @Transactional
     public String register(RegisterRequest request, MultipartFile profilePicture) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new ValidationException("Username is already taken.");
-        }
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ValidationException("Email is already registered.");
-        }
+        validateNewUser(request);
 
-        User user = new User();
-        user.setName(request.getFullName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        User user = buildUserFromRequest(request);
 
         if (profilePicture != null && !profilePicture.isEmpty()) {
-            try {
-                String originalFileName = profilePicture.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String fileName = UUID.randomUUID().toString() + extension;
-                Path filePath = Paths.get(profilePhotoDir, fileName);
-                Files.copy(profilePicture.getInputStream(), filePath);
-
-                // For simplicity, we store the filename. A full URL would depend on how the file is served.
-                user.setProfilePictureUrl(fileName);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to save profile picture: " + e.getMessage());
-            }
+            user.setProfilePictureUrl(saveProfilePicture(profilePicture));
         }
 
         User savedUser = userRepository.save(user);
-
-        roleRepository.findByRoleName("FORMS_MANAGER").ifPresent(role -> {
-            userRoleRepository.save(UserRole.builder()
-                    .userId(savedUser.getId())
-                    .roleId(role.getId())
-                    .build());
-        });
+        assignDefaultRole(savedUser);
 
         return "User registered successfully";
     }
 
+    // ================= UPDATE PROFILE =================
     @Transactional
     public void updateProfile(UUID userId, UpdateUserRequest request, MultipartFile profilePicture) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
-        if (!user.getUsername().equals(request.getUsername()) && userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new ValidationException("Username is already taken.");
-        }
-        if (!user.getEmail().equals(request.getEmail()) && userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ValidationException("Email is already registered.");
-        }
-
-        user.setName(request.getFullName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPhoneNumber(request.getPhoneNumber());
+        validateUpdateUser(user, request);
+        updateUserFields(user, request);
 
         if (profilePicture != null && !profilePicture.isEmpty()) {
-            try {
-                String originalFileName = profilePicture.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String fileName = UUID.randomUUID().toString() + extension;
-                Path filePath = Paths.get(profilePhotoDir, fileName);
-                Files.copy(profilePicture.getInputStream(), filePath);
-
-                // Update profile picture URL
-                user.setProfilePictureUrl(fileName);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to save profile picture: " + e.getMessage());
-            }
+            user.setProfilePictureUrl(saveProfilePicture(profilePicture));
         }
 
         userRepository.save(user);
     }
 
+    // ================= LOGIN =================
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
-        // Ensure roles/modules exist and user has a default role if missing BEFORE authentication
-        moduleService.seedModules(request.getIdentifier()); 
+
+        moduleService.seedModules(request.getIdentifier());
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword())
@@ -157,23 +108,15 @@ public class AuthService {
         HttpSession session = httpRequest.getSession(true);
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
 
-        String authenticatedUsername = ((UserDetails) authentication.getPrincipal()).getUsername();
-        User user = userRepository.findByUsername(authenticatedUsername)
+        String username = ((UserDetails) authentication.getPrincipal()).getUsername();
+
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
         return new LoginResponse(user.getId(), user.getUsername(), user.getEmail());
     }
 
-    public void refreshSecurityContext(String username) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        Authentication newAuth = new UsernamePasswordAuthenticationToken(
-                userDetails,
-                userDetails.getPassword(),
-                userDetails.getAuthorities()
-        );
-        SecurityContextHolder.getContext().setAuthentication(newAuth);
-    }
-
+    // ================= LOGOUT =================
     public void logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
@@ -182,16 +125,31 @@ public class AuthService {
         SecurityContextHolder.clearContext();
     }
 
-    public UUID getCurrentUserId() {
-        String username = SessionUtil.getCurrentUsername();
-        if (username != null) {
-            return userRepository.findByUsername(username)
-                    .map(User::getId)
-                    .orElse(null);
-        }
-        return null;
+    // ================= REFRESH SECURITY =================
+    public void refreshSecurityContext(String username) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        Authentication newAuth = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                userDetails.getPassword(),
+                userDetails.getAuthorities()
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
     }
 
+    // ================= CURRENT USER =================
+    public UUID getCurrentUserId() {
+        String username = SessionUtil.getCurrentUsername();
+
+        if (username == null) return null;
+
+        return userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElse(null);
+    }
+
+    // ================= USER DETAILS =================
     public UserDetailResponse getUserDetails() {
         String username = SessionUtil.getCurrentUsername();
         if (username == null) return null;
@@ -199,21 +157,11 @@ public class AuthService {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) return null;
 
-        // Ensure roles/modules exist and user has a default role if none assigned
         moduleService.seedModules();
 
         var menu = moduleService.getUserMenuForUser(username);
-        
-        // Flatten permissions for easier checking on frontend
-        List<String> permissions = new ArrayList<>();
-        collectPrefixes(menu, permissions);
-
-        // Fetch User Roles
-        List<String> roles = userRoleRepository.findByUserId(user.getId()).stream()
-                .map(ur -> roleRepository.findById(ur.getRoleId())
-                        .map(Role::getRoleName)
-                        .orElse("UNKNOWN"))
-                .collect(Collectors.toList());
+        List<String> permissions = extractPermissions(menu);
+        List<String> roles = getUserRoles(user.getId());
 
         return UserDetailResponse.builder()
                 .id(user.getId())
@@ -221,22 +169,114 @@ public class AuthService {
                 .fullName(user.getName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .profilePictureUrl(user.getProfilePictureUrl() != null ? "/api/v1/auth/profile-photo/" + user.getProfilePictureUrl() : null)
+                .profilePictureUrl(user.getProfilePictureUrl() != null
+                        ? "/api/v1/auth/profile-photo/" + user.getProfilePictureUrl()
+                        : null)
                 .menu(menu)
                 .permissions(permissions)
                 .roles(roles)
                 .build();
     }
 
+    // ================= PRIVATE HELPERS =================
+
+    private void validateNewUser(RegisterRequest request) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new ValidationException("Username is already taken.");
+        }
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ValidationException("Email is already registered.");
+        }
+    }
+
+    private void validateUpdateUser(User user, UpdateUserRequest request) {
+        if (!user.getUsername().equals(request.getUsername())
+                && userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new ValidationException("Username is already taken.");
+        }
+
+        if (!user.getEmail().equals(request.getEmail())
+                && userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ValidationException("Email is already registered.");
+        }
+    }
+
+    private User buildUserFromRequest(RegisterRequest request) {
+        User user = new User();
+        user.setName(request.getFullName());
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        return user;
+    }
+
+    private void updateUserFields(User user, UpdateUserRequest request) {
+        user.setName(request.getFullName());
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+    }
+
+    private String saveProfilePicture(MultipartFile file) {
+        try {
+            String originalFileName = file.getOriginalFilename();
+            String extension = "";
+
+            if (originalFileName != null && originalFileName.contains(".")) {
+                extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            }
+
+            String fileName = UUID.randomUUID() + extension;
+            Path filePath = Paths.get(profilePhotoDir, fileName);
+
+            Files.copy(file.getInputStream(), filePath);
+
+            return fileName;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save profile picture: " + e.getMessage());
+        }
+    }
+
+    private void assignDefaultRole(User user) {
+        roleRepository.findByRoleName("FORMS_MANAGER").ifPresent(role -> {
+            userRoleRepository.save(UserRole.builder()
+                    .userId(user.getId())
+                    .roleId(role.getId())
+                    .build());
+        });
+    }
+
+    private List<String> getUserRoles(UUID userId) {
+        return userRoleRepository.findByUserId(userId).stream()
+                .map(ur -> roleRepository.findById(ur.getRoleId())
+                        .map(Role::getRoleName)
+                        .orElse("UNKNOWN"))
+                .collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> extractPermissions(List<Map<String, Object>> menu) {
+        List<String> permissions = new ArrayList<>();
+        collectPrefixes(menu, permissions);
+        return permissions;
+    }
+
     @SuppressWarnings("unchecked")
     private void collectPrefixes(List<Map<String, Object>> items, List<String> prefixes) {
         if (items == null) return;
+
         for (var item : items) {
             String prefix = (String) item.get("prefix");
+
             if (prefix != null && !prefix.isEmpty()) {
                 prefixes.add(prefix);
             }
-            List<Map<String, Object>> children = (List<Map<String, Object>>) item.get("children");
+
+            List<Map<String, Object>> children =
+                    (List<Map<String, Object>>) item.get("children");
+
             collectPrefixes(children, prefixes);
         }
     }
