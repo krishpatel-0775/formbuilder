@@ -27,14 +27,16 @@ export default function FormVersionsPage() {
         fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" }),
         fetch(ENDPOINTS.formVersions(id), { credentials: "include" }),
       ]);
-      if (!formRes.ok) throw new Error("Form not found.");
+      if (!formRes.ok || !verRes.ok) {
+        router.push("/forms/all");
+        return;
+      }
+      
       const formJson = await formRes.json();
       setFormName(formJson.data?.formName || `Form #${id}`);
 
-      if (verRes.ok) {
-        const verJson = await verRes.json();
-        setVersions((verJson.data || []).reverse()); // latest first
-      }
+      const verJson = await verRes.json();
+      setVersions((verJson.data || []).reverse()); // latest first
     } catch (e) {
       setError(e.message);
     } finally {

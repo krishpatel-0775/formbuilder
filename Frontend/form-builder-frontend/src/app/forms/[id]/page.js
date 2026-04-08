@@ -202,25 +202,27 @@ export default function PublicFormPage() {
         setFormData(initialData);
 
         // Fetch existing draft
-        try {
-          const draftRes = await fetch(`${ENDPOINTS.SUBMISSIONS}/draft?formId=${id}`, { credentials: "include" });
-          if (draftRes.ok) {
-            const draftJson = await draftRes.json();
-            if (draftJson.success && draftJson.data) {
-              const draft = draftJson.data;
-              // Check version
-              const activeVersion = data.formVersionId || null;
-              if (draft.formVersionId === activeVersion) {
-                setFormData(prev => ({ ...prev, ...draft.data }));
-                setDraftSubmissionId(draft.submissionId);
-                setDraftBanner({ type: "success", message: "You have a saved draft. Resuming where you left off." });
-              } else {
-                setDraftBanner({ type: "warning", message: "Your previous draft was for an older version of this form and cannot be restored." });
+        if (user) {
+          try {
+            const draftRes = await fetch(`${ENDPOINTS.SUBMISSIONS}/draft?formId=${id}`, { credentials: "include" });
+            if (draftRes.ok) {
+              const draftJson = await draftRes.json();
+              if (draftJson.success && draftJson.data) {
+                const draft = draftJson.data;
+                // Check version
+                const activeVersion = data.formVersionId || null;
+                if (draft.formVersionId === activeVersion) {
+                  setFormData(prev => ({ ...prev, ...draft.data }));
+                  setDraftSubmissionId(draft.submissionId);
+                  setDraftBanner({ type: "success", message: "You have a saved draft. Resuming where you left off." });
+                } else {
+                  setDraftBanner({ type: "warning", message: "Your previous draft was for an older version of this form and cannot be restored." });
+                }
               }
             }
+          } catch (err) {
+            console.error("Failed to fetch draft:", err);
           }
-        } catch (err) {
-          console.error("Failed to fetch draft:", err);
         }
 
         setLoading(false);
@@ -823,11 +825,13 @@ export default function PublicFormPage() {
                 </button>
               )}
 
-              <button type="button" onClick={handleSaveDraft} disabled={isDraftSaving}
-                className="group flex items-center gap-4 px-8 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95 disabled:opacity-50">
-                {isDraftSaving ? <Loader2 size={20} className="animate-spin" /> : <RotateCcw size={20} className="group-hover:rotate-180 transition-transform duration-500" />}
-                {isDraftSaving ? "Saving..." : "Save Draft"}
-              </button>
+              {user && (
+                <button type="button" onClick={handleSaveDraft} disabled={isDraftSaving}
+                  className="group flex items-center gap-4 px-8 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95 disabled:opacity-50">
+                  {isDraftSaving ? <Loader2 size={20} className="animate-spin" /> : <RotateCcw size={20} className="group-hover:rotate-180 transition-transform duration-500" />}
+                  {isDraftSaving ? "Saving..." : "Save Draft"}
+                </button>
+              )}
 
               {isLastPage ? (
                 <button type="submit" disabled={isSubmitting}

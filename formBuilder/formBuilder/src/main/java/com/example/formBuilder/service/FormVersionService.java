@@ -13,13 +13,14 @@ import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.repository.FormFieldRepository;
 import com.example.formBuilder.repository.FormRepository;
 import com.example.formBuilder.repository.FormVersionRepository;
+import com.example.formBuilder.entity.User;
+import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.security.SessionUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,13 +35,31 @@ public class FormVersionService {
     private final FormFieldRepository fieldRepository;
     private final JdbcTemplate jdbcTemplate;
     private final SchemaManager schemaManager;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        String username = SessionUtil.getCurrentUsername();
+        if (username == null) throw new ValidationException("Unauthorized");
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ValidationException("User not found"));
+    }
+
+    private Form checkFormOwnership(UUID formId) {
+        Form form = formRepository.findById(formId)
+                .orElseThrow(() -> new ResourceNotFoundException("Form " + formId + " not found"));
+        User user = getCurrentUser();
+        if (form.getUser() != null && !form.getUser().getId().equals(user.getId())) {
+            throw new ValidationException("Access denied: You do not own this form");
+        }
+        return form;
+    }
 
 
     /**
      * Returns all versions for a form, ordered ascending (oldest first).
      */
     public List<FormVersionDto> getVersions(UUID formId) {
-        getFormOrThrow(formId);
+        checkFormOwnership(formId);
         return versionRepository.findByFormIdOrderByVersionNumberAsc(formId)
                 .stream()
                 .map(this::toDto)
@@ -51,6 +70,7 @@ public class FormVersionService {
      * Returns a specific version with full field list.
      */
     public FormVersionDto getVersion(UUID formId, UUID versionId) {
+        checkFormOwnership(formId);
         FormVersion version = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version " + versionId + " not found"));
         if (!version.getFormId().equals(formId)) {
@@ -65,7 +85,7 @@ public class FormVersionService {
      */
     @Transactional
     public FormVersionDto createVersion(UUID formId) {
-        Form form = getFormOrThrow(formId);
+        Form form = checkFormOwnership(formId);
         String username = SessionUtil.getCurrentUsername();
 
         FormVersion source = resolveSourceVersion(formId);
@@ -146,7 +166,7 @@ public class FormVersionService {
      */
     @Transactional
     public FormVersionDto activateVersion(UUID formId, UUID versionId) {
-        Form form = getFormOrThrow(formId);
+        Form form = checkFormOwnership(formId);
 
         FormVersion toActivate = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version " + versionId + " not found"));
@@ -194,7 +214,7 @@ public class FormVersionService {
         // FIXED: Ensure all field names are unique within the version to prevent bad SQL grammar
         validateUniqueFieldNames(incoming);
 
-        Form form = getFormOrThrow(current.getFormId()); // FIXED: Need form to check status
+        Form form = checkFormOwnership(current.getFormId()); // Use ownership check
 
         // FIXED: IF form is DRAFT, update the existing version in-place
         if (form.getStatus() == FormStatus.DRAFT) {
@@ -284,7 +304,7 @@ public class FormVersionService {
         FormVersion current = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version not found"));
 
-        Form form = getFormOrThrow(current.getFormId()); // FIXED: Need form to check status
+        Form form = checkFormOwnership(current.getFormId()); // Use ownership check
 
         // FIXED: IF form is DRAFT, update the existing version in-place
         if (form.getStatus() == com.example.formBuilder.enums.FormStatus.DRAFT) {
@@ -464,6 +484,7 @@ public class FormVersionService {
      */
     @Transactional
     public FormVersionDto getOrCreateDraft(UUID formId) {
+        checkFormOwnership(formId);
         Optional<FormVersion> latestOpt = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(formId);
 
         if (latestOpt.isPresent()) {

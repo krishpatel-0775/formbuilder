@@ -113,21 +113,32 @@ public class FormService {
     }
 
     public FormResponseDto getFormResponseById(UUID id) {
-        Form form = getFormById(id);
+        Form form = formRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Form with ID " + id + " not found"));
         
-        // If form is not published, only the owner can see it
-        if (form.getStatus() != PUBLISHED) {
-            getFormWithPermission(id);
+        // Privacy Check:
+        // 1. If form is DRAFT, only the owner should see it.
+        // 2. If form is PUBLISHED, anyone can see it FOR FILLING, but not administrative data (like tableName).
+        
+        boolean isOwner = false;
+        try {
+            User user = getCurrentUser();
+            isOwner = form.getUser() != null && form.getUser().getId().equals(user.getId());
+        } catch (Exception e) {
+            // Unauthenticated - definitely not the owner
+        }
+
+        if (form.getStatus() != PUBLISHED && !isOwner) {
+            throw new ValidationException("Access denied: You do not own this draft form");
         }
 
         FormResponseDto dto = mapToResponseDto(form);
-        try {
-            String json = objectMapper.writeValueAsString(dto);
-            log.info("Successfully serialized form DTO: {}", json.substring(0, Math.min(json.length(), 100)));
-        } catch (Exception e) {
-            log.error("Failed to serialize form DTO manually: {}", e.getMessage(), e);
-            throw new RuntimeException("Serialization failed for form " + id + ": " + e.getMessage());
+        
+        // Mask internal metadata if the requester is not the owner or is unauthenticated
+        if (!isOwner) {
+            dto.setTableName(null); // Guests don't need to see technical table names
         }
+        
         return dto;
     }
 

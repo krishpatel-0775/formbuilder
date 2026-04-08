@@ -12,6 +12,7 @@ import com.example.formBuilder.service.FormService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -30,16 +31,19 @@ public class FormController {
     private final FormService formService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<FormListDto>>> getAllForms() {
         return ResponseEntity.ok(ApiResponse.success(formService.getAllForms()));
     }
 
     @GetMapping(AppConstants.API_FORM_DELETED)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<FormListDto>>> getDeletedForms() {
         return ResponseEntity.ok(ApiResponse.success(formService.getDeletedForms()));
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> createForm(@Valid @RequestBody FormRequest req) {
         return ResponseEntity.ok(ApiResponse.success(formService.createForm(req), null));
     }
@@ -50,6 +54,7 @@ public class FormController {
     }
 
     @GetMapping("/{id}/data")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getFormData(
             @PathVariable UUID id,
             @RequestParam(required = false) UUID versionId,
@@ -62,6 +67,7 @@ public class FormController {
     }
 
     @GetMapping(AppConstants.API_FORM_DELETED_DATA)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDeletedFormData(
             @PathVariable UUID id,
             @RequestParam(required = false) UUID versionId,
@@ -75,6 +81,7 @@ public class FormController {
     
 
     @PostMapping(AppConstants.API_FORM_PUBLISH)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> publishForm(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.publishForm(id), null));
     }
@@ -99,6 +106,7 @@ public class FormController {
     }
 
     @PostMapping(AppConstants.API_FORM_RULES)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> saveFormRules(
             @PathVariable UUID id,
             @RequestBody List<@Valid FormRuleDTO> rules) {
@@ -106,16 +114,19 @@ public class FormController {
     }
 
     @DeleteMapping(AppConstants.API_FORM_BY_ID)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> deleteForm(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.deleteForm(id), null));
     }
 
     @PutMapping(AppConstants.API_FORM_RESTORE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> restoreForm(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.restoreForm(id), null));
     }
 
     @GetMapping("/{id}/export/csv")
+    @PreAuthorize("isAuthenticated()")
     public void exportCsv(
             @PathVariable UUID id,
             @RequestParam(required = false) UUID versionId,

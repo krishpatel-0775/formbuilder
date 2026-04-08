@@ -7,6 +7,7 @@ import com.example.formBuilder.constants.AppConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @RestController
 @CrossOrigin(origins = AppConstants.FRONTEND_URL, allowCredentials = "true")
 @RequestMapping("/api/v1/forms/{formId}/versions")
+@PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class FormVersionController {
 

@@ -16,6 +16,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Path;
@@ -42,6 +43,7 @@ public class AuthController {
     }
 
     @PutMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> updateProfile(
             @RequestPart("request") @Valid UpdateUserRequest request,
             @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
@@ -54,6 +56,7 @@ public class AuthController {
     }
 
     @GetMapping("/profile-photo/{fileName:.+}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> getProfilePhoto(@PathVariable String fileName) {
         try {
             Path filePath = Paths.get(profilePhotoDir).resolve(fileName).normalize();
@@ -82,12 +85,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
         authService.logout(request);
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 
     @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserDetailResponse>> me() {
         UserDetailResponse userDetails = authService.getUserDetails();
         if (userDetails == null) {

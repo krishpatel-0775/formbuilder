@@ -34,9 +34,22 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .userDetailsService(userDetailsService) // Specifically set UserDetailsService
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/api/v1/forms/**", "/api/v1/submissions/**").permitAll()
+                        // Public Auth Endpoints
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
+                        
+                        // Public Form Rendering Endpoints (needed by the public form filler)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/{id:[a-fA-F0-9-]+}").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/{id:[a-fA-F0-9-]+}/rules").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/{id:[a-fA-F0-9-]+}/lookup/**").permitAll()
+                        
+                        // Public Submission Endpoints
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/submissions").permitAll()
+                        
+                        // Options and Swagger
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

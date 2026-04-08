@@ -12,6 +12,7 @@ import com.example.formBuilder.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,16 +36,19 @@ public class SubmissionController {
     }
  
     @PostMapping("/draft")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<DraftResponse>> saveDraft(@RequestBody DraftRequest request) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.saveDraft(request)));
     }
  
     @GetMapping("/draft")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<DraftResponse>> getDraft(@RequestParam UUID formId) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.getDraft(formId)));
     }
 
     @GetMapping("/{formId}/response/{responseId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<SubmissionDetailDTO>> getSubmissionDetail(
             @PathVariable UUID formId,
             @PathVariable UUID responseId) {
@@ -54,22 +58,26 @@ public class SubmissionController {
 
     // Soft-deletes a specific submission record from a form's dynamic table.
     @DeleteMapping(AppConstants.API_SUBMISSION_DELETE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> deleteResponse(@PathVariable UUID formId, @PathVariable UUID responseId) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponse(formId, responseId), null));
     }
 
     @PutMapping(AppConstants.API_SUBMISSION_RESTORE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> restoreResponse(@PathVariable UUID formId, @PathVariable UUID responseId) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.restoreResponse(formId, responseId), null));
     }
 
     // Bulk soft-deletes submission records.
     @PostMapping(AppConstants.API_SUBMISSION_BULK_DELETE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> deleteBulkResponses(@PathVariable UUID formId, @RequestBody List<UUID> responseIds) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.deleteResponses(formId, responseIds), null));
     }
 
     @PostMapping(AppConstants.API_SUBMISSION_BULK_RESTORE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> restoreBulkResponses(@PathVariable UUID formId, @RequestBody List<UUID> responseIds) {
         return ResponseEntity.ok(ApiResponse.success(submissionService.restoreResponses(formId, responseIds), null));
     }

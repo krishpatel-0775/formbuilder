@@ -91,6 +91,10 @@ export default function EditFormPage() {
             const vJson = await vRes.json();
             fieldSource = vJson.data; // the version, which has .fields and .rules
             setIsVersionActive(!!vJson.data?.isActive);
+          } else {
+            // If version fetch fails (Access Denied), redirect
+            router.push("/forms/all");
+            return;
           }
         }
 
