@@ -203,20 +203,32 @@ export default function FormVaultPage() {
         .filter(f => f.formName?.toLowerCase().includes(searchQuery.toLowerCase()))
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+    // Style object for CSS variables to avoid styled-jsx hydration issues
+    const themeStyles = {
+        "--primary": "#2463eb",
+        "--primary-hover": "#1d4ed8",
+        "--primary-soft": "rgba(36, 99, 235, 0.08)",
+        "--primary-glow": "rgba(36, 99, 235, 0.25)",
+    };
+
     return (
-        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-500">
+        <div 
+            className="h-full flex flex-col overflow-hidden animate-in fade-in duration-700 bg-[#f9fafb]"
+            style={themeStyles}
+            suppressHydrationWarning={true}
+        >
             {/* Fixed Top Section: Header & Controls */}
-            <div className="p-6 lg:p-10 pb-4 space-y-8 flex-shrink-0">
+            <div className="p-6 lg:p-10 pb-4 space-y-8 flex-shrink-0" suppressHydrationWarning={true}>
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-primary/10 rounded-xl text-primary">
-                                <FileText size={20} />
+                        <div className="flex items-center gap-4 mb-2">
+                            <div className="p-3 bg-[var(--primary-soft)] rounded-2xl text-[var(--primary)] shadow-sm border border-[#2463eb1a]">
+                                <FileText size={26} strokeWidth={2.5} />
                             </div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Form Vault</h1>
+                            <h1 className="text-4xl font-[900] text-slate-900 tracking-tight">Form Vault</h1>
                         </div>
-                        <p className="text-slate-500 font-medium tracking-tight">Manage and monitor all your active forms.</p>
+                        <p className="text-slate-500 font-semibold tracking-tight ml-1 text-sm">Professional deployment and form management center.</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
@@ -225,257 +237,231 @@ export default function FormVaultPage() {
                                 setShowRestoreModal(true);
                                 fetchDeletedForms();
                             }}
-                            className="flex items-center justify-center gap-2 px-6 py-4 bg-white border-2 border-slate-100 text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:border-primary/20 hover:text-primary transition-all w-full sm:w-auto"
+                            className="flex items-center justify-center gap-2 px-6 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold uppercase text-[11px] tracking-widest hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-lg transition-all w-full sm:w-auto"
                         >
-                            <History size={20} strokeWidth={3} />
-                            Restore Forms
+                            <History size={16} strokeWidth={2.5} />
+                            Recovery
                         </button>
                         <Link
                             href="/"
-                            className="flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
+                            className="flex items-center justify-center gap-3 px-8 py-4 bg-[var(--primary)] text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-[var(--primary-glow)] hover:bg-[var(--primary-hover)] hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
                         >
-                            <Plus size={20} strokeWidth={3} />
-                            Create New Form
+                            <Plus size={18} strokeWidth={3} />
+                            Create New
                         </Link>
                     </div>
                 </div>
 
-                {/* Controls Section */}
-                <div className="flex flex-col md:flex-row items-center gap-4 bg-white/50 backdrop-blur-md p-2 rounded-[2rem] border border-white/20 shadow-sm">
+                {/* Search & Layout Controls */}
+                <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-2.5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/40">
                     <div className="relative flex-1 group w-full">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[var(--primary)] transition-all duration-300" size={20} />
                         <input
                             type="text"
-                            placeholder="Search your forms..."
-                            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-3xl text-sm focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                            placeholder="Find your forms..."
+                            className="w-full pl-16 pr-6 py-4 bg-transparent rounded-2xl text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:ring-0 transition-all outline-none"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             suppressHydrationWarning={true}
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 p-1 bg-white border border-slate-100 rounded-2xl">
+                    <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
                         <button
                             onClick={() => setViewMode("grid")}
-                            className={`p-3 rounded-xl transition-all ${viewMode === "grid" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
+                            className={`p-3 rounded-xl transition-all duration-300 ${viewMode === "grid" ? "bg-white text-[var(--primary)] shadow-md" : "text-slate-400 hover:text-slate-600"}`}
                             suppressHydrationWarning={true}
                         >
-                            <LayoutGrid size={18} />
+                            <LayoutGrid size={20} strokeWidth={2.5} />
                         </button>
                         <button
                             onClick={() => setViewMode("list")}
-                            className={`p-3 rounded-xl transition-all ${viewMode === "list" ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-50"}`}
+                            className={`p-3 rounded-xl transition-all duration-300 ${viewMode === "list" ? "bg-white text-[var(--primary)] shadow-md" : "text-slate-400 hover:text-slate-600"}`}
                             suppressHydrationWarning={true}
                         >
-                            <ListIcon size={18} />
+                            <ListIcon size={20} strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Scrollable Content Section: Grid/List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar no-scrollbar p-6 lg:p-10 pt-4 pb-20">
+            <div className="flex-1 overflow-y-auto custom-scrollbar no-scrollbar p-6 lg:p-10 pt-4 pb-24">
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="h-64 bg-white rounded-[2rem] border border-slate-100 animate-pulse" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="h-80 bg-white rounded-[3rem] border border-slate-100 animate-pulse shadow-sm" />
                         ))}
                     </div>
                 ) : filteredForms.length === 0 ? (
-                    <div className="h-[50vh] flex flex-col items-center justify-center bg-white border border-dashed border-slate-200 rounded-[3rem]">
-                        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mb-6">
-                            <FileText size={32} className="text-slate-200" />
+                    <div className="h-[55vh] flex flex-col items-center justify-center bg-white/50 border-2 border-dashed border-slate-200 rounded-[4rem]">
+                        <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center mb-6">
+                            <FileText size={40} className="text-slate-200" />
                         </div>
-                        <h3 className="text-xl font-black text-slate-800 tracking-tight">No forms found</h3>
-                        <p className="text-slate-500 mt-2 font-medium">Try a different search or create your first form.</p>
+                        <h3 className="text-2xl font-black text-slate-800 tracking-tight">Vault is Empty</h3>
+                        <p className="text-slate-500 mt-2 font-semibold">Ready to start building something great?</p>
                     </div>
                 ) : viewMode === "grid" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                         {filteredForms.map(form => (
-                            <div key={form.id} className="relative group bg-white rounded-[2.5rem] p-4 border border-slate-100 hover:border-primary/20 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] transition-all duration-500 overflow-hidden">
-                                {/* Decorative Background Element */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100%] transition-transform group-hover:scale-110 duration-700 pointer-events-none" />
+                            <div key={form.id} className="group relative flex flex-col bg-white rounded-[3.5rem] border border-slate-200/80 hover:border-[#2463eb55] transition-all duration-500 hover:shadow-[0_45px_100px_-20px_rgba(36,99,235,0.12)] hover:-translate-y-2 overflow-hidden">
+                                
+                                {/* Status Accent Strip */}
+                                <div className={`absolute top-0 left-0 w-full h-[6px] transition-all duration-700 ${form.status === "PUBLISHED" ? "bg-[#2463eb]" : "bg-slate-200"}`} />
 
-                                <div className="relative p-6 space-y-6">
-                                    {/* Header: Icon & Status */}
-                                    <div className="flex justify-between items-start">
-                                        <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 shadow-inner">
-                                            <FileText size={24} strokeWidth={2.5} />
+                                <div className="p-9 pb-6 flex-1">
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="w-16 h-16 bg-[#2463eb0a] rounded-[1.75rem] flex items-center justify-center text-[var(--primary)] group-hover:scale-110 group-hover:bg-[#2463eb15] transition-all duration-500 border border-[#2463eb0d]">
+                                            <FileText size={32} strokeWidth={2} />
                                         </div>
-                                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${form.status === "PUBLISHED"
-                                                ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-                                                : "bg-amber-50 text-amber-600 border-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
-                                            }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                                            {form.status}
+                                        <div className={`px-5 py-2 rounded-full text-[10px] font-[900] uppercase tracking-[0.15em] border transition-all ${
+                                            form.status === "PUBLISHED" 
+                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.1)]" 
+                                            : "bg-slate-50 text-slate-400 border-slate-100"
+                                        }`}>
+                                            <span className="flex items-center gap-2.5">
+                                                <span className={`w-2 h-2 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" : "bg-slate-300"}`} />
+                                                {form.status}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    {/* Title & Meta Info */}
-                                    <div className="space-y-1">
-                                        <h3 className="text-xl font-black text-slate-900 tracking-tight group-hover:text-primary transition-colors cursor-default truncate">
-                                            {form.formName}
-                                        </h3>
+                                    <h3 className="text-2xl font-[900] text-slate-900 tracking-tight leading-tight mb-4 group-hover:text-[var(--primary)] transition-colors line-clamp-2">
+                                        {form.formName}
+                                    </h3>
+                                    
+                                    <div className="flex items-center gap-6 text-slate-400 text-[11px] font-[800] uppercase tracking-widest pl-1" suppressHydrationWarning={true}>
+                                        <div className="flex items-center gap-2.5">
+                                            <Calendar size={15} strokeWidth={2.5} className="text-slate-300" />
+                                            {mounted ? new Date(form.createdAt).toLocaleDateString() : "---"}
+                                        </div>
+                                        {form.formVersionId && (
+                                             <div className="flex items-center gap-2.5">
+                                                <GitBranch size={15} strokeWidth={2.5} className="text-slate-300" />
+                                                v{form.formVersionId.slice(0, 4)}
+                                            </div>
+                                        )}
                                     </div>
+                                </div>
 
-                                    {/* Actions Footer */}
-                                    <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
+                                {/* Premium Action Area */}
+                                <div className="px-9 pb-9 space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <Link
                                             href={`/forms/edit/${form.id}`}
-                                            className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10 hover:shadow-primary/20 hover:-translate-y-0.5"
+                                            className="flex items-center justify-center gap-2.5 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] transition-all shadow-lg active:scale-95"
                                         >
-                                            Edit form
+                                            <FileText size={16} strokeWidth={3} /> Edit
                                         </Link>
+                                        
+                                        {form.status === "PUBLISHED" ? (
+                                            <Link
+                                                href={`/forms/data/${form.id}`}
+                                                className="flex items-center justify-center gap-2.5 py-4 bg-white text-emerald-600 border-2 border-emerald-50 rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-emerald-100 hover:border-emerald-100 transition-all active:scale-95 shadow-sm"
+                                            >
+                                                <ArrowUpRight size={16} strokeWidth={3} /> Data
+                                            </Link>
+                                        ) : (
+                                            <button
+                                                onClick={() => handlePublish(form.id)}
+                                                disabled={publishingState[form.id]}
+                                                className="flex items-center justify-center gap-2.5 py-4 bg-[var(--primary-soft)] text-[var(--primary)] border-2 border-[#2463eb15] rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all disabled:opacity-50 active:scale-95"
+                                            >
+                                                {publishingState[form.id] ? (
+                                                    <RefreshCw size={16} className="animate-spin" />
+                                                ) : (
+                                                    <Rocket size={16} strokeWidth={3} />
+                                                )}
+                                                Publish
+                                            </button>
+                                        )}
+                                    </div>
 
-                                        <div className="flex gap-2">
-                                            {form.status !== "PUBLISHED" ? (
-                                                <button
-                                                    onClick={() => handlePublish(form.id)}
-                                                    disabled={publishingState[form.id]}
-                                                    className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary transition-all shadow-sm disabled:opacity-50"
-                                                    title="Synchronize Architecture"
-                                                    suppressHydrationWarning={true}
-                                                >
-                                                    {publishingState[form.id] ? (
-                                                        <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                                    ) : (
-                                                        <Rocket size={18} strokeWidth={2.5} />
-                                                    )}
-                                                </button>
-                                            ) : (
-                                                <div className="flex gap-2">
+                                    {/* Glass-styled Utility Row */}
+                                    <div className="flex items-center justify-between p-2.5 bg-slate-50/50 backdrop-blur-md rounded-2xl border border-white/80 shadow-inner">
+                                        <div className="flex items-center gap-2">
+                                            {form.status === "PUBLISHED" && (
+                                                <>
                                                     <button
                                                         onClick={() => handleCopyLink(form.id)}
-                                                        className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all shadow-sm ${copiedId === form.id ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary"
-                                                            }`}
-                                                        title="Copy Form Link"
+                                                        className={`p-3 rounded-xl transition-all ${copiedId === form.id ? "bg-[#2463eb] text-white shadow-lg shadow-[#2463eb44]" : "text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-md"}`}
+                                                        title="Copy URL"
                                                     >
                                                         {copiedId === form.id ? <Check size={18} strokeWidth={3} /> : <Copy size={18} strokeWidth={2.5} />}
                                                     </button>
                                                     <Link
                                                         href={`/forms/${form.id}`}
-                                                        className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
-                                                        title="Fill Form"
+                                                        className="p-3 rounded-xl text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-md transition-all"
+                                                        title="Live Preview"
                                                     >
                                                         <ExternalLink size={18} strokeWidth={2.5} />
                                                     </Link>
                                                     <button
                                                         onClick={() => handleOpenApiModal(form)}
-                                                        className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm"
-                                                        title="API Endpoints"
+                                                        className="p-3 rounded-xl text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-md transition-all"
+                                                        title="API Docs"
                                                     >
-                                                        <Share2 size={18} strokeWidth={2.5} />
+                                                        <Code size={18} strokeWidth={2.5} />
                                                     </button>
-                                                </div>
+                                                </>
                                             )}
-
                                             <Link
                                                 href={`/forms/${form.id}/versions`}
-                                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-violet-50 hover:text-violet-600 transition-all shadow-sm"
-                                                title="Version History"
-                                                suppressHydrationWarning={true}
+                                                className="p-3 rounded-xl text-slate-400 hover:bg-white hover:text-violet-600 hover:shadow-md transition-all"
+                                                title="History"
                                             >
                                                 <GitBranch size={18} strokeWidth={2.5} />
                                             </Link>
-
-                                            <button
-                                                onClick={() => handleDelete(form.id)}
-                                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
-                                                title="Purge Protocol"
-                                                suppressHydrationWarning={true}
-                                            >
-                                                <Trash2 size={18} strokeWidth={2.5} />
-                                            </button>
                                         </div>
+                                        <button
+                                            onClick={() => handleDelete(form.id)}
+                                            className="p-3 rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all"
+                                            title="Archive Unit"
+                                        >
+                                            <Trash2 size={18} strokeWidth={2.5} />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                    /* List View remains professional and clean */
+                    <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl shadow-slate-200/40">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-100">
+                            <thead className="bg-slate-50/80 border-b border-slate-100">
                                 <tr>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Form Name</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Modified</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                    <th className="px-10 py-6 text-[11px] font-[900] text-slate-400 uppercase tracking-widest">Unit Name</th>
+                                    <th className="px-10 py-6 text-[11px] font-[900] text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-10 py-6 text-[11px] font-[900] text-slate-400 uppercase tracking-widest">Modified</th>
+                                    <th className="px-10 py-6 text-[11px] font-[900] text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-slate-100">
                                 {filteredForms.map(form => (
-                                    <tr key={form.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-8 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
-                                                    <FileText size={18} />
+                                    <tr key={form.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-10 py-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-[#2463eb11] group-hover:text-[var(--primary)] flex items-center justify-center transition-all">
+                                                    <FileText size={18} strokeWidth={2.5} />
                                                 </div>
-                                                <span className="font-bold text-slate-900">{form.formName}</span>
+                                                <span className="font-bold text-slate-800 text-lg">{form.formName}</span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-5">
-                                            <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${form.status === "PUBLISHED" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
-                                                }`}>
+                                        <td className="px-10 py-6">
+                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${form.status === "PUBLISHED" ? "bg-emerald-100/50 text-emerald-600 border-emerald-100" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
                                                 {form.status}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-5 text-xs font-semibold text-slate-500">
-                                            {form.updatedAt ? new Date(form.updatedAt).toLocaleString("en-US", {
-                                                year: 'numeric', month: 'short', day: 'numeric',
-                                                hour: '2-digit', minute: '2-digit'
-                                            }) : "N/A"}
+                                        <td className="px-10 py-6 text-sm font-bold text-slate-400" suppressHydrationWarning={true}>
+                                            {mounted && form.updatedAt ? new Date(form.updatedAt).toLocaleDateString() : "---"}
                                         </td>
-                                        <td className="px-8 py-5 text-right space-x-2">
-                                            {form.status !== "PUBLISHED" && (
-                                                <button
-                                                    onClick={() => handlePublish(form.id)}
-                                                    disabled={publishingState[form.id]}
-                                                    className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
-                                                    suppressHydrationWarning={true}
-                                                >
-                                                    <Rocket size={18} />
-                                                </button>
-                                            )}
-                                            {form.status === "PUBLISHED" && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleCopyLink(form.id)}
-                                                        className={`inline-flex p-2 rounded-lg transition-all ${copiedId === form.id ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-primary hover:bg-primary/5"
-                                                            }`}
-                                                        title="Copy Form Link"
-                                                    >
-                                                        {copiedId === form.id ? <Check size={18} /> : <Copy size={18} />}
-                                                    </button>
-                                                    <Link href={`/forms/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Fill Form">
-                                                        <ExternalLink size={18} />
-                                                    </Link>
-                                                </>
-                                            )}
-                                            <Link href={`/forms/edit/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Edit Architecture">
-                                                <FileText size={18} />
+                                        <td className="px-10 py-6 text-right space-x-2">
+                                            <Link href={`/forms/edit/${form.id}`} className="inline-flex p-3 text-slate-400 hover:text-[var(--primary)] transition-all rounded-xl hover:bg-[var(--primary-soft)]">
+                                                <FileText size={20} />
                                             </Link>
-                                            {form.status === "PUBLISHED" && (
-                                                <Link href={`/forms/data/${form.id}`} className="inline-flex p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all" title="View Live Data">
-                                                    <ArrowUpRight size={18} />
-                                                </Link>
-                                            )}
-                                            <button
-                                                onClick={() => handleOpenApiModal(form)}
-                                                className="inline-flex p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                title="API Endpoints"
-                                            >
-                                                <Share2 size={18} />
-                                            </button>
-                                            <Link href={`/forms/${form.id}/versions`} className="inline-flex p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all" title="Version History">
-                                                <GitBranch size={18} />
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDelete(form.id)}
-                                                className="inline-flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                                suppressHydrationWarning={true}
-                                            >
-                                                <Trash2 size={18} />
+                                            <button onClick={() => handleDelete(form.id)} className="inline-flex p-3 text-slate-400 hover:text-red-500 transition-all rounded-xl hover:bg-red-50">
+                                                <Trash2 size={20} />
                                             </button>
                                         </td>
                                     </tr>
@@ -493,62 +479,58 @@ export default function FormVaultPage() {
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
                         onClick={() => setShowRestoreModal(false)}
                     />
-                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-100">
-                        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-xl text-primary">
-                                    <History size={20} />
+                    <div className="relative bg-white rounded-[3rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-500 border border-slate-100">
+                        <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-[var(--primary-soft)] rounded-2xl text-[var(--primary)] shadow-sm">
+                                    <History size={24} strokeWidth={2.5} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Restore Deleted Forms</h2>
-                                    <p className="text-xs text-slate-500 font-medium">Select a form to recover it to your vault.</p>
+                                    <h2 className="text-2xl font-[900] text-slate-900 tracking-tight">Recovery Console</h2>
+                                    <p className="text-sm text-slate-500 font-semibold mt-0.5">Bring decommissioned forms back online.</p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => setShowRestoreModal(false)}
-                                className="p-2 hover:bg-slate-200 rounded-xl text-slate-400 transition-colors"
-                            >
-                                <X size={20} />
+                            <button onClick={() => setShowRestoreModal(false)} className="p-3 hover:bg-slate-200 rounded-2xl text-slate-400 transition-colors">
+                                <X size={24} strokeWidth={3} />
                             </button>
                         </div>
 
-                        <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar no-scrollbar">
+                        <div className="p-10 max-h-[60vh] overflow-y-auto custom-scrollbar no-scrollbar">
                             {fetchingDeleted ? (
-                                <div className="flex flex-col items-center justify-center py-12 gap-4">
-                                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Scanning Archive...</p>
+                                <div className="flex flex-col items-center justify-center py-16 gap-5">
+                                    <div className="w-14 h-14 border-[5px] border-[var(--primary-soft)] border-t-[var(--primary)] rounded-full animate-spin" />
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accessing Archive Vault...</p>
                                 </div>
                             ) : deletedForms.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-                                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-200">
-                                        <AlertCircle size={32} />
+                                <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
+                                    <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner">
+                                        <AlertCircle size={40} />
                                     </div>
                                     <div>
-                                        <p className="font-black text-slate-800 tracking-tight uppercase text-sm">No deleted forms found</p>
-                                        <p className="text-xs text-slate-400 mt-1">Your archive is currently empty.</p>
+                                        <p className="font-black text-slate-800 tracking-tight uppercase text-base">Archive Clean</p>
+                                        <p className="text-sm text-slate-400 font-semibold mt-1">No forms found in recovery storage.</p>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="space-y-5">
                                     {deletedForms.map(form => (
-                                        <div key={form.id} className="flex items-center justify-between p-5 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-primary/20 hover:bg-white transition-all duration-300 shadow-sm hover:shadow-md">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-inner">
-                                                    <FileText size={20} />
+                                        <div key={form.id} className="flex items-center justify-between p-7 bg-slate-50 border border-slate-200 rounded-[2rem] group hover:border-[var(--primary)] hover:bg-white transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/40">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-[var(--primary)] transition-colors shadow-inner">
+                                                    <FileText size={24} />
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-black text-slate-900 tracking-tight">{form.formName}</h4>
-                                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
-                                                        Deleted on {new Date(form.updatedAt).toLocaleDateString()}
+                                                    <h4 className="font-[900] text-slate-900 text-lg tracking-tight">{form.formName}</h4>
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1" suppressHydrationWarning={true}>
+                                                        Purged {mounted ? new Date(form.updatedAt).toLocaleDateString() : "---"}
                                                     </p>
                                                 </div>
                                             </div>
                                             <button
                                                 onClick={() => handleRestore(form.id)}
-                                                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg shadow-slate-900/10"
+                                                className="flex items-center gap-3 px-7 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] transition-all shadow-xl active:scale-95"
                                             >
-                                                <RefreshCw size={14} strokeWidth={3} />
-                                                Restore
+                                                <RefreshCw size={16} strokeWidth={3} /> Restore
                                             </button>
                                         </div>
                                     ))}
@@ -556,11 +538,8 @@ export default function FormVaultPage() {
                             )}
                         </div>
 
-                        <div className="p-8 border-t border-slate-100 bg-slate-50/30 flex justify-end">
-                            <button
-                                onClick={() => setShowRestoreModal(false)}
-                                className="px-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
-                            >
+                        <div className="p-10 border-t border-slate-100 bg-slate-50/30 flex justify-end">
+                            <button onClick={() => setShowRestoreModal(false)} className="px-10 py-4 bg-white border-2 border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 hover:border-slate-300 transition-all">
                                 Close
                             </button>
                         </div>
@@ -572,102 +551,96 @@ export default function FormVaultPage() {
             {showApiModal && selectedFormForLinks && (
                 <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
                     <div 
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-500"
                         onClick={() => setShowApiModal(false)}
                     />
-                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-400 border border-slate-100">
+                    <div className="relative bg-white rounded-[3.5rem] w-full max-w-3xl overflow-hidden shadow-[0_60px_120px_-20px_rgba(0,0,0,0.25)] animate-in zoom-in-95 duration-700 border border-slate-100">
                         {/* Modal Header */}
-                        <div className="p-8 pb-6 border-b border-slate-50 flex items-center justify-between bg-slate-900 text-white">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
-                                    <Code size={22} className="text-white" />
+                        <div className="p-10 pb-8 border-b border-slate-50 flex items-center justify-between bg-slate-900 text-white">
+                            <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-2xl shadow-xl">
+                                    <Code size={28} className="text-white" strokeWidth={2.5} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black tracking-tight uppercase">Developer Blueprint</h2>
-                                    <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase opacity-80">External API Integration V1.0</p>
+                                    <h2 className="text-2xl font-[900] tracking-tight uppercase">API Gateway</h2>
+                                    <p className="text-[11px] text-[var(--primary)] font-black tracking-[0.3em] uppercase opacity-90 mt-1">Version Control 2.4</p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => setShowApiModal(false)}
-                                className="p-2 hover:bg-white/10 rounded-xl transition-all duration-300"
-                            >
-                                <X size={20} />
+                            <button onClick={() => setShowApiModal(false)} className="p-3 hover:bg-white/10 rounded-2xl transition-all duration-300">
+                                <X size={24} strokeWidth={3} />
                             </button>
                         </div>
 
                         {/* Modal Content */}
-                        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar no-scrollbar">
+                        <div className="p-10 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar no-scrollbar">
                             
-                            {/* Architecture Badge */}
-                            <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-3xl flex items-start gap-4">
-                                <div className="p-3 bg-white rounded-2xl text-blue-600 shadow-sm">
-                                    <Grid size={20} />
+                            <div className="p-8 bg-[#2463eb07] border-2 border-[#2463eb11] rounded-[2.5rem] flex items-start gap-6 shadow-inner">
+                                <div className="p-4 bg-white rounded-2xl text-[var(--primary)] shadow-lg shadow-[#2463eb11]">
+                                    <Grid size={24} strokeWidth={2.5} />
                                 </div>
                                 <div>
-                                    <h4 className="font-black text-slate-900 text-sm tracking-tight">External Frontend Architecture</h4>
-                                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
-                                        To correctly implement <span className="text-blue-600 font-bold">Conditional Visibility Rules</span>, fetch the schema first to follow the logic engine's instructions.
+                                    <h4 className="font-black text-slate-900 text-lg tracking-tight">Sync Instructions</h4>
+                                    <p className="text-sm text-slate-500 font-semibold leading-relaxed mt-1.5 italic">
+                                        Use the provided endpoints to bridge external frontends with your <span className="text-[var(--primary)] font-bold">Smart Rule Engine</span>.
                                     </p>
                                 </div>
                             </div>
 
                             {/* Step 1 */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-7 h-7 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px] font-black">1</div>
-                                        <h4 className="font-black text-slate-900 text-sm tracking-tight">Fetch Definition & Logic Rules</h4>
+                            <div className="space-y-5">
+                                <div className="flex items-center justify-between pl-2">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-[11px] font-black shadow-lg">01</div>
+                                        <h4 className="font-black text-slate-800 text-base tracking-tight uppercase">Metadata Fetch</h4>
                                     </div>
-                                    <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest border border-amber-100">Rule Engine Logic</span>
+                                    <span className="px-4 py-1.5 bg-[#2463eb11] text-[var(--primary)] text-[10px] font-black rounded-full uppercase tracking-widest border border-[#2463eb1a]">Schema Sync</span>
                                 </div>
                                 <div className="relative group">
-                                    <div className="w-full pl-6 pr-20 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-600 font-mono break-all leading-relaxed">
-                                        <span className="text-amber-600 mr-2">GET</span> {`http://localhost:9090/api/v1/forms/${selectedFormForLinks.id}`}
+                                    <div className="w-full pl-8 pr-24 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl text-[12px] font-bold text-slate-600 font-mono break-all leading-loose shadow-inner">
+                                        <span className="text-[var(--primary)] mr-3 font-[900]">GET</span> {`http://localhost:9090/api/v1/forms/${selectedFormForLinks.id}`}
                                     </div>
                                     <button 
                                         onClick={() => handleCopyApiLink(`http://localhost:9090/api/v1/forms/${selectedFormForLinks.id}`, 'metadata')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-primary hover:border-primary/20 transition-all shadow-sm"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-4 bg-white border border-slate-200 rounded-[1.25rem] text-slate-400 hover:text-[var(--primary)] hover:border-[#2463eb44] transition-all shadow-xl shadow-slate-200/20 active:scale-90"
                                     >
-                                        {copiedLinkType === 'metadata' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                        {copiedLinkType === 'metadata' ? <Check size={20} className="text-emerald-500" strokeWidth={3} /> : <Copy size={20} strokeWidth={2.5} />}
                                     </button>
                                 </div>
                             </div>
 
                             {/* Step 2 */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px] font-black">2</div>
-                                    <h4 className="font-black text-slate-900 text-sm tracking-tight">Final Submission</h4>
+                            <div className="space-y-5">
+                                <div className="flex items-center gap-4 pl-2">
+                                    <div className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-[11px] font-black shadow-lg">02</div>
+                                    <h4 className="font-black text-slate-800 text-base tracking-tight uppercase">Payload Submission</h4>
                                 </div>
                                 <div className="relative group">
-                                    <div className="w-full pl-6 pr-20 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-600 font-mono break-all leading-relaxed">
-                                        <span className="text-emerald-600 mr-2">POST</span> http://localhost:9090/api/v1/submissions
+                                    <div className="w-full pl-8 pr-24 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl text-[12px] font-bold text-slate-600 font-mono break-all leading-loose shadow-inner">
+                                        <span className="text-emerald-500 mr-3 font-[900]">POST</span> http://localhost:9090/api/v1/submissions
                                     </div>
                                     <button 
                                         onClick={() => handleCopyApiLink("http://localhost:9090/api/v1/submissions", 'submission')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-primary hover:border-primary/20 transition-all shadow-sm"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-4 bg-white border border-slate-200 rounded-[1.25rem] text-slate-400 hover:text-[var(--primary)] hover:border-[#2463eb44] transition-all shadow-xl shadow-slate-200/20 active:scale-90"
                                     >
-                                        {copiedLinkType === 'submission' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                        {copiedLinkType === 'submission' ? <Check size={20} className="text-emerald-500" strokeWidth={3} /> : <Copy size={20} strokeWidth={2.5} />}
                                     </button>
                                 </div>
 
-                                {/* Payload Architecture */}
-                                <div className="mt-6 space-y-3">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Payload Architecture</p>
-                                    <div className="relative rounded-3xl overflow-hidden border border-slate-100">
-                                        <div className="bg-slate-50 px-6 py-3 border-b border-slate-100 flex items-center justify-between">
-                                            <div className="flex gap-1.5">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
-                                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
-                                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                <div className="mt-8 space-y-4">
+                                    <p className="text-[11px] font-[900] text-slate-400 uppercase tracking-[0.2em] pl-4">JSON Architecture</p>
+                                    <div className="relative rounded-[2.5rem] overflow-hidden border-2 border-slate-100 shadow-2xl">
+                                        <div className="bg-slate-900 px-8 py-4 border-b border-slate-800 flex items-center justify-between">
+                                            <div className="flex gap-2">
+                                                <div className="w-3 h-3 rounded-full bg-red-500/20" />
+                                                <div className="w-3 h-3 rounded-full bg-amber-500/20" />
+                                                <div className="w-3 h-3 rounded-full bg-emerald-500/20" />
                                             </div>
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Request_Payload.json</span>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">application/json</span>
                                         </div>
-                                        <pre className="p-6 bg-slate-50/50 text-[11px] font-bold text-slate-600 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
+                                        <pre className="p-8 bg-slate-900 text-[13px] font-bold text-slate-300 font-mono overflow-x-auto custom-scrollbar leading-[1.8]">
 {`{
   "formId": "${selectedFormForLinks.id}",
   "versionId": "${selectedFormForLinks.formVersionId || "3fa85f64-5717-4562-b3fc-2c963f66afa6"}",
-  "isDraft": true,
   "values": {
     "field_key_1": "Your Value",
     "field_key_2": "Your Value",
@@ -675,19 +648,19 @@ export default function FormVaultPage() {
   }
 }`}
                                         </pre>
-                                        <div className="absolute right-4 bottom-4">
+                                        <div className="absolute right-6 bottom-6">
                                             <button 
                                                 onClick={handleCopyJson}
-                                                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl ${
+                                                className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl ${
                                                     copiedLinkType === 'json' 
-                                                    ? "bg-emerald-500 text-white shadow-emerald-200" 
-                                                    : "bg-primary text-white hover:bg-slate-900 shadow-primary/20"
+                                                    ? "bg-emerald-500 text-white shadow-emerald-500/40" 
+                                                    : "bg-[var(--primary)] text-white hover:scale-105 shadow-[var(--primary-glow)]"
                                                 }`}
                                             >
                                                 {copiedLinkType === 'json' ? (
-                                                    <><Check size={14} strokeWidth={3} /> Copied</>
+                                                    <><Check size={18} strokeWidth={3} /> Copied</>
                                                 ) : (
-                                                    <><Copy size={14} strokeWidth={3} /> Copy JSON</>
+                                                    <><Copy size={18} strokeWidth={3} /> Copy Payload</>
                                                 )}
                                             </button>
                                         </div>
@@ -697,12 +670,9 @@ export default function FormVaultPage() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex justify-end">
-                            <button
-                                onClick={() => setShowApiModal(false)}
-                                className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10 active:scale-95"
-                            >
-                                Close Blueprint
+                        <div className="p-10 border-t border-slate-50 bg-slate-50/50 flex justify-end">
+                            <button onClick={() => setShowApiModal(false)} className="px-12 py-5 bg-slate-900 text-white rounded-[1.5rem] text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] transition-all shadow-xl shadow-slate-900/20 active:scale-95">
+                                Close Documentation
                             </button>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
     BookOpen, 
     FileText, 
@@ -14,18 +14,17 @@ import {
     Copy,
     Check,
     Type, Hash, Mail, Calendar, Phone, Clock, Link, CircleDot, CheckSquare,
-    ListPlus, ToggleLeft, Heading, Pilcrow, Minus, Layout
+    ListPlus, ToggleLeft, Heading, Pilcrow, Minus, Layout, SeparatorHorizontal, Menu, X, Globe
 } from "lucide-react";
+
+const DOCS_VERSION = "v1.0.0";
 
 export default function DocsPage() {
     const [activeSection, setActiveSection] = useState("overview");
     const [copiedId, setCopiedId] = useState(null);
 
-    const handleCopy = (text, id) => {
-        navigator.clipboard.writeText(text);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
-    };
+    // Track if scrolling is caused by a manual click to avoid intersection observer jumps
+    const isManualScrolling = useRef(false);
 
     const sections = [
         { id: "overview", label: "Overview", icon: BookOpen },
@@ -38,16 +37,55 @@ export default function DocsPage() {
         { id: "security", label: "Security", icon: ShieldCheck }
     ];
 
+    useEffect(() => {
+        const observerOptions = {
+            root: null,
+            rootMargin: '-20% 0px -70% 0px', // Trigger when section is in the upper middle of the screen
+            threshold: 0
+        };
+
+        const observerCallback = (entries) => {
+            if (isManualScrolling.current) return;
+
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    setActiveSection(entry.target.id);
+                }
+            });
+        };
+
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        
+        sections.forEach(section => {
+            const element = document.getElementById(section.id);
+            if (element) observer.observe(element);
+        });
+
+        return () => observer.disconnect();
+    }, []);
+
+    const handleCopy = (text, id) => {
+        navigator.clipboard.writeText(text);
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
+    };
+
     const scrollToSection = (id) => {
         const element = document.getElementById(id);
         if (element) {
+            isManualScrolling.current = true;
             element.scrollIntoView({ behavior: "smooth" });
             setActiveSection(id);
+            
+            // Re-enable observer after smooth scroll completes
+            setTimeout(() => {
+                isManualScrolling.current = false;
+            }, 800);
         }
     };
 
     return (
-        <div className="flex min-h-screen bg-slate-50/50">
+        <div className="flex min-h-[calc(100vh-4rem)] bg-slate-50/50">
             {/* Left Sidebar - Table of Contents */}
             <aside className="w-80 hidden lg:block border-r border-slate-200 bg-white sticky top-0 h-[calc(100vh-4rem)] p-8 overflow-y-auto custom-scrollbar no-scrollbar">
                 <div className="space-y-8">
@@ -81,7 +119,7 @@ export default function DocsPage() {
                             Access full system capabilities via our RESTful endpoints.
                         </p>
                         <div className="text-[10px] font-mono text-primary bg-primary/10 px-3 py-2 rounded-lg inline-block">
-                            v1.0.0
+                            {DOCS_VERSION}
                         </div>
                     </div>
                 </div>
@@ -89,6 +127,20 @@ export default function DocsPage() {
 
             {/* Main Content Area */}
             <main className="flex-1 p-6 lg:p-16 max-w-5xl mx-auto space-y-24">
+                
+                {/* Configuration Note */}
+                <div className="p-8 bg-blue-50 border border-blue-100 rounded-[2.5rem] flex items-start gap-5 shadow-sm">
+                    <div className="p-3 bg-white rounded-2xl text-blue-600 shadow-sm">
+                        <Globe size={22} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-black text-blue-900 tracking-tight mb-1">Environmental Configuration</h4>
+                        <p className="text-xs text-blue-700/80 font-semibold leading-relaxed">
+                            The following documentation assumes your backend is running on <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-800 font-bold">localhost:9090</code>. 
+                            Ensure you swap this with your production API gateway URL for live environments.
+                        </p>
+                    </div>
+                </div>
                 
                 {/* 1. Overview */}
                 <section id="overview" className="scroll-mt-32 space-y-8">
@@ -108,7 +160,7 @@ export default function DocsPage() {
                             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
                                 <Zap size={24} />
                             </div>
-                            <h3 className="text-lg font-black text-slate-900 mb-4">Frontend Dependence</h3>
+                            <h3 className="text-lg font-black text-slate-900 mb-4">Dynamic Rendering</h3>
                             <p className="text-sm text-slate-500 font-medium leading-relaxed">
                                 The frontend acts as a dynamic renderer, fetching metadata to determine field types, validation, and rules.
                             </p>
@@ -135,7 +187,7 @@ export default function DocsPage() {
                         </div>
                         <h2 className="text-3xl font-black text-slate-900 tracking-tight">Fetch Form Definitions</h2>
                         <p className="text-slate-500 font-medium leading-relaxed">
-                            Retreive the complete form schema including field types, labels, and validation rules.
+                            Retrieve the complete form schema including field types, labels, and validation rules.
                         </p>
                     </div>
 
@@ -241,7 +293,7 @@ export default function DocsPage() {
                                 { k: "defaultValue", d: "Initial state." },
                                 { k: "placeholder", d: "Input hint." },
                                 { k: "helperText", d: "Below-input text." },
-                                { k: "sourceTable", d: "Dynamic data source." },
+                                { k: "sourceTable", d: "Dynamic source for dropdowns." },
                                 { k: "maxFileSize", d: "Upload MB limit." },
                                 { k: "allowedFiles", d: ".pdf,.jpg etc." },
                                 { k: "isReadOnly", d: "Disable editing." },
@@ -311,7 +363,7 @@ export default function DocsPage() {
                                     { type: "heading", icon: Heading, desc: "Header text" },
                                     { type: "paragraph", icon: Pilcrow, desc: "Description text" },
                                     { type: "divider", icon: Minus, desc: "Visual separator" },
-                                    { type: "page_break", icon: Layout, desc: "Pagination" }
+                                    { type: "page_break", icon: SeparatorHorizontal, desc: "Pagination" }
                                 ]
                             }
                         ].map(cat => (
@@ -355,7 +407,6 @@ export default function DocsPage() {
                                 {[
                                     { k: "formId", t: "UUID", r: "Yes", d: "Unique identifier for the form structure." },
                                     { k: "versionId", t: "UUID", r: "Yes", d: "The architectural version being submitted." },
-                                    { k: "isDraft", t: "Boolean", r: "No", d: "If true, bypasses validation for partial saves." },
                                     { k: "values", t: "Object", r: "Yes", d: "Map of fieldKey to actual user data." }
                                 ].map(item => (
                                     <div key={item.k} className="p-4 bg-white border border-slate-100 rounded-2xl flex items-start gap-4">
@@ -408,7 +459,6 @@ export default function DocsPage() {
 {`{
   "formId": "02ebe36d-5248-4c89-9d99-f36f17df22f0",
   "versionId": "f47ac10b-58cc-...",
-  "isDraft": false,
   "values": {
     "full_name": "John Doe",
     "experience_years": 8,
@@ -426,7 +476,7 @@ export default function DocsPage() {
                         <div>
                             <h4 className="text-sm font-black text-amber-900 tracking-tight">Critical Mapping Rule</h4>
                             <p className="text-xs text-amber-700 font-medium leading-relaxed mt-1">
-                                Every key in the <code className="bg-amber-100 px-1 rounded">values</code> object **MUST** exactly match a <code className="bg-amber-100 px-1 rounded">fieldKey</code> from the metadata response. 
+                                Every key in the <code className="bg-amber-100 px-1 rounded">values</code> object <strong>MUST</strong> exactly match a <code className="bg-amber-100 px-1 rounded">fieldKey</code> from the metadata response. 
                                 Unmapped keys will be ignored, and missing required keys will trigger a structural validation error.
                             </p>
                         </div>
@@ -482,7 +532,7 @@ export default function DocsPage() {
                                 fieldKey Generation
                             </h3>
                             <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                                The <code className="text-primary font-bold">fieldKey</code> is automatically derived from the label using a deterministic **Slugification Algorithm**. Developers MUST use these keys in the submission payload.
+                                The <code className="text-primary font-bold">fieldKey</code> is automatically derived from the label using a deterministic <strong>Slugification Algorithm</strong>. Developers <strong>MUST</strong> use these keys in the submission payload.
                             </p>
                             
                             <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] p-8 space-y-6">
@@ -598,11 +648,14 @@ export default function DocsPage() {
                     </div>
 
                     <div className="p-12 bg-slate-900 rounded-[3rem] text-center text-white space-y-6">
-                        <h3 className="text-2xl font-black tracking-tight tracking-tight">Ready to integrate?</h3>
+                        <h3 className="text-2xl font-black tracking-tight">Ready to integrate?</h3>
                         <p className="text-slate-400 font-medium max-w-lg mx-auto leading-relaxed">
                             Check our best practices section to optimize your implementation for scale.
                         </p>
-                        <button className="px-10 py-4 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                        <button 
+                            onClick={() => window.open('https://github.com/formbuilder/sdk', '_blank')}
+                            className="px-10 py-4 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                        >
                             Download SDK
                         </button>
                     </div>
