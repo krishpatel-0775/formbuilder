@@ -296,7 +296,7 @@ export default function FormDataPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Database className="text-indigo-600" size={20} />
-              <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">Submission Manager</span>
+              <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">Manage Submissions</span>
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Form Responses</h1>
           </div>
@@ -399,7 +399,7 @@ export default function FormDataPage() {
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8 flex items-start gap-4">
             <AlertCircle className="text-red-500 shrink-0" size={24} />
             <div className="flex-1">
-              <h3 className="text-red-800 font-black uppercase text-[11px] tracking-widest mb-2">Submission Fetch Error</h3>
+              <h3 className="text-red-800 font-black uppercase text-[11px] tracking-widest mb-2">Error Loading Data</h3>
               <div className="bg-white/50 border border-red-100 rounded-xl p-3 mb-4">
                 <code className="text-red-600 text-xs font-bold leading-relaxed whitespace-pre-wrap">{error}</code>
               </div>
@@ -503,7 +503,7 @@ export default function FormDataPage() {
                                     onClick={(e) => e.stopPropagation()}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all text-xs font-black uppercase tracking-widest shadow-sm"
                                   >
-                                    <ExternalLink size={14} /> Open Resource
+                                    <ExternalLink size={14} /> View File
                                   </a>
                                 ) : (
                                   <span className="text-slate-700">

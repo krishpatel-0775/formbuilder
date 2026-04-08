@@ -2,7 +2,6 @@ package com.example.formBuilder.service;
 
 import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.entity.FormField;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.Boolean.TRUE;
 
@@ -23,23 +23,10 @@ public class SchemaManager {
 
     private static final Pattern VALID_NAME = Pattern.compile(AppConstants.VALID_NAME_REGEX);
  
-    @PostConstruct
-    public void initStaticTables() {
-        String sql = "CREATE TABLE IF NOT EXISTS form_submission_meta (" +
-                "id UUID PRIMARY KEY, " +
-                "form_id UUID NOT NULL, " +
-                "form_version_id UUID, " +
-                "submission_table VARCHAR(100) NOT NULL, " +
-                "submission_row_id UUID NOT NULL, " +
-                "status VARCHAR(50) NOT NULL, " +
-                "submitted_by VARCHAR(100), " +
-                "submitted_at TIMESTAMP, " +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)";
-        jdbcTemplate.execute(sql);
-    }
+    /** Field types that are purely visual — they have no database column. */
 
     /** Field types that are purely visual — they have no database column. */
-    private static final java.util.Set<String> DISPLAY_ONLY_TYPES = java.util.Set.of(
+    private static final Set<String> DISPLAY_ONLY_TYPES = Set.of(
             "page_break", "heading", "paragraph", "divider"
     );
 
@@ -61,32 +48,32 @@ public class SchemaManager {
      * Sanitizes by lowercasing, replacing spaces/hyphens with underscores,
      * and removing non-alphanumeric characters.
      */
-    public String buildSafeTableName(String formName) {
-        if (formName == null || formName.isBlank()) {
-            throw new IllegalArgumentException("Form name cannot be empty");
-        }
-
-        // 1. Lowercase
-        String sanitized = formName.trim().toLowerCase();
-
-        // 2. Replace spaces and hyphens with underscores
-        sanitized = sanitized.replaceAll("[\\s\\-]", "_");
-
-        // 3. Remove any remaining characters that are not a-z, 0-9, or _
-        sanitized = sanitized.replaceAll("[^a-z0-9_]", "");
-
-        // 4. Ensure it doesn't start with a number (Postgres requirement for unquoted identifiers)
-        if (Character.isDigit(sanitized.charAt(0))) {
-            sanitized = "f_" + sanitized;
-        }
-
-        // 5. Truncate to 50 chars to leave room for the "form_data_" prefix and any suffixes
-        if (sanitized.length() > 50) {
-            sanitized = sanitized.substring(0, 50);
-        }
-
-        return "form_data_" + sanitized;
-    }
+//    public String buildSafeTableName(String formName) {
+//        if (formName == null || formName.isBlank()) {
+//            throw new IllegalArgumentException("Form name cannot be empty");
+//        }
+//
+//        // 1. Lowercase
+//        String sanitized = formName.trim().toLowerCase();
+//
+//        // 2. Replace spaces and hyphens with underscores
+//        sanitized = sanitized.replaceAll("[\\s\\-]", "_");
+//
+//        // 3. Remove any remaining characters that are not a-z, 0-9, or _
+//        sanitized = sanitized.replaceAll("[^a-z0-9_]", "");
+//
+//        // 4. Ensure it doesn't start with a number (Postgres requirement for unquoted identifiers)
+//        if (Character.isDigit(sanitized.charAt(0))) {
+//            sanitized = "f_" + sanitized;
+//        }
+//
+//        // 5. Truncate to 50 chars to leave room for the "form_data_" prefix and any suffixes
+//        if (sanitized.length() > 50) {
+//            sanitized = sanitized.substring(0, 50);
+//        }
+//
+//        return "form_data_" + sanitized;
+//    }
 
     /**
      * Generates and executes the CREATE TABLE SQL statement with constraints for a new form.
@@ -126,31 +113,31 @@ public class SchemaManager {
     /**
      * Renames an existing column in the specified dynamic table.
      */
-    public void renameColumn(String tableName, String oldName, String newName) {
-        validateColumnName(oldName);
-        validateColumnName(newName);
-        String sql = "ALTER TABLE " + tableName +
-                " RENAME COLUMN " + oldName + " TO " + newName;
-        jdbcTemplate.execute(sql);
-    }
+//    public void renameColumn(String tableName, String oldName, String newName) {
+//        validateColumnName(oldName);
+//        validateColumnName(newName);
+//        String sql = "ALTER TABLE " + tableName +
+//                " RENAME COLUMN " + oldName + " TO " + newName;
+//        jdbcTemplate.execute(sql);
+//    }
 
     /**
      * Drops a column from the specified dynamic table if it exists.
      */
-    public void dropColumn(String tableName, String columnName) {
-        validateColumnName(columnName);
-        String sql = "ALTER TABLE " + tableName +
-                " DROP COLUMN IF EXISTS " + columnName;
-        jdbcTemplate.execute(sql);
-    }
+//    public void dropColumn(String tableName, String columnName) {
+//        validateColumnName(columnName);
+//        String sql = "ALTER TABLE " + tableName +
+//                " DROP COLUMN IF EXISTS " + columnName;
+//        jdbcTemplate.execute(sql);
+//    }
 
 
-    public void makeColumnNullable(String tableName, String columnName) {
-        validateColumnName(columnName);
-        String sql = "ALTER TABLE " + tableName +
-                " ALTER COLUMN " + columnName + " DROP NOT NULL";
-        jdbcTemplate.execute(sql);
-    }
+//    public void makeColumnNullable(String tableName, String columnName) {
+//        validateColumnName(columnName);
+//        String sql = "ALTER TABLE " + tableName +
+//                " ALTER COLUMN " + columnName + " DROP NOT NULL";
+//        jdbcTemplate.execute(sql);
+//    }
 
     /**
      * Adds a new column to the specified dynamic table.
@@ -196,7 +183,7 @@ public class SchemaManager {
                     .queryForList(sql, String.class, tableName)
                     .stream()
                     .map(String::toLowerCase)
-                    .collect(java.util.stream.Collectors.toSet());
+                    .collect(Collectors.toSet());
         } catch (Exception e) {
             // Table does not exist at all — all non-display fields are missing
             return fields.stream()

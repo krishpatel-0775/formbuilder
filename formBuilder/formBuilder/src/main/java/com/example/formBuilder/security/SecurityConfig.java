@@ -1,6 +1,7 @@
 package com.example.formBuilder.security;
 
 import com.example.formBuilder.constants.AppConstants;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,15 +43,15 @@ public class SecurityConfig {
                         .sessionFixation().migrateSession()
                         .maximumSessions(1)
                         .expiredSessionStrategy(event -> {
-                            jakarta.servlet.http.HttpServletResponse response = event.getResponse();
-                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            HttpServletResponse response = event.getResponse();
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
                             response.getWriter().write("{\"error\": \"Session expired due to concurrent login\"}");
                         })
                 )
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
                             response.getWriter().write("{\"error\": \"Unauthorized - Please log in\"}");
                         })

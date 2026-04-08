@@ -383,10 +383,11 @@ public class FormService {
         Form form = getFormById(formId);
         String tableName = form.getTableName();
 
-        // Check if the column belongs to an active field
+        // Check if the column belongs to an active field (by either key or name)
         boolean isActive = getActiveFields(form).stream()
-                .anyMatch(f -> f.getFieldName().equals(columnName));
-
+                .anyMatch(f -> (f.getFieldKey() != null && f.getFieldKey().equals(columnName)) || 
+                               (f.getFieldName() != null && f.getFieldName().equals(columnName)));
+        
         if (!isActive) {
             throw new ValidationException("Cannot lookup values for inactive or non-existent field: " + columnName);
         }
@@ -556,7 +557,7 @@ public class FormService {
                 schemaManager.validateColumnName(key); // Throws if reserved or invalid
                 String lowerKey = key.toLowerCase();
                 if (fieldNames.contains(lowerKey)) {
-                    throw new ValidationException("Duplicate field identifier: " + key + ". Each field must have a unique name.");
+                    throw new ValidationException("Two fields have the same name or very similar labels. Please ensure every field has a unique name.");
                 }
                 fieldNames.add(lowerKey);
             }

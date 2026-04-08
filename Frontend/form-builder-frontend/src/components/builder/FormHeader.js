@@ -42,12 +42,12 @@ export function FormHeader({
         </NextLink>
         <div className="flex flex-col flex-1 max-w-lg">
           <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1 ml-1 truncate">
-            {isPublished ? "Immutable Protocol" : "Architectural Draft"}
+            {isPublished ? "Published Form" : "Draft Form"}
           </span>
           {canEditName ? (
             <input
               type="text"
-              placeholder="Name your masterpiece..."
+              placeholder="Form Name..."
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               className={`text-xl font-black bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300 tracking-tight text-slate-900`}
@@ -71,7 +71,7 @@ export function FormHeader({
           <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 shadow-sm shadow-emerald-500/5 transition-all">
             <ShieldCheck size={16} strokeWidth={3} className="animate-in zoom-in duration-500" />
             <span className="text-[10px] font-black uppercase tracking-[0.15em]">
-              Operational State: Live
+              Status: Published
             </span>
           </div>
         ) : (
@@ -104,7 +104,7 @@ export function FormHeader({
             {isPublishing ? (
               <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
             ) : (
-              <><Rocket size={18} strokeWidth={3} /> Publish Architecture</>
+              <><Rocket size={18} strokeWidth={3} /> Publish Form</>
             )}
           </button>
         )}

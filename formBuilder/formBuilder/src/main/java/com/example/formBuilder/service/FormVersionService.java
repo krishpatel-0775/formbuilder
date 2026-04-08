@@ -1,5 +1,6 @@
 package com.example.formBuilder.service;
 
+import com.example.formBuilder.constants.AppConstants;
 import com.example.formBuilder.dto.FormFieldResponseDto;
 import com.example.formBuilder.dto.FormVersionDto;
 import com.example.formBuilder.dto.UpdateFieldRequest;
@@ -370,8 +371,8 @@ public class FormVersionService {
             schemaManager.validateColumnName(key);
             
             if (seen.contains(key)) {
-                log.error("Duplicate field key found: {}", key); // FIXED: Log duplicate
-                throw new ValidationException("Duplicate field identifier: '" + key + "'. Each database-backed field MUST have a unique generated key.");
+                log.error("Duplicate field key found: {}", key);
+                throw new ValidationException("Two fields have the same name or very similar labels. Please ensure every field has a unique name.");
             }
             seen.add(key);
         }
@@ -429,7 +430,7 @@ public class FormVersionService {
         field.setFieldName(req.getName());
         String key = req.getFieldKey();
         if (key == null || key.isBlank()) {
-            key = com.example.formBuilder.constants.AppConstants.sanitizeKey(req.getName());
+            key = AppConstants.sanitizeKey(req.getName());
         }
         field.setFieldKey(key);
         field.setFieldType(req.getType());
@@ -463,7 +464,7 @@ public class FormVersionService {
      */
     @Transactional
     public FormVersionDto getOrCreateDraft(UUID formId) {
-        java.util.Optional<FormVersion> latestOpt = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(formId);
+        Optional<FormVersion> latestOpt = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(formId);
 
         if (latestOpt.isPresent()) {
             // Return the latest version. Branching (creating a new version) will only happen 
@@ -492,7 +493,7 @@ public class FormVersionService {
         List<FormField> fieldsToMigrate = fieldRepository.findAll();
         for (FormField f : fieldsToMigrate) {
             if (f.getFieldKey() == null || f.getFieldKey().isBlank()) {
-                f.setFieldKey(com.example.formBuilder.constants.AppConstants.sanitizeKey(f.getFieldName()));
+                f.setFieldKey(AppConstants.sanitizeKey(f.getFieldName()));
             }
         }
         fieldRepository.saveAll(fieldsToMigrate);
@@ -515,7 +516,7 @@ public class FormVersionService {
         FormVersion v1 = FormVersion.builder()
                 .formId(form.getId())
                 .versionNumber(1)
-                .isActive(form.getStatus() == com.example.formBuilder.enums.FormStatus.PUBLISHED)
+                .isActive(form.getStatus() == FormStatus.PUBLISHED)
                 .isLatest(true) // Migrated first version is the latest
                 .rules(form.getRules() != null ? form.getRules() : "[]")
                 .createdBy("system-migration")
@@ -659,7 +660,7 @@ public class FormVersionService {
         // something went wrong — block the publish to prevent broken submissions.
         List<String> remainingDrift = schemaManager.detectDrift(tableName, fields);
         if (!remainingDrift.isEmpty()) {
-            throw new com.example.formBuilder.exception.ValidationException(
+            throw new ValidationException(
                 "Publish blocked: schema drift detected after migration attempt. " +
                 "Missing columns in table '" + tableName + "': " +
                 String.join(", ", remainingDrift) + ". Manual database intervention required."
@@ -670,7 +671,6 @@ public class FormVersionService {
 
     private void addMissingCommonColumns(String tableName) {
         try {
-            // form_version_id is now UUID (not BIGINT)
             jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS form_version_id UUID");
             jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS is_draft BOOLEAN DEFAULT FALSE NOT NULL");
             jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE NOT NULL");

@@ -15,7 +15,7 @@ export function DefaultValuePanel({ activeField, updateField }) {
       {textTypes.includes(activeField.type) && (
         <input
           type={activeField.type === "number" ? "number" : "text"}
-          placeholder="Pre-set architectural value..."
+          placeholder="Default value..."
           value={activeField.defaultValue ?? ""}
           onChange={(e) => updateField(activeField.id, "defaultValue", e.target.value)}
           className={base}
@@ -25,7 +25,7 @@ export function DefaultValuePanel({ activeField, updateField }) {
       {activeField.type === "textarea" && (
         <textarea
           rows={3}
-          placeholder="Pre-set narrative value..."
+          placeholder="Default text description..."
           value={activeField.defaultValue ?? ""}
           onChange={(e) => updateField(activeField.id, "defaultValue", e.target.value)}
           className={`${base} resize-none`}
@@ -171,7 +171,7 @@ export function SidebarProps({
     <div className="space-y-10 pb-10">
       {/* Required Toggle */}
       <div className="space-y-4">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Integrity Control</label>
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Required Setting</label>
         <div
           onClick={() => updateField(activeField.id, "required", !activeField.required)}
           className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer border transition-all duration-500 ${activeField.required
@@ -184,7 +184,7 @@ export function SidebarProps({
               }`}>
               <AlertCircle size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-[11px] font-black uppercase tracking-widest">Mandatory Input</span>
+            <span className="text-[11px] font-black uppercase tracking-widest">Required Field</span>
           </div>
           <div className={`w-12 h-6 rounded-full transition-all relative ${activeField.required ? "bg-primary shadow-lg shadow-primary/30" : "bg-slate-200"}`}>
             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-sm ${activeField.required ? "translate-x-7 scale-110" : "translate-x-1"}`} />
@@ -194,7 +194,7 @@ export function SidebarProps({
       
       {/* Read Only Toggle */}
       <div className="space-y-4">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Access Control</label>
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Read-Only Setting</label>
         <div
           onClick={() => updateField(activeField.id, "isReadOnly", !activeField.isReadOnly)}
           className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer border transition-all duration-500 ${activeField.isReadOnly
@@ -207,7 +207,7 @@ export function SidebarProps({
               }`}>
               <ShieldCheck size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-[11px] font-black uppercase tracking-widest">Read Only Field</span>
+            <span className="text-[11px] font-black uppercase tracking-widest">Make Read-Only</span>
           </div>
           <div className={`w-12 h-6 rounded-full transition-all relative ${activeField.isReadOnly ? "bg-amber-500 shadow-lg shadow-amber-500/30" : "bg-slate-200"}`}>
             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-sm ${activeField.isReadOnly ? "translate-x-7 scale-110" : "translate-x-1"}`} />
@@ -231,28 +231,30 @@ export function SidebarProps({
       <div className="space-y-8">
         <div className="flex items-center gap-2 px-1">
           <SlidersHorizontal size={14} className="text-primary" />
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Boundary Settings</label>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Validation Limits</label>
         </div>
 
         {["text", "textarea", "email", "phone", "url"].includes(activeField.type) && (
           <div className="space-y-10">
             <div className="grid grid-cols-2 gap-4">
               <div className="relative">
-                <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Min Chars</span>
+                <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Min Characters</span>
                 <input
                   type="number"
                   value={activeField.minLength}
                   onChange={(e) => handleNumberInput(e, activeField.id, "minLength")}
+                  onWheel={(e) => e.target.blur()}
                   placeholder="0"
                   className={inputBase}
                 />
               </div>
               <div className="relative">
-                <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">Max Chars</span>
+                <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">Max Characters</span>
                 <input
                   type="number"
                   value={activeField.maxLength}
                   onChange={(e) => handleNumberInput(e, activeField.id, "maxLength")}
+                  onWheel={(e) => e.target.blur()}
                   placeholder="∞"
                   className={inputBase}
                 />
@@ -261,7 +263,7 @@ export function SidebarProps({
 
             {["text", "email", "phone", "url"].includes(activeField.type) && (
               <div className="space-y-3">
-                <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Regex Pattern validation</span>
+                <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Validation Rule (Regex)</span>
                 <input
                   type="text"
                   placeholder="e.g. ^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"
@@ -347,32 +349,36 @@ export function SidebarProps({
                   onClick={() => updateField(activeField.id, "options", [...(activeField.options || []), `Option ${(activeField.options?.length || 0) + 1}`])}
                   className="w-full p-4 border-2 border-dashed border-primary/20 rounded-2xl text-primary font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary/5 hover:border-primary/40 transition-all flex items-center justify-center gap-2 group"
                 >
-                  <Plus size={16} className="group-hover:rotate-90 transition-transform" /> Add Architectural Choice
+                  <Plus size={16} className="group-hover:rotate-90 transition-transform" /> Add Option
                 </button>
               </div>
             ) : (
               <div className="space-y-6 bg-primary/5 p-6 rounded-[2rem] border border-primary/10">
                 <div className="space-y-2">
-                  <label className="text-[9px] uppercase font-black tracking-widest text-primary/60 ml-1">Data Reservoir (Source Form)</label>
+                  <label className="text-[9px] uppercase font-black tracking-widest text-primary/60 ml-1">Form Library (Source)</label>
                   <select
                     value={activeField.sourceTable || ""}
                     onChange={(e) => { updateField(activeField.id, "sourceTable", e.target.value); updateField(activeField.id, "sourceColumn", ""); }}
                     className="w-full bg-white border border-primary/10 p-4 rounded-2xl text-[13px] font-black text-slate-800 outline-none focus:border-primary transition-all shadow-xl shadow-primary/5"
                   >
-                    <option value="" disabled>Select Source Protocol...</option>
+                    <option value="" disabled>Select Source Form...</option>
                     {availableForms.map((f) => <option key={f.id} value={f.id.toString()}>{f.formName}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] uppercase font-black tracking-widest text-primary/60 ml-1">Data Stream (Column)</label>
+                  <label className="text-[9px] uppercase font-black tracking-widest text-primary/60 ml-1">Select Column</label>
                   <select
                     value={activeField.sourceColumn || ""}
                     onChange={(e) => updateField(activeField.id, "sourceColumn", e.target.value)}
                     className="w-full bg-white border border-primary/10 p-4 rounded-2xl text-[13px] font-black text-slate-800 outline-none focus:border-primary transition-all shadow-xl shadow-primary/5 disabled:opacity-50"
                     disabled={!activeField.sourceTable}
                   >
-                    <option value="" disabled>Select Data Stream...</option>
-                    {selectedFormFields.map((f) => <option key={f.fieldName} value={f.fieldName}>{f.fieldName} ({f.fieldType})</option>)}
+                    <option value="" disabled>Select Column...</option>
+                    {selectedFormFields.map((f) => (
+                      <option key={f.id} value={f.fieldKey || f.fieldName}>
+                        {f.fieldName} ({f.fieldType})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -383,21 +389,23 @@ export function SidebarProps({
         {activeField.type === "number" && (
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
-              <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Min Magnitude</span>
+              <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Minimum Value</span>
               <input
                 type="number"
                 value={activeField.min}
                 onChange={(e) => handleNumberInput(e, activeField.id, "min")}
+                onWheel={(e) => e.target.blur()}
                 placeholder="-∞"
                 className={inputBase}
               />
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">Max Magnitude</span>
+              <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">Maximum Value</span>
               <input
                 type="number"
                 value={activeField.max}
                 onChange={(e) => handleNumberInput(e, activeField.id, "max")}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="+∞"
                 className={inputBase}
               />
@@ -409,7 +417,7 @@ export function SidebarProps({
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="relative">
-                <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Earliest Temporal Phase</span>
+                <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Start Date</span>
                 <input
                   type="date"
                   value={activeField.afterDate}
@@ -418,7 +426,7 @@ export function SidebarProps({
                 />
               </div>
               <div className="relative">
-                <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">Latest Temporal Phase</span>
+                <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">End Date</span>
                 <input
                   type="date"
                   value={activeField.beforeDate}
@@ -433,7 +441,7 @@ export function SidebarProps({
         {activeField.type === "time" && (
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
-              <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Start Gate</span>
+              <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Start Time</span>
               <input
                 type="time"
                 value={activeField.afterTime ?? ""}
@@ -442,7 +450,7 @@ export function SidebarProps({
               />
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">End Gate</span>
+              <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">End Time</span>
               <input
                 type="time"
                 value={activeField.beforeTime ?? ""}
@@ -459,14 +467,14 @@ export function SidebarProps({
               <div className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center">
                 <Code2 size={16} />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Protocol Integrity</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Link Security</span>
             </div>
             <p className="text-[11px] font-bold text-slate-500 leading-relaxed mb-4 italic transition-colors group-hover:text-slate-700">
-              "Architecture automatically enforces <span className="text-primary">HTTPS/HTTP</span> protocol standards for all incoming dimensional links."
+              "System automatically ensures <span className="text-primary">HTTPS/HTTP</span> secure link standards for all incoming shared links."
             </p>
             <div className="flex gap-2">
               <span className={`${badgeBase} bg-white text-primary border-primary/10`}>Secure</span>
-              <span className={`${badgeBase} bg-white text-slate-400 border-slate-100`}>Dimensional</span>
+              <span className={`${badgeBase} bg-white text-slate-400 border-slate-100`}>External</span>
             </div>
           </div>
         )}
@@ -481,12 +489,12 @@ export function SidebarProps({
                 className={inputBase}
               >
                 <option value="2">2 MB (Standard)</option>
-                <option value="5">5 MB (Aggregated)</option>
+                <option value="5">5 MB (Standard)</option>
               </select>
             </div>
 
             <div className="space-y-4">
-              <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Allowed Dimensional Formats</span>
+              <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Allowed File Types</span>
               <div className="grid grid-cols-2 gap-2">
                 {["pdf", "jpg", "png", "xlsx", "xml"].map((ext) => {
                   const currentTypes = (activeField.allowedFileTypes || "").split(",").map(t => t.trim()).filter(Boolean);

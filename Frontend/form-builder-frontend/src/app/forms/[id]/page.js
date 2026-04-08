@@ -612,11 +612,11 @@ export default function PublicFormPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Transmission Successful</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Form Submitted</span>
                 </div>
-                <h1 className="text-4xl font-black text-slate-900 leading-none tracking-tight">Response Received</h1>
+                <h1 className="text-4xl font-black text-slate-900 leading-none tracking-tight">Thank You</h1>
                 <p className="text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
-                  Your data has been securely ingested into the system. Thank you for your contribution to the {formConfig.formName} protocol.
+                  Your data has been saved successfully. Thank you for your contribution to the {formConfig.formName}.
                 </p>
               </div>
 
@@ -667,7 +667,7 @@ export default function PublicFormPage() {
             <div className="relative space-y-2">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Secure Data Protocol</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Form Details</span>
               </div>
               <h1 className="text-5xl font-black text-slate-900 leading-none tracking-tight">{formConfig.formName}</h1>
 
@@ -676,13 +676,13 @@ export default function PublicFormPage() {
                   {/* Phase Tracker */}
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Operational Phase</span>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3.5">Build your form</p>
                       <p className="text-xl font-black text-slate-800">
                         {currentPage + 1} <span className="text-slate-300 mx-1 font-medium">/</span> {totalPages}
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 block">Completion Integrity</span>
+                      <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 block">Progress</span>
                       <div className="flex items-center gap-3">
                         <span className="text-xl font-black text-primary">{progressPct}%</span>
                         <div className="w-12 h-12 relative flex items-center justify-center">
@@ -729,7 +729,7 @@ export default function PublicFormPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-[15px] text-slate-500 font-medium pt-4 max-w-md leading-relaxed">System ready for data ingestion. Please provide the required parameters below.</p>
+                <p className="text-[15px] text-slate-500 font-medium pt-4 max-w-md leading-relaxed">System ready for your input. Please fill in the details below.</p>
               )}
             </div>
           </div>
@@ -740,10 +740,10 @@ export default function PublicFormPage() {
               <div className="flex items-center justify-between px-8 py-5 bg-red-100/50 border-b border-red-200">
                 <div className="flex items-center gap-3">
                   <AlertCircle size={20} className="text-red-600 animate-pulse" />
-                  <span className="text-xs font-black text-red-700 uppercase tracking-[0.2em]">Validation Protocol Failure</span>
+                  <span className="text-xs font-black text-red-700 uppercase tracking-[0.2em]">Please Check Errors</span>
                 </div>
                 <span className="bg-red-200/50 text-red-700 px-3 py-1 rounded-full text-[10px] font-black">
-                  {totalErrors} CRITICAL POINT{totalErrors > 1 ? "S" : ""}
+                  {totalErrors} ERROR{totalErrors > 1 ? "S" : ""} FOUND
                 </span>
               </div>
               <div className="p-8 grid gap-4">
@@ -759,7 +759,7 @@ export default function PublicFormPage() {
                         {i + 1}
                       </div>
                       <div className="flex-1">
-                        <span className="text-[10px] font-black text-red-300 uppercase tracking-widest block mb-1">{fieldName} Identifier</span>
+                        <span className="text-[10px] font-black text-red-300 uppercase tracking-widest block mb-1">{fieldName} Field</span>
                         <p className="text-sm font-black text-red-900 leading-tight">{msg}</p>
                       </div>
                       <ChevronRight size={16} className="text-red-200 group-hover:text-red-500 transition-colors mt-2" />
@@ -803,7 +803,7 @@ export default function PublicFormPage() {
                   <AlertCircle size={28} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">System Rejection</h3>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Form Error</h3>
                   <p className="text-[15px] text-red-600/80 font-inter leading-relaxed">{errors._ruleError[0]}</p>
                 </div>
               </div>
@@ -819,7 +819,7 @@ export default function PublicFormPage() {
                 <button type="button" onClick={handleBack}
                   className="group flex items-center gap-4 px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:border-primary/20 hover:text-primary hover:bg-primary/5 transition-all active:scale-95">
                   <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                  Phase Return
+                  Previous Step
                 </button>
               )}
 
@@ -836,12 +836,12 @@ export default function PublicFormPage() {
                     : "bg-slate-900 text-white hover:bg-primary shadow-primary/20 hover:scale-[1.02] active:scale-95"
                     }`}>
                   {isSubmitting ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />}
-                  {isSubmitting ? "Orchestrating..." : "Finalize Protocol"}
+                  {isSubmitting ? "Submitting..." : "Submit Form"}
                 </button>
               ) : (
                 <button type="submit"
                   className="flex-1 h-20 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 bg-slate-900 text-white hover:bg-primary shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95">
-                  Next Interface <ChevronRight size={24} className="animate-bounce-x" />
+                  Next Step <ChevronRight size={24} className="animate-bounce-x" />
                 </button>
               )}
             </div>

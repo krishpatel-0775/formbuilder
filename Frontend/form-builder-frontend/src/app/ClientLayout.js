@@ -37,7 +37,7 @@ export default function ClientLayout({ children }) {
     }, [isCollapsed, isSidebarOpen]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
+        <div className="h-screen flex flex-col bg-background selection:bg-primary/20 overflow-hidden">
             {/* Header Navigation */}
             <header className="sticky top-0 z-[1000] w-full border-b bg-white/70 backdrop-blur-xl transition-all">
                 <div className="flex h-16 items-center justify-between px-6 lg:px-10">
@@ -94,7 +94,7 @@ export default function ClientLayout({ children }) {
                 <main
                     className={`flex-1 flex flex-col min-w-0 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] relative`}
                 >
-                    <div className="flex-1 overflow-hidden bg-mesh relative">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar no-scrollbar bg-mesh relative">
                         {children}
                     </div>
                 </main>

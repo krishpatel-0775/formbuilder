@@ -58,12 +58,12 @@ export function SortableFieldItem({
         <div className="flex-1 ml-10 p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm group-hover:shadow-xl transition-all">
           <div className="flex items-center gap-2 mb-3">
               <div className="w-1 h-4 bg-orange-400 rounded-full" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-400">Section Landmark</span>
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Form Field</p>
           </div>
           <input
             value={field.label}
             onChange={(e) => updateField(field.id, "label", e.target.value)}
-            placeholder="Architecture landmark title..."
+            placeholder="Section Label..."
             className="w-full text-2xl font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"
           />
           <div className="flex gap-2 mt-4">
@@ -163,11 +163,11 @@ export function SortableFieldItem({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{field.type}</span>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Field ID:</span>
             {field.required && <div className="w-1 h-1 rounded-full bg-red-400" />}
         </div>
         <input 
-            placeholder="Define architecture component name..." 
+            placeholder="Page Divider..." 
             value={field.label} 
             onChange={(e) => updateField(field.id, "label", e.target.value)}
             className="w-full text-lg font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"

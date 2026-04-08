@@ -14,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
- 
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -214,7 +215,7 @@ public class SubmissionService {
         // ── Schema drift check ────────────────────────────────────────────────────
         List<String> driftedColumns = schemaManager.detectDrift(tableName, formFields);
         if (!driftedColumns.isEmpty()) {
-            throw new com.example.formBuilder.exception.ValidationException(
+            throw new ValidationException(
                 "Submission blocked: the form's data table is out of sync with its field definitions. " +
                 "Missing columns: " + String.join(", ", driftedColumns) + ". " +
                 "Please contact the form administrator."
@@ -489,10 +490,10 @@ public class SubmissionService {
 
             case "date" -> {
 
-                java.time.LocalDate inputDate = null;
+                LocalDate inputDate = null;
 
                 try {
-                    inputDate = java.time.LocalDate.parse(stringValue);
+                    inputDate = LocalDate.parse(stringValue);
                 } catch (Exception e) {
                     errors.add(field.getFieldName() + " must be a valid date (yyyy-MM-dd)");
                 }

@@ -260,10 +260,10 @@ export default function BuilderPage() {
     };
 
     return (
-        <div className="flex h-full bg-background text-slate-900 font-sans overflow-hidden">
+        <div className="flex h-screen bg-background text-slate-900 font-sans overflow-hidden">
             <Toolbar handleDragStart={handleDragStart} />
 
-            <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative overflow-hidden">
+            <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative h-full overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-40 pointer-events-none" />
 
                 <FormHeader
@@ -272,14 +272,14 @@ export default function BuilderPage() {
                     saveForm={saveForm}
                     isSaving={isPublishing}
                     showSuccess={showSuccess}
-                    saveLabel="Draft Form"
+                    saveLabel="Save Form"
                     saveIcon={<Rocket size={18} strokeWidth={2.5} />}
                     userRole={userRole}
                     onPreview={() => setIsPreviewOpen(true)}
                 />
 
                 <div onDrop={handleDrop} onDragOver={handleDragOver}
-                    className="flex-1 p-10 overflow-auto custom-scrollbar relative z-0">
+                    className="flex-1 p-10 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-0">
                     <div className="max-w-3xl mx-auto space-y-6 pb-20">
                         {fields.length === 0 && (
                             <div className="h-[40vh] border-2 border-slate-200 border-dashed rounded-[3rem] flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm group hover:border-primary/30 transition-colors">
@@ -288,11 +288,11 @@ export default function BuilderPage() {
                                         <MousePointer2 size={32} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform" />
                                     </div>
                                 </div>
-                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Empty Workspace</h3>
-                                <p className="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest">Drag components here to start</p>
+                                <h1 className="text-4xl font-black text-slate-900 leading-none tracking-tight">Thank You</h1>
+                                <p className="text-[15px] text-slate-500 font-medium pt-4 max-w-md leading-relaxed">System ready for your input. Please fill in the details below.</p>
                                 <div className="mt-8 flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
                                     <Sparkles size={14} className="text-primary" />
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Build something premium</span>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3.5">Build your form</p>
                                 </div>
                             </div>
                         )}
@@ -321,7 +321,7 @@ export default function BuilderPage() {
                                                 {FieldIcons[activeSortField?.type]}
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Architectural Component</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Form Field</p>
                                                 <span className="text-lg font-black text-slate-900 tracking-tight">{activeSortField?.label || "Untitled Component"}</span>
                                             </div>
                                         </div>
