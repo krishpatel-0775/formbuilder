@@ -217,7 +217,11 @@ The system supports a wide range of field types to handle diverse data collectio
 * **Stability**: Unlike `fieldName` (Label), which can be changed for UI purposes, the `fieldKey` is designed to be immutable once assigned, serving as the stable database column mapping.
 * **Binding**: Frontend components MUST bind their `name` or `id` attribute to this key.
 
-## 4.2 Field Key Generation Logic (Slugification)
+## 4.2 Field Sequencing & Preservation
+*   **Automatic Ordering**: The `fields` array returned in the Metadata API is pre-sorted based on the administrator's layout in the Form Builder.
+*   **The Blueprint Rule**: The frontend renderer should iterate through the `fields` array exactly as received. There is no need for manual client-side sorting or secondary "order rules".
+
+## 4.3 Field Key Generation Logic (Slugification)
 The system automatically derives the `fieldKey` from the `fieldName` (Label) using a deterministic **Slugification Algorithm**. Developers should understand this logic to predict keys for their submission payloads.
 
 ### The Algorithm:

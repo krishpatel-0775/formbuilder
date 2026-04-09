@@ -189,24 +189,10 @@ export default function PublicFormPage() {
 
             const targets = new Set(
               parsedRules
-                .filter((r) => r.action?.type === "SHOW" && r.action?.targetField && r.action.targetField !== "__FIELD_ORDER__")
+                .filter((r) => r.action?.type === "SHOW" && r.action?.targetField)
                 .map((r) => r.action.targetField)
             );
             setShowTargetFields(targets);
-
-            const orderRule = parsedRules.find(r => r.action?.targetField === "__FIELD_ORDER__");
-            if (orderRule && orderRule.action?.message && data.fields) {
-              const orderArray = orderRule.action.message.split(",");
-              data.fields.sort((a, b) => {
-                let aName = a.fieldName || "";
-                let bName = b.fieldName || "";
-                let aIdx = orderArray.indexOf(aName);
-                let bIdx = orderArray.indexOf(bName);
-                if (aIdx === -1) aIdx = 999;
-                if (bIdx === -1) bIdx = 999;
-                return aIdx - bIdx;
-              });
-            }
           }
         } catch (e) {
           console.warn("Could not load rules:", e);
@@ -265,7 +251,7 @@ export default function PublicFormPage() {
     const newVisibility = {};
     formRules.forEach(rule => {
       const action = rule.action;
-      if (!action || !action.targetField || action.targetField === "__FIELD_ORDER__") return;
+      if (!action || !action.targetField) return;
       if (action.type !== "SHOW" && action.type !== "HIDE") return;
 
       if (evaluateConditionNode(rule.condition, currentData)) {

@@ -482,55 +482,43 @@ export default function DocsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        <div className="space-y-8">
-                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Logical Operators</h4>
-                                <div className="space-y-4">
-                                    {[
-                                        { op: "EQUALS", desc: "Strict equality check" },
-                                        { op: "NOT_EQUALS", desc: "Inequality check" },
-                                        { op: "GREATER_THAN", desc: "Numeric is greater than" },
-                                        { op: "LESS_THAN", desc: "Numeric is less than" },
-                                        { op: "GREATER_THAN_OR_EQUAL", desc: "Numeric is >= threshold" },
-                                        { op: "LESS_THAN_OR_EQUAL", desc: "Numeric is <= threshold" },
-                                        { op: "CONTAINS", desc: "Substring matching" },
-                                        { op: "STARTS_WITH", desc: "Prefix matching" },
-                                        { op: "ENDS_WITH", desc: "Suffix matching" },
-                                        { op: "IS_EMPTY", desc: "Null or blank check" },
-                                        { op: "IS_NOT_EMPTY", desc: "Presence check" },
-                                        { op: "REGEX_MATCH", label: "Matches Java Regex Pattern" }
-                                    ].map(item => (
-                                        <div key={item.op} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                                            <code className="text-[10px] font-black text-primary">{item.op}</code>
-                                            <span className="text-[9px] text-slate-500 font-bold">{item.desc || item.label}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Action Types</h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {["SHOW", "HIDE", "REQUIRE", "VALIDATION_ERROR"].map(action => (
-                                        <div key={action} className="p-4 bg-slate-900 rounded-2xl text-center">
-                                            <code className="text-[10px] font-black text-emerald-400">{action}</code>
-                                        </div>
-                                    ))}
-                                </div>
+                        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm h-full">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Logical Operators</h4>
+                            <div className="space-y-4">
+                                {[
+                                    { op: "EQUALS", desc: "Strict equality check" },
+                                    { op: "NOT_EQUALS", desc: "Inequality check" },
+                                    { op: "GREATER_THAN", desc: "Numeric is greater than" },
+                                    { op: "LESS_THAN", desc: "Numeric is less than" },
+                                    { op: "GREATER_THAN_OR_EQUAL", desc: "Numeric is >= threshold" },
+                                    { op: "LESS_THAN_OR_EQUAL", desc: "Numeric is <= threshold" },
+                                    { op: "CONTAINS", desc: "Substring matching" },
+                                    { op: "STARTS_WITH", desc: "Prefix matching" },
+                                    { op: "ENDS_WITH", desc: "Suffix matching" },
+                                    { op: "IS_EMPTY", desc: "Null or blank check" },
+                                    { op: "IS_NOT_EMPTY", desc: "Presence check" },
+                                    { op: "REGEX_MATCH", label: "Matches Java Regex Pattern" }
+                                ].map(item => (
+                                    <div key={item.op} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <code className="text-[10px] font-black text-primary">{item.op}</code>
+                                        <span className="text-[9px] text-slate-500 font-bold">{item.desc || item.label}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden">
-                            <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rule Definition (JSON)</span>
-                                <button 
-                                    onClick={() => handleCopy(`{ "condition": { ... }, "action": { ... } }`, "rules-json")}
-                                    className="text-slate-500 hover:text-white"
-                                >
-                                    {copiedId === "rules-json" ? <Check size={16} /> : <Copy size={16} />}
-                                </button>
-                            </div>
-                            <div className="p-8">
+                        <div className="space-y-8">
+                            <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                                <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rule Definition (JSON)</span>
+                                    <button 
+                                        onClick={() => handleCopy(`{ "condition": { ... }, "action": { ... } }`, "rules-json")}
+                                        className="text-slate-500 hover:text-white"
+                                    >
+                                        {copiedId === "rules-json" ? <Check size={16} /> : <Copy size={16} />}
+                                    </button>
+                                </div>
+                                <div className="p-8">
 <pre className="p-8 bg-slate-950/50 rounded-3xl text-sm text-primary font-mono overflow-x-auto leading-relaxed">
 {`{
   "condition": {
@@ -551,6 +539,18 @@ export default function DocsPage() {
   }
 }`}
 </pre>
+                                </div>
+                            </div>
+
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Action Types</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {["SHOW", "HIDE", "REQUIRE", "VALIDATION_ERROR"].map(action => (
+                                        <div key={action} className="p-4 bg-slate-900 rounded-2xl text-center hover:bg-black transition-all cursor-default">
+                                            <code className="text-[10px] font-black text-emerald-400">{action}</code>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -976,6 +976,23 @@ export default function DocsPage() {
                                         <code className="text-xs font-black text-primary bg-primary/5 px-3 py-1 rounded-lg">{row.t}</code>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* New Concept: Automatic Sequencing */}
+                    <div className="mt-8 p-10 bg-primary/5 rounded-[3rem] border border-primary/10">
+                        <div className="flex items-start gap-6">
+                            <div className="p-4 bg-white rounded-2xl text-primary shadow-sm">
+                                <Activity size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Architectural Field Sequencing</h3>
+                                <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-3xl">
+                                    The order of the <code className="text-primary font-bold">fields</code> array is authoritative. 
+                                    The backend performs the heavy lifting by pre-sorting fields according to the Form Builder layout. 
+                                    <strong>No manual sorting logic is required on the client side.</strong>
+                                </p>
                             </div>
                         </div>
                     </div>

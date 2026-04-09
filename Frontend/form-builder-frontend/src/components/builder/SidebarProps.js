@@ -33,23 +33,6 @@ export function DefaultValuePanel({ activeField, updateField, handleNumberInput 
         />
       )}
 
-      {activeField.type === "date" && (
-        <input
-          type="date"
-          value={activeField.defaultValue ?? ""}
-          onChange={(e) => updateField(activeField.id, "defaultValue", e.target.value)}
-          className={base}
-        />
-      )}
-
-      {activeField.type === "time" && (
-        <input
-          type="time"
-          value={activeField.defaultValue ?? ""}
-          onChange={(e) => updateField(activeField.id, "defaultValue", e.target.value)}
-          className={base}
-        />
-      )}
 
       {(activeField.type === "radio" || activeField.type === "select") &&
         !activeField.sourceTable && activeField.options?.length > 0 && (

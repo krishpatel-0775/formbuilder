@@ -14,6 +14,7 @@ export function FormFieldWrapper({
   onCheckboxChange,
   label // Added label prop for display
 }) {
+  const [isOpen, setIsOpen] = useState(false); // For select field
   const fieldIdentifier = field.fieldKey || field.fieldName;
   const displayLabel = label || field.fieldName;
 
@@ -26,6 +27,10 @@ export function FormFieldWrapper({
     ? "border-red-200 bg-red-50/20 text-red-900 placeholder:text-red-200 focus:border-red-400 focus:ring-8 focus:ring-red-50"
     : "border-slate-200 bg-white text-slate-800 placeholder:text-slate-300 focus:border-primary focus:ring-8 focus:ring-primary/5 hover:border-slate-300 shadow-sm"
     }`;
+  
+  const currentVals = Array.isArray(value)
+    ? value
+    : (value || "").toString().split(",").map(v => v.trim()).filter(Boolean);
 
   // ── Static elements: render and return early (no label/input/errors) ──
   if (field.fieldType === "heading") {
@@ -157,9 +162,6 @@ export function FormFieldWrapper({
             const optLabel = isObj ? opt.value : opt;
 
             // Handle both array and comma-separated string states
-            const currentVals = Array.isArray(value)
-              ? value
-              : (value || "").toString().split(",").map(v => v.trim()).filter(Boolean);
             const isActive = currentVals.some(v => v == optVal);
 
             return (
@@ -187,13 +189,8 @@ export function FormFieldWrapper({
       )}
 
       {/* SELECT (Single/Multi) */}
-      {field.fieldType === "select" && (() => {
-        const [isOpen, setIsOpen] = useState(false);
-        const currentVals = Array.isArray(value)
-          ? value
-          : (value || "").toString().split(",").map(v => v.trim()).filter(Boolean);
-
-        return !field.isMultiSelect ? (
+      {field.fieldType === "select" && (
+        !field.isMultiSelect ? (
           <div className="relative group/select">
             <select value={value || ""}
               onChange={(e) => onChange(fieldIdentifier, e.target.value)}
@@ -228,6 +225,7 @@ export function FormFieldWrapper({
                       {label}
                       {!field.isReadOnly && (
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             onCheckboxChange(fieldIdentifier, val);
@@ -285,8 +283,8 @@ export function FormFieldWrapper({
               </>
             )}
           </div>
-        );
-      })()}
+        )
+      )}
 
       {/* TOGGLE */}
       {field.fieldType === "toggle" && (() => {
@@ -313,10 +311,9 @@ export function FormFieldWrapper({
       })()}
 
       {/* FILE UPLOAD */}
-      {field.fieldType === "file_upload" && (() => {
-        const [uploading, setUploading] = (typeof useState !== 'undefined') ? [false, () => { }] : [false, () => { }]; // Placeholder if needed, but we can manage local state here if wrapper allows
-        return <FileUploadItem field={field} value={value} onChange={onChange} hasError={hasError} inputCls={inputCls} />;
-      })()}
+      {field.fieldType === "file_upload" && (
+        <FileUploadItem field={field} value={value} onChange={onChange} hasError={hasError} inputCls={inputCls} />
+      )}
 
       {/* GENERIC INPUTS */}
       {!["textarea", "radio", "checkbox", "select", "toggle", "file_upload", "heading", "paragraph", "divider"].includes(field.fieldType) && (

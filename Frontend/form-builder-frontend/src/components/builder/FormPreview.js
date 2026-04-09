@@ -48,6 +48,7 @@ export function FormPreview({ isOpen, onClose, fields, formName }) {
 
           <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
             <button
+              type="button"
               onClick={() => setViewMode("desktop")}
               className={`p-2 rounded-lg transition-all ${viewMode === "desktop" ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
               title="Desktop View"
@@ -55,6 +56,7 @@ export function FormPreview({ isOpen, onClose, fields, formName }) {
               <Monitor size={18} />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode("mobile")}
               className={`p-2 rounded-lg transition-all ${viewMode === "mobile" ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
               title="Mobile View"
@@ -64,6 +66,7 @@ export function FormPreview({ isOpen, onClose, fields, formName }) {
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl transition-all"
             title="Close Preview"
@@ -96,6 +99,7 @@ export function FormPreview({ isOpen, onClose, fields, formName }) {
                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No data was actually saved in preview mode</p>
                   </div>
                   <button 
+                    type="button"
                     onClick={() => setSubmitted(false)}
                     className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-primary/20"
                   >

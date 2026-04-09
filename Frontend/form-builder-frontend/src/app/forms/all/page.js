@@ -177,27 +177,6 @@ export default function FormVaultPage() {
         });
     };
 
-    const handleCopyJson = () => {
-        if (!selectedFormForLinks) return;
-        
-        const json = {
-            formId: selectedFormForLinks.id,
-            versionId: selectedFormForLinks.formVersionId || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            isDraft: true,
-            values: {
-                field_key_1: "Value 1",
-                field_key_2: "Value 2",
-                field_key_3: "Value 3"
-            }
-        };
-        
-        navigator.clipboard.writeText(JSON.stringify(json, null, 2)).then(() => {
-            setCopiedLinkType('json');
-            setTimeout(() => setCopiedLinkType(null), 2000);
-        }).catch(err => {
-            console.error("Failed to copy JSON:", err);
-        });
-    };
 
     const filteredForms = forms
         .filter(f => f.formName?.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -626,46 +605,6 @@ export default function FormVaultPage() {
                                     </button>
                                 </div>
 
-                                <div className="mt-8 space-y-4">
-                                    <p className="text-[11px] font-[900] text-slate-400 uppercase tracking-[0.2em] pl-4">JSON Architecture</p>
-                                    <div className="relative rounded-[2.5rem] overflow-hidden border-2 border-slate-100 shadow-2xl">
-                                        <div className="bg-slate-900 px-8 py-4 border-b border-slate-800 flex items-center justify-between">
-                                            <div className="flex gap-2">
-                                                <div className="w-3 h-3 rounded-full bg-red-500/20" />
-                                                <div className="w-3 h-3 rounded-full bg-amber-500/20" />
-                                                <div className="w-3 h-3 rounded-full bg-emerald-500/20" />
-                                            </div>
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">application/json</span>
-                                        </div>
-                                        <pre className="p-8 bg-slate-900 text-[13px] font-bold text-slate-300 font-mono overflow-x-auto custom-scrollbar leading-[1.8]">
-{`{
-  "formId": "${selectedFormForLinks.id}",
-  "versionId": "${selectedFormForLinks.formVersionId || "3fa85f64-5717-4562-b3fc-2c963f66afa6"}",
-  "values": {
-    "field_key_1": "Your Value",
-    "field_key_2": "Your Value",
-    "field_key_3": "Your Value"
-  }
-}`}
-                                        </pre>
-                                        <div className="absolute right-6 bottom-6">
-                                            <button 
-                                                onClick={handleCopyJson}
-                                                className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl ${
-                                                    copiedLinkType === 'json' 
-                                                    ? "bg-emerald-500 text-white shadow-emerald-500/40" 
-                                                    : "bg-[var(--primary)] text-white hover:scale-105 shadow-[var(--primary-glow)]"
-                                                }`}
-                                            >
-                                                {copiedLinkType === 'json' ? (
-                                                    <><Check size={18} strokeWidth={3} /> Copied</>
-                                                ) : (
-                                                    <><Copy size={18} strokeWidth={3} /> Copy Payload</>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 

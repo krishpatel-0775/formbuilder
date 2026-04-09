@@ -158,18 +158,6 @@ export default function EditFormPage() {
           if (rulesRaw) {
             rulesArr = typeof rulesRaw === "string" ? JSON.parse(rulesRaw) : rulesRaw;
             rulesArr = rulesArr || [];
-            const orderRule = rulesArr.find(r => r.action?.targetField === "__FIELD_ORDER__");
-            if (orderRule && orderRule.action?.message) {
-              const orderArray = orderRule.action.message.split(",");
-              loadedFields.sort((a, b) => {
-                let aIdx = orderArray.indexOf(a._orderKey || "");
-                let bIdx = orderArray.indexOf(b._orderKey || "");
-                if (aIdx === -1) aIdx = 999;
-                if (bIdx === -1) bIdx = 999;
-                return aIdx - bIdx;
-              });
-            }
-            rulesArr = rulesArr.filter(r => r.action?.targetField !== "__FIELD_ORDER__");
           }
         } catch (e) { console.warn("Could not parse rules", e); }
         // FIXED: log status for debugging
@@ -432,12 +420,6 @@ export default function EditFormPage() {
           return r;
         });
 
-        const currentOrderList = fields.map((f, idx) => {
-          if (isDisplayOnly(f.type)) return `${f.type}_${idx}`;
-          return f.key || (f.label ? generateColumnName(f.label) : "");
-        }).filter(Boolean).join(",");
-
-        cleanRules.push({ action: { type: "SHOW", targetField: "__FIELD_ORDER__", message: currentOrderList } });
 
         const rulesUrl = versionId
           ? ENDPOINTS.formVersionRules(id, versionId)
