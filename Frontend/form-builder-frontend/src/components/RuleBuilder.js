@@ -4,11 +4,18 @@ import { useState } from "react";
 import { Plus, Trash2, GitBranch, AlertTriangle, Eye, EyeOff, Star, X, Sparkles, ChevronRight, Zap, Target } from "lucide-react";
 
 const OPERATORS = [
-    { value: "EQUALS", label: "Strictly Equals" },
-    { value: "NOT_EQUALS", label: "Does Not Equal" },
-    { value: "GREATER_THAN", label: "Greater Than" },
-    { value: "LESS_THAN", label: "Less Than" },
-    { value: "CONTAINS", label: "Includes Phrase" },
+    { value: "EQUALS", label: "Equals" },
+    { value: "NOT_EQUALS", label: "Not Equals" },
+    { value: "GREATER_THAN", label: "Greater Than (>)" },
+    { value: "LESS_THAN", label: "Less Than (<)" },
+    { value: "GREATER_THAN_OR_EQUAL", label: "Greater or Equal (>=)" },
+    { value: "LESS_THAN_OR_EQUAL", label: "Less or Equal (<=)" },
+    { value: "CONTAINS", label: "Contains" },
+    { value: "STARTS_WITH", label: "Starts With" },
+    { value: "ENDS_WITH", label: "Ends With" },
+    { value: "IS_EMPTY", label: "Is Empty" },
+    { value: "IS_NOT_EMPTY", label: "Is Not Empty" },
+    { value: "REGEX_MATCH", label: "Regex Match" },
 ];
 
 const ACTION_TYPES = [
@@ -25,8 +32,14 @@ const LOGICAL_OPERATORS = [
 
 const emptyCondition = () => ({ field: "", operator: "EQUALS", value: "" });
 
-export default function RuleBuilder({ rules = [], onChange, fieldNames = [], defaultTargetField = "" }) {
+export default function RuleBuilder({ rules = [], onChange, fieldNames = [], defaultTargetField = "", isSidebar = false }) {
     const [expandedRules, setExpandedRules] = useState(new Set());
+
+    // Ensure all rules have a stable _id for local UI state
+    const rulesWithIds = rules.map((r, i) => {
+        if (r._id) return r;
+        return { ...r, _id: `temp-${i}-${r.action?.targetField}` };
+    });
 
     const addRule = () => {
         const rule = {
@@ -35,7 +48,7 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                 logicalOperator: "AND",
                 conditions: [emptyCondition()],
             },
-            action: { type: "SHOW", targetField: defaultTargetField, message: "" },
+            action: { type: "SHOW", targetField: defaultTargetField, message: "", scope: "FIELD" },
         };
         onChange([...rules, rule]);
         setExpandedRules((prev) => new Set([...prev, rule._id]));
@@ -54,7 +67,13 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
     };
 
     const updateRule = (idx, updater) => {
-        onChange(rules.map((r, i) => (i === idx ? updater(r) : r)));
+        onChange(rulesWithIds.map((r, i) => {
+            if (i === idx) {
+                const updated = updater(r);
+                return { ...updated, _id: r._id }; // Force preserve _id
+            }
+            return r;
+        }));
     };
 
     const addCondition = (ruleIdx) => {
@@ -113,6 +132,31 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
     const inputCls = "w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-[13px] font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-200 shadow-sm";
     const selectCls = inputCls + " appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%208l5%205%205-5%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_15px_center] pr-12";
 
+    const getRulePreview = (rule) => {
+        const conditions = rule.condition?.conditions || [];
+        if (conditions.length === 0) return "Incomplete rule logic.";
+        
+        const condStrs = conditions.map(c => {
+            const field = c.field || "?";
+            const op = OPERATORS.find(o => o.value === c.operator)?.label || c.operator;
+            const val = ["IS_EMPTY", "IS_NOT_EMPTY"].includes(c.operator) ? "" : ` '${c.value || ""}'`;
+            return `${field} ${op.toLowerCase()}${val}`;
+        });
+        
+        const logic = rule.condition?.logicalOperator || "AND";
+        const ifStr = condStrs.join(` ${logic} `);
+        
+        const action = rule.action || {};
+        const type = ACTION_TYPES.find(a => a.value === action.type)?.label || action.type;
+        const target = action.targetField || "Form";
+        const scopeStr = action.type === "VALIDATION_ERROR" 
+            ? (action.scope === "FORM" ? "Global form error" : `Error on ${target}`)
+            : `${type} ${target}`;
+            
+        const messageStr = action.message ? `: '${action.message}'` : "";
+        return `If ${ifStr} → ${scopeStr}${messageStr}`;
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between px-1">
@@ -142,7 +186,7 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
             )}
 
             <div className="space-y-4">
-                {rules.map((rule, ruleIdx) => {
+                {rulesWithIds.map((rule, ruleIdx) => {
                     const isExpanded = expandedRules.has(rule._id);
                     const actionType = rule.action?.type || "SHOW";
                     const actionInfo = ACTION_TYPES.find((a) => a.value === actionType);
@@ -160,39 +204,63 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                         >
                             {/* Rule header */}
                             <div
-                                className={`flex items-center gap-4 p-5 cursor-pointer transition-all ${isExpanded ? "bg-primary/5" : ""}`}
+                                className={`p-4 cursor-pointer transition-all space-y-3 ${isExpanded ? "bg-primary/5" : ""}`}
                                 onClick={() => toggleExpand(rule._id)}
                             >
-                                <div className={`flex items-center gap-3 flex-1 px-4 py-2 rounded-2xl border text-[11px] font-black uppercase tracking-widest transition-all ${styleClass}`}>
+                                {/* Identity & Actions */}
+                                <div className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border text-[11px] font-black uppercase tracking-widest transition-all ${styleClass}`}>
                                     <div className={`p-1.5 rounded-lg ${isExpanded ? "bg-white shadow-sm" : "bg-white/50"}`}>
                                         {actionInfo?.icon}
                                     </div>
-                                    <span>{actionInfo?.label}</span>
-                                    {rule.action?.targetField && (
-                                        <>
-                                            <ChevronRight size={12} className="opacity-30" />
-                                            <span className="text-slate-400 font-mono tracking-tighter lowercase">{rule.action.targetField}</span>
-                                        </>
+                                    <span className="truncate">{actionInfo?.label}</span>
+                                    {rule.action?.targetField && rule.action?.scope !== "FORM" && (
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <ChevronRight size={12} className="opacity-30 flex-shrink-0" />
+                                            <span className="text-slate-400 font-mono tracking-tighter lowercase truncate">{rule.action.targetField}</span>
+                                        </div>
                                     )}
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); removeRule(ruleIdx); }}
-                                        className="w-10 h-10 flex items-center justify-center rounded-2xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                    <div className={`w-6 h-6 flex items-center justify-center text-slate-300 transition-transform duration-500 ${isExpanded ? "rotate-90 text-primary" : ""}`}>
-                                        <ChevronRight size={20} strokeWidth={3} />
+                                    {rule.action?.scope === "FORM" && (
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <ChevronRight size={12} className="opacity-30" />
+                                            <span className="text-slate-300 font-black tracking-widest text-[8px] border border-slate-200 px-2 py-0.5 rounded-full">FORM</span>
+                                        </div>
+                                    )}
+
+                                    <div className="ml-auto flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); removeRule(ruleIdx); }}
+                                            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            title="Delete Rule"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                        <div className={`w-6 h-6 flex items-center justify-center text-slate-400 transition-all duration-500 ${isExpanded ? "rotate-90 text-primary" : ""}`}>
+                                            <ChevronRight size={16} strokeWidth={3} />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Rule body */}
                             {isExpanded && (
-                                <div className="p-8 pt-0 space-y-8 animate-in fade-in duration-700">
+                                <div 
+                                    className="p-8 pt-0 space-y-8 animate-in fade-in duration-700"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
                                     <div className="w-full h-px bg-slate-100/50" />
+
+                                    {/* Operational Summary - Prominent at the top */}
+                                    <div className="bg-slate-900 rounded-[1.5rem] p-6 text-white space-y-4 shadow-2xl shadow-slate-900/10 border border-white/5 relative overflow-hidden group/summary">
+                                        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover/summary:scale-110 transition-transform duration-700">
+                                            <GitBranch size={80} />
+                                        </div>
+                                        <div className="flex items-center gap-2 relative z-10">
+                                            <GitBranch size={12} className="text-primary" />
+                                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">Operational Summary</span>
+                                        </div>
+                                        <p className="text-[14px] font-bold leading-relaxed relative z-10 tracking-tight">{getRulePreview(rule)}</p>
+                                    </div>
 
                                     {/* IF Section */}
                                     <div className="space-y-6">
@@ -246,8 +314,8 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                             {fieldNames.map((name) => <option key={name} value={name}>{name}</option>)}
                                                         </select>
 
-                                                        <div className="flex gap-3">
-                                                            <div className="w-[45%]">
+                                                        <div className="space-y-3">
+                                                            <div className="w-full">
                                                                 <select
                                                                     value={cond.operator}
                                                                     onChange={(e) => updateCondition(ruleIdx, condIdx, "operator", e.target.value)}
@@ -256,15 +324,17 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                                     {OPERATORS.map((op) => <option key={op.value} value={op.value}>{op.label}</option>)}
                                                                 </select>
                                                             </div>
-                                                            <div className="flex-1">
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="Threshold value..."
-                                                                    value={cond.value ?? ""}
-                                                                    onChange={(e) => updateCondition(ruleIdx, condIdx, "value", e.target.value)}
-                                                                    className={inputCls}
-                                                                />
-                                                            </div>
+                                                            {!["IS_EMPTY", "IS_NOT_EMPTY"].includes(cond.operator) && (
+                                                                <div className="w-full">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Threshold value..."
+                                                                        value={cond.value ?? ""}
+                                                                        onChange={(e) => updateCondition(ruleIdx, condIdx, "value", e.target.value)}
+                                                                        className={inputCls}
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -311,7 +381,17 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                             })}
                                         </div>
 
-                                        {actionType !== "VALIDATION_ERROR" && (
+                                        {(actionType !== "VALIDATION_ERROR" || (actionType === "VALIDATION_ERROR" && rule.action?.scope !== "FORM")) && isSidebar && (
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Fixed Target Target</label>
+                                                <div className="w-full bg-slate-100/50 border border-slate-200 p-4 rounded-2xl text-[13px] font-black text-slate-400 flex items-center gap-3">
+                                                    <Target size={14} className="opacity-50" />
+                                                    <span>{defaultTargetField || "Current Field"}</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {actionType !== "VALIDATION_ERROR" && !isSidebar && (
                                             <div className="space-y-2">
                                                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Dimension</label>
                                                 <select
@@ -322,6 +402,49 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                     <option value="" disabled>Select architectural target...</option>
                                                     {fieldNames.map((name) => <option key={name} value={name}>{name}</option>)}
                                                 </select>
+                                            </div>
+                                        )}
+
+                                        {actionType === "VALIDATION_ERROR" && (
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateAction(ruleIdx, "scope", "FIELD")}
+                                                        className={`flex-1 py-3 px-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                                            rule.action?.scope !== "FORM" 
+                                                            ? "bg-primary/5 border-primary text-primary" 
+                                                            : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
+                                                        }`}
+                                                    >
+                                                        Field Error
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateAction(ruleIdx, "scope", "FORM")}
+                                                        className={`flex-1 py-3 px-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                                            rule.action?.scope === "FORM" 
+                                                            ? "bg-primary/5 border-primary text-primary" 
+                                                            : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
+                                                        }`}
+                                                    >
+                                                        Form Error
+                                                    </button>
+                                                </div>
+
+                                                {rule.action?.scope !== "FORM" && !isSidebar && (
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Field</label>
+                                                        <select
+                                                            value={rule.action?.targetField || ""}
+                                                            onChange={(e) => updateAction(ruleIdx, "targetField", e.target.value)}
+                                                            className={selectCls}
+                                                        >
+                                                            <option value="" disabled>Select field to anchor error...</option>
+                                                            {fieldNames.map((name) => <option key={name} value={name}>{name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
 
@@ -337,6 +460,7 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                 />
                                             </div>
                                         )}
+
                                     </div>
                                 </div>
                             )}

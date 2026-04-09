@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +60,7 @@ public class ApiResponse<T> {
                 .success(false)
                 .message(message)
                 .status(status)
-                .timestamp(new java.util.Date().toString())
+                .timestamp(new Date().toString())
                 .errors(errors)
                 .build();
     }

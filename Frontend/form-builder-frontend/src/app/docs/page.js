@@ -485,12 +485,20 @@ export default function DocsPage() {
                                     {[
                                         { op: "EQUALS", desc: "Strict equality check" },
                                         { op: "NOT_EQUALS", desc: "Inequality check" },
-                                        { op: "GREATER_THAN", desc: "Numeric comparison" },
-                                        { op: "CONTAINS", desc: "Substring matching" }
+                                        { op: "GREATER_THAN", desc: "Numeric is greater than" },
+                                        { op: "LESS_THAN", desc: "Numeric is less than" },
+                                        { op: "GREATER_THAN_OR_EQUAL", desc: "Numeric is >= threshold" },
+                                        { op: "LESS_THAN_OR_EQUAL", desc: "Numeric is <= threshold" },
+                                        { op: "CONTAINS", desc: "Substring matching" },
+                                        { op: "STARTS_WITH", desc: "Prefix matching" },
+                                        { op: "ENDS_WITH", desc: "Suffix matching" },
+                                        { op: "IS_EMPTY", desc: "Null or blank check" },
+                                        { op: "IS_NOT_EMPTY", desc: "Presence check" },
+                                        { op: "REGEX_MATCH", label: "Matches Java Regex Pattern" }
                                     ].map(item => (
                                         <div key={item.op} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                                            <code className="text-xs font-black text-primary">{item.op}</code>
-                                            <span className="text-[10px] text-slate-500 font-bold">{item.desc}</span>
+                                            <code className="text-[10px] font-black text-primary">{item.op}</code>
+                                            <span className="text-[9px] text-slate-500 font-bold">{item.desc || item.label}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -499,7 +507,7 @@ export default function DocsPage() {
                             <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Action Types</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {["SHOW", "HIDE", "ENABLE", "DISABLE"].map(action => (
+                                    {["SHOW", "HIDE", "REQUIRE", "VALIDATION_ERROR"].map(action => (
                                         <div key={action} className="p-4 bg-slate-900 rounded-2xl text-center">
                                             <code className="text-[10px] font-black text-emerald-400">{action}</code>
                                         </div>
@@ -526,14 +534,16 @@ export default function DocsPage() {
     "conditions": [
       { 
         "field": "user_age", 
-        "operator": "GREATER_THAN", 
+        "operator": "LESS_THAN", 
         "value": "18" 
       }
     ]
   },
   "action": {
-    "type": "SHOW",
-    "targetField": "license_number"
+    "type": "VALIDATION_ERROR",
+    "targetField": "user_age",
+    "message": "Must be 18 to proceed.",
+    "scope": "FIELD"
   }
 }`}
 </pre>
@@ -642,7 +652,7 @@ export default function DocsPage() {
   "message": "Submission successful",
   "data": {
     "submission_id": "8c5b...",
-    "recorded_at": "${new Date().toISOString()}"
+    "recorded_at": "2026-04-09T06:30:00.000Z"
   }
 }`}
                                         </pre>
@@ -737,10 +747,13 @@ export default function DocsPage() {
 <pre className="text-xs text-primary font-mono leading-relaxed">
 {`{
   "success": false,
-  "message": "field_name is required",
-  "data": null,
+  "message": "Validation failed",
+  "errors": {
+    "full_name": ["Min length is 3"],
+    "_FORM_ERROR_": ["Configuration mismatch detected"]
+  },
   "status": 400,
-  "timestamp": "${new Date().toUTCString()}"
+  "timestamp": "2026-04-09T06:30:00 GMT"
 }`}
 </pre>
                             </div>

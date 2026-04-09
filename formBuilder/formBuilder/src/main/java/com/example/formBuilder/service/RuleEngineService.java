@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 
 @Slf4j
@@ -28,7 +29,7 @@ public class RuleEngineService {
             return;
         }
 
-        List<String> requireErrors = new ArrayList<>();
+        Map<String, List<String>> allErrors = new LinkedHashMap<>();
 
         for (FormRuleDTO rule : rules) {
             if (rule.getCondition() == null || rule.getAction() == null) {
@@ -49,7 +50,19 @@ public class RuleEngineService {
                     String message = (action.getMessage() != null && !action.getMessage().isBlank())
                             ? action.getMessage()
                             : "Form submission rejected by a validation rule.";
-                    throw new ValidationException(message);
+                    
+                    // Handle scope
+                    String errorKey;
+                    if (action.getScope() == com.example.formBuilder.enums.RuleScope.FORM) {
+                        errorKey = "_FORM_ERROR_";
+                    } else {
+                        // Default to FIELD for legacy rules (null scope) or explicit FIELD scope
+                        errorKey = (action.getTargetField() != null && !action.getTargetField().isBlank())
+                                ? action.getTargetField()
+                                : "_FORM_ERROR_"; // Fallback if FIELD but no targetField
+                    }
+                    
+                    allErrors.computeIfAbsent(errorKey, k -> new ArrayList<>()).add(message);
                 }
                 case REQUIRE -> {
                     String targetField = action.getTargetField();
@@ -59,7 +72,10 @@ public class RuleEngineService {
                     }
                     Object fieldValue = values.get(targetField);
                     if (fieldValue == null || fieldValue.toString().trim().isEmpty()) {
-                        requireErrors.add(targetField + " is required based on the form rules");
+                        String msg = (action.getMessage() != null && !action.getMessage().isBlank())
+                                ? action.getMessage()
+                                : targetField + " is required based on the form rules";
+                        allErrors.computeIfAbsent(targetField, k -> new ArrayList<>()).add(msg);
                     }
                 }
                 // SHOW and HIDE are visibility-only; they do not affect submission validation
@@ -67,8 +83,8 @@ public class RuleEngineService {
             }
         }
 
-        if (!requireErrors.isEmpty()) {
-            throw new ValidationException(String.join(", ", requireErrors));
+        if (!allErrors.isEmpty()) {
+            throw new ValidationException(allErrors);
         }
     }
 
@@ -127,11 +143,7 @@ public class RuleEngineService {
         Object rawValue = values.get(condition.getField());
         Object ruleValue = condition.getValue();
 
-        // Null-safety: if the field doesn't exist, condition cannot be satisfied
-        if (rawValue == null || rawValue.toString().trim().isEmpty()) {
-            return false;
-        }
-        String actualStr = rawValue.toString().trim();
+        String actualStr = (rawValue != null) ? rawValue.toString().trim() : "";
         String expectedStr = (ruleValue != null) ? ruleValue.toString().trim() : "";
 
         return switch (condition.getOperator()) {
@@ -139,13 +151,32 @@ public class RuleEngineService {
             case NOT_EQUALS -> !actualStr.equalsIgnoreCase(expectedStr);
             case CONTAINS -> actualStr.toLowerCase().contains(expectedStr.toLowerCase());
             case GREATER_THAN -> {
-                // Skip numeric comparison if either side is blank/non-numeric
-                if (expectedStr.isBlank()) yield false;
+                if (actualStr.isBlank() || expectedStr.isBlank()) yield false;
                 yield compareNumeric(actualStr, expectedStr) > 0;
             }
             case LESS_THAN -> {
-                if (expectedStr.isBlank()) yield false;
+                if (actualStr.isBlank() || expectedStr.isBlank()) yield false;
                 yield compareNumeric(actualStr, expectedStr) < 0;
+            }
+            case GREATER_THAN_OR_EQUAL -> {
+                if (actualStr.isBlank() || expectedStr.isBlank()) yield false;
+                yield compareNumeric(actualStr, expectedStr) >= 0;
+            }
+            case LESS_THAN_OR_EQUAL -> {
+                if (actualStr.isBlank() || expectedStr.isBlank()) yield false;
+                yield compareNumeric(actualStr, expectedStr) <= 0;
+            }
+            case IS_EMPTY -> actualStr.isEmpty();
+            case IS_NOT_EMPTY -> !actualStr.isEmpty();
+            case STARTS_WITH -> actualStr.toLowerCase().startsWith(expectedStr.toLowerCase());
+            case ENDS_WITH -> actualStr.toLowerCase().endsWith(expectedStr.toLowerCase());
+            case REGEX_MATCH -> {
+                try {
+                    yield Pattern.compile(expectedStr, Pattern.CASE_INSENSITIVE).matcher(actualStr).find();
+                } catch (Exception e) {
+                    log.warn("Invalid regex pattern: {}", expectedStr);
+                    yield false;
+                }
             }
         };
     }

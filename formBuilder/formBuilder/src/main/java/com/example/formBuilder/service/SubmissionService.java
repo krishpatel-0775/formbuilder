@@ -397,6 +397,7 @@ public class SubmissionService {
 
         String sql = "SELECT * FROM " + tableName + " WHERE id = ?::uuid AND is_draft = true";
         try {
+            log.info("Retrieving draft for form {} and user {}", formId, currentUser);
             Map<String, Object> data = jdbcTemplate.queryForMap(sql, meta.getSubmissionRowId().toString());
             data.remove("id");
             data.remove("is_deleted");

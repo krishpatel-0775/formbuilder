@@ -1,6 +1,7 @@
 package com.example.formBuilder.dto;
 
 import com.example.formBuilder.enums.ActionType;
+import com.example.formBuilder.enums.RuleScope;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -19,4 +20,6 @@ public class RuleActionDTO {
     private String targetField;
 
     private String message;
+
+    private RuleScope scope;
 }

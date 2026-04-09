@@ -29,6 +29,19 @@ const evaluateConditionNode = (node, values) => {
     case "CONTAINS": return val1.toLowerCase().includes(val2.toLowerCase());
     case "GREATER_THAN": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) > Number(val2);
     case "LESS_THAN": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) < Number(val2);
+    case "GREATER_THAN_OR_EQUAL": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) >= Number(val2);
+    case "LESS_THAN_OR_EQUAL": return !isNaN(Number(val1)) && !isNaN(Number(val2)) && Number(val1) <= Number(val2);
+    case "IS_EMPTY": return val1 === "";
+    case "IS_NOT_EMPTY": return val1 !== "";
+    case "STARTS_WITH": return val1.toLowerCase().startsWith(val2.toLowerCase());
+    case "ENDS_WITH": return val1.toLowerCase().endsWith(val2.toLowerCase());
+    case "REGEX_MATCH": {
+      try {
+        return new RegExp(val2, "i").test(val1);
+      } catch (e) {
+        return false;
+      }
+    }
     default: return false;
   }
 };
@@ -164,6 +177,14 @@ export default function PublicFormPage() {
         try {
           if (data.rules) {
             parsedRules = typeof data.rules === "string" ? JSON.parse(data.rules) : data.rules;
+            
+            // Sort rules by executionOrder for client-side evaluation
+            parsedRules.sort((a, b) => {
+              const orderA = a.executionOrder ?? Infinity;
+              const orderB = b.executionOrder ?? Infinity;
+              return orderA - orderB;
+            });
+            
             setFormRules(parsedRules);
 
             const targets = new Set(
@@ -201,30 +222,6 @@ export default function PublicFormPage() {
         const initialData = getInitialFormData(data.fields);
         setFormData(initialData);
 
-        // Fetch existing draft
-        if (user) {
-          try {
-            const draftRes = await fetch(`${ENDPOINTS.SUBMISSIONS}/draft?formId=${id}`, { credentials: "include" });
-            if (draftRes.ok) {
-              const draftJson = await draftRes.json();
-              if (draftJson.success && draftJson.data) {
-                const draft = draftJson.data;
-                // Check version
-                const activeVersion = data.formVersionId || null;
-                if (draft.formVersionId === activeVersion) {
-                  setFormData(prev => ({ ...prev, ...draft.data }));
-                  setDraftSubmissionId(draft.submissionId);
-                  setDraftBanner({ type: "success", message: "You have a saved draft. Resuming where you left off." });
-                } else {
-                  setDraftBanner({ type: "warning", message: "Your previous draft was for an older version of this form and cannot be restored." });
-                }
-              }
-            }
-          } catch (err) {
-            console.error("Failed to fetch draft:", err);
-          }
-        }
-
         setLoading(false);
       })
       .catch((err) => {
@@ -232,6 +229,35 @@ export default function PublicFormPage() {
         setLoading(false);
       });
   }, [id]);
+
+  // ── Fetch existing draft when user and formConfig are ready ────────────────
+  useEffect(() => {
+    if (!id || !user || !formConfig) return;
+
+    const fetchDraft = async () => {
+      try {
+        const draftRes = await fetch(`${ENDPOINTS.SUBMISSIONS}/draft?formId=${id}`, { credentials: "include" });
+        if (draftRes.ok) {
+          const draftJson = await draftRes.json();
+          if (draftJson.success && draftJson.data) {
+            const draft = draftJson.data;
+            const activeVersion = formConfig.formVersionId || null;
+            if (activeVersion === null || draft.formVersionId === activeVersion) {
+              setFormData(prev => ({ ...prev, ...draft.data }));
+              setDraftSubmissionId(draft.submissionId);
+              setDraftBanner({ type: "success", message: "You have a saved draft. Resuming where you left off." });
+            } else {
+              setDraftBanner({ type: "warning", message: "Your previous draft was for an older version of this form and cannot be restored." });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch draft:", err);
+      }
+    };
+
+    fetchDraft();
+  }, [id, user, formConfig]);
 
   const evaluateVisibility = useCallback((currentData) => {
     if (!formRules || formRules.length === 0) return;
@@ -368,17 +394,25 @@ export default function PublicFormPage() {
       }
     });
 
-    // Rule engine validation errors (only for fields on this page)
-    const pageFieldNames = new Set(pageFields.map(f => f.fieldName));
+    // Rule engine validation errors
     formRules.forEach(rule => {
       if (rule.action?.type === "VALIDATION_ERROR") {
         if (evaluateConditionNode(rule.condition, formData)) {
-          let target = rule.action.targetField;
-          if (!target && rule.condition?.conditions?.length > 0) {
-            target = rule.condition.conditions[0].field;
-          }
-          if (target && pageFieldNames.has(target)) {
-            push(target, rule.action.message || "Submission rejected by rules.");
+          const action = rule.action;
+          const message = action.message || "Requirement not met.";
+          
+          if (action.scope === "FORM") {
+             push("_FORM_ERROR_", message);
+          } else {
+            let target = action.targetField;
+            if (!target && rule.condition?.conditions?.length > 0) {
+              target = rule.condition.conditions[0].field;
+            }
+            if (target) {
+              push(target, message);
+            } else {
+              push("_FORM_ERROR_", message);
+            }
           }
         }
       }
@@ -483,12 +517,19 @@ export default function PublicFormPage() {
         try {
           const errorData = JSON.parse(errorText);
           if (errorData.errors && Object.keys(errorData.errors).length > 0) {
-            setErrors((prev) => ({ ...prev, ...errorData.errors }));
+             setErrors((prev) => ({ ...prev, ...errorData.errors }));
+             
+             // Check for form-level errors
+             if (errorData.errors["_FORM_ERROR_"]) {
+               setErrors((prev) => ({ ...prev, _ruleError: errorData.errors["_FORM_ERROR_"] }));
+             }
             
-            // Scroll to the first error
-            const firstErrorField = Object.keys(errorData.errors)[0];
-            const el = document.getElementById(`field-${firstErrorField}`);
-            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            // Scroll to the first field error if any
+            const fieldError = Object.keys(errorData.errors).find(k => k !== "_FORM_ERROR_");
+            if (fieldError) {
+                const el = document.getElementById(`field-${fieldError}`);
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
           } else {
             setErrors((prev) => ({ ...prev, _ruleError: [errorData.message || "Submission failed"] }));
           }
@@ -745,41 +786,6 @@ export default function PublicFormPage() {
             </div>
           </div>
 
-          {/* Global Error Console */}
-          {totalErrors > 0 && (
-            <div className="m-10 md:mx-16 mb-0 rounded-[2rem] border-2 border-red-100 bg-red-50/50 overflow-hidden animate-in slide-in-from-top-4 duration-500">
-              <div className="flex items-center justify-between px-8 py-5 bg-red-100/50 border-b border-red-200">
-                <div className="flex items-center gap-3">
-                  <AlertCircle size={20} className="text-red-600 animate-pulse" />
-                  <span className="text-xs font-black text-red-700 uppercase tracking-[0.2em]">Please Check Errors</span>
-                </div>
-                <span className="bg-red-200/50 text-red-700 px-3 py-1 rounded-full text-[10px] font-black">
-                  {totalErrors} ERROR{totalErrors > 1 ? "S" : ""} FOUND
-                </span>
-              </div>
-              <div className="p-8 grid gap-4">
-                {Object.entries(errors).filter(([k]) => k !== "_ruleError").map(([fieldName, msgs]) =>
-                  msgs.map((msg, i) => (
-                    <button key={`${fieldName}-${i}`} type="button"
-                      onClick={() => {
-                        const el = document.getElementById(`field-${fieldName}`);
-                        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-                      }}
-                      className="group flex items-start gap-4 p-4 rounded-2xl bg-white border border-red-100 hover:border-red-300 transition-all text-left">
-                      <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-500 font-black text-[10px] group-hover:scale-110 transition-transform">
-                        {i + 1}
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-[10px] font-black text-red-300 uppercase tracking-widest block mb-1">{fieldName} Field</span>
-                        <p className="text-sm font-black text-red-900 leading-tight">{msg}</p>
-                      </div>
-                      <ChevronRight size={16} className="text-red-200 group-hover:text-red-500 transition-colors mt-2" />
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Form Content Area */}
           <form onSubmit={isLastPage ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }} noValidate
@@ -808,14 +814,16 @@ export default function PublicFormPage() {
             )}
 
             {/* Rule Engine Violation */}
-            {errors._ruleError && (
+            {(errors._ruleError || errors._FORM_ERROR_) && (
               <div className="rounded-[2.5rem] border-2 border-red-200 bg-white p-8 flex items-start gap-6 shadow-xl shadow-red-500/5">
                 <div className="w-14 h-14 rounded-[1.5rem] bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0 animate-bounce">
                   <AlertCircle size={28} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Form Error</h3>
-                  <p className="text-[15px] text-red-600/80 font-inter leading-relaxed">{errors._ruleError[0]}</p>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Requirement Unmet</h3>
+                  <p className="text-[15px] text-red-600/80 font-inter leading-relaxed">
+                    {(errors._ruleError && errors._ruleError[0]) || (errors._FORM_ERROR_ && errors._FORM_ERROR_[0])}
+                  </p>
                 </div>
               </div>
             )}

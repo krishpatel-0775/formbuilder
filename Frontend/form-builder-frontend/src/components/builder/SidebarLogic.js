@@ -27,14 +27,24 @@ export function SidebarLogic({
     );
   }
 
-  const allFieldNames = fields
-    .map((f) => f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "")
-    .filter(Boolean);
+  const isFieldInCondition = (condition, name) => {
+    if (!condition) return false;
+    if (condition.field === name) return true;
+    if (condition.conditions && Array.isArray(condition.conditions)) {
+      return condition.conditions.some(c => isFieldInCondition(c, name));
+    }
+    return false;
+  };
 
-  // Rules that target this field
-  const fieldRules = rules.filter((r) => r.action?.targetField === fieldName);
-  // All other rules
-  const otherRules = rules.filter((r) => r.action?.targetField !== fieldName);
+  const isRuleRelevant = (rule) => {
+    const isTarget = rule.action?.targetField === fieldName;
+    const isSource = isFieldInCondition(rule.condition, fieldName);
+    return isTarget || isSource;
+  };
+
+  // Partition rules into those relevant to this sidebar view and those that are not
+  const fieldRules = rules.filter(isRuleRelevant);
+  const otherRules = rules.filter(r => !isRuleRelevant(r));
 
   const handleFieldRulesChange = (updated) => {
     setRules([...otherRules, ...updated]);
@@ -76,9 +86,10 @@ export function SidebarLogic({
         <RuleBuilder
           rules={fieldRules}
           onChange={handleFieldRulesChange}
-          fieldNames={allFieldNames}
+          fieldNames={fields.map(f => f.label? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "").filter(Boolean)}
           defaultTargetField={fieldName}
           onAddRule={addFieldRule}
+          isSidebar={true}
         />
       </div>
     </div>
