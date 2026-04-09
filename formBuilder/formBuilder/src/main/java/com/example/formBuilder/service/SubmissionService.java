@@ -11,6 +11,7 @@ import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.security.SessionUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SubmissionService {
 
     private final FormRepository formRepository;
@@ -441,15 +443,21 @@ public class SubmissionService {
         switch (f.getFieldType()) {
             case "number":
                 try { return Integer.parseInt(strVal); }
-                catch (NumberFormatException e) {
-                    try { return Double.parseDouble(strVal); }
-                    catch (NumberFormatException e2) { return null; }
-                }
+                catch (NumberFormatException e) { return null; }
+            case "decimal":
+                try { return Double.parseDouble(strVal); }
+                catch (NumberFormatException e) { return null; }
             case "date": try { return java.sql.Date.valueOf(strVal); } catch (Exception e) { return null; }
             case "time":
                 try {
                     if (strVal.length() == 5) strVal = strVal + ":00";
                     return java.sql.Time.valueOf(strVal);
+                } catch (Exception e) { return null; }
+            case "datetime":
+                try {
+                    String ts = strVal.replace("T", " ");
+                    if (ts.length() == 16) ts = ts + ":00";
+                    return java.sql.Timestamp.valueOf(ts);
                 } catch (Exception e) { return null; }
             case "toggle": return "true".equalsIgnoreCase(strVal);
             case "file_upload":
@@ -526,7 +534,28 @@ public class SubmissionService {
                     number = Integer.parseInt(stringValue);
                 } catch (Exception e) {
                     errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
-                          .add("Must be a valid number");
+                          .add("Must be a whole number");
+                    isNumber = false;
+                }
+                if (isNumber) {
+                    if (field.getMin() != null && number < field.getMin().intValue()) {
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Value must be at least " + field.getMin().intValue());
+                    }
+                    if (field.getMax() != null && number > field.getMax().intValue()) {
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Value must be at most " + field.getMax().intValue());
+                    }
+                }
+            }
+            case "decimal" -> {
+                double number = 0;
+                boolean isNumber = true;
+                try {
+                    number = Double.parseDouble(stringValue);
+                } catch (Exception e) {
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Must be a valid decimal number");
                     isNumber = false;
                 }
                 if (isNumber) {
@@ -551,6 +580,41 @@ public class SubmissionService {
                     if (stringValue.compareTo(field.getBeforeTime()) > 0) {
                         errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
                               .add("Must be before " + field.getBeforeTime());
+                    }
+                }
+            }
+            case "datetime" -> {
+                java.time.LocalDateTime inputDt = null;
+                try {
+                    String s = stringValue.replace(" ", "T");
+                    if (s.length() == 16) s += ":00";
+                    inputDt = java.time.LocalDateTime.parse(s);
+                } catch (Exception e) {
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Must be a valid date-time (yyyy-MM-ddTHH:mm)");
+                }
+                if (inputDt != null) {
+                    if (field.getAfterDatetime() != null && !field.getAfterDatetime().isBlank()) {
+                        try {
+                            String sAfter = field.getAfterDatetime().replace(" ", "T");
+                            if (sAfter.length() == 16) sAfter += ":00";
+                            java.time.LocalDateTime after = java.time.LocalDateTime.parse(sAfter);
+                            if (inputDt.isBefore(after)) {
+                                errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                                      .add("Must be after " + field.getAfterDatetime());
+                            }
+                        } catch (Exception e) {}
+                    }
+                    if (field.getBeforeDatetime() != null && !field.getBeforeDatetime().isBlank()) {
+                        try {
+                            String sBefore = field.getBeforeDatetime().replace(" ", "T");
+                            if (sBefore.length() == 16) sBefore += ":00";
+                            java.time.LocalDateTime before = java.time.LocalDateTime.parse(sBefore);
+                            if (inputDt.isAfter(before)) {
+                                errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                                      .add("Must be before " + field.getBeforeDatetime());
+                            }
+                        } catch (Exception e) {}
                     }
                 }
             }

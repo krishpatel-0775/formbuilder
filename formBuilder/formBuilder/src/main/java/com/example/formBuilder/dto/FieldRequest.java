@@ -23,8 +23,8 @@ public class FieldRequest {
     private Boolean required;
     private Integer minLength;
     private Integer maxLength;
-    private Integer min;
-    private Integer max;
+    private Double min;
+    private Double max;
     private String pattern;
     private String beforeDate;
     private String afterDate;
@@ -38,6 +38,8 @@ public class FieldRequest {
     private String sourceColumn;
     private String afterTime;
     private String beforeTime;
+    private String beforeDatetime;
+    private String afterDatetime;
     private Boolean isReadOnly;
 
     @JsonProperty("isMultiSelect")

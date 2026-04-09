@@ -1,8 +1,8 @@
 import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListChecks, Code2, CheckCircle2, ShieldCheck } from "lucide-react";
 
 
-export function DefaultValuePanel({ activeField, updateField }) {
-  const textTypes = ["text", "email", "url", "phone", "number"];
+export function DefaultValuePanel({ activeField, updateField, handleNumberInput }) {
+  const textTypes = ["text", "email", "url", "phone", "number", "decimal", "date", "time", "datetime"];
   const base = "w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-[13px] font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-300 shadow-sm";
 
   return (
@@ -14,10 +14,11 @@ export function DefaultValuePanel({ activeField, updateField }) {
 
       {textTypes.includes(activeField.type) && (
         <input
-          type={activeField.type === "number" ? "number" : "text"}
+          type={["number", "decimal"].includes(activeField.type) ? "number" : activeField.type === "datetime" ? "datetime-local" : activeField.type === "date" ? "date" : activeField.type === "time" ? "time" : "text"}
           placeholder="Default value..."
           value={activeField.defaultValue ?? ""}
-          onChange={(e) => updateField(activeField.id, "defaultValue", e.target.value)}
+          onChange={(e) => ["number", "decimal"].includes(activeField.type) ? handleNumberInput(e, activeField.id, "defaultValue") : updateField(activeField.id, "defaultValue", e.target.value)}
+          onWheel={(e) => ["number", "decimal"].includes(activeField.type) && e.target.blur()}
           className={base}
         />
       )}
@@ -113,7 +114,7 @@ export function DefaultValuePanel({ activeField, updateField }) {
 }
 
 export function InputInstructionPanel({ activeField, updateField }) {
-  const placeholderTypes = ["text", "textarea", "email", "url", "phone", "number"];
+  const placeholderTypes = ["text", "textarea", "email", "url", "phone", "number", "decimal"];
   const base = "w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-[13px] font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-300 shadow-sm";
 
   // Display only if the field is not a structural one (like divider, heading, paragraph)
@@ -223,7 +224,7 @@ export function SidebarProps({
       <div className="w-full h-px bg-slate-100" />
 
       {/* Default Value */}
-      <DefaultValuePanel activeField={activeField} updateField={updateField} />
+      <DefaultValuePanel activeField={activeField} updateField={updateField} handleNumberInput={handleNumberInput} />
 
       <div className="w-full h-px bg-slate-100" />
 
@@ -386,7 +387,7 @@ export function SidebarProps({
           </div>
         )}
 
-        {activeField.type === "number" && (
+        {["number", "decimal"].includes(activeField.type) && (
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
               <span className="absolute left-4 top-3.5 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Minimum Value</span>
@@ -457,6 +458,31 @@ export function SidebarProps({
                 onChange={(e) => updateField(activeField.id, "beforeTime", e.target.value)}
                 className={`${inputBase} pt-6`}
               />
+            </div>
+          </div>
+        )}
+
+        {activeField.type === "datetime" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="relative">
+                <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10 transition-colors group-focus-within:text-primary">Earliest Date/Time</span>
+                <input
+                  type="datetime-local"
+                  value={activeField.afterDatetime ?? ""}
+                  onChange={(e) => updateField(activeField.id, "afterDatetime", e.target.value)}
+                  className={`${inputBase} pt-6`}
+                />
+              </div>
+              <div className="relative">
+                <span className="absolute left-4 top-2 text-[9px] text-slate-400 font-black uppercase tracking-widest z-10">Latest Date/Time</span>
+                <input
+                  type="datetime-local"
+                  value={activeField.beforeDatetime ?? ""}
+                  onChange={(e) => updateField(activeField.id, "beforeDatetime", e.target.value)}
+                  className={`${inputBase} pt-6`}
+                />
+              </div>
             </div>
           </div>
         )}

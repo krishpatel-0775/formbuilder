@@ -191,6 +191,8 @@ public class FormService {
                 .afterDate(f.getAfterDate())
                 .afterTime(f.getAfterTime())
                 .beforeTime(f.getBeforeTime())
+                .beforeDatetime(f.getBeforeDatetime())
+                .afterDatetime(f.getAfterDatetime())
                 .options(f.getOptions() != null ? new ArrayList<>(f.getOptions()) : null)
                 .sourceTable(f.getSourceTable())
                 .sourceColumn(f.getSourceColumn())
@@ -359,7 +361,20 @@ public class FormService {
         List<Form> forms = formRepository.findByUserId(user.getId());
         
         return forms.stream()
-                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus(), form.getCreatedAt(), form.getUpdatedAt()))
+                .map(form -> {
+                    Integer activeVersion = versionRepository
+                            .findByFormIdAndIsActiveTrue(form.getId())
+                            .map(FormVersion::getVersionNumber)
+                            .orElse(null);
+                    return FormListDto.builder()
+                            .id(form.getId())
+                            .formName(form.getFormName())
+                            .status(form.getStatus())
+                            .createdAt(form.getCreatedAt())
+                            .updatedAt(form.getUpdatedAt())
+                            .activeVersion(activeVersion)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -368,7 +383,20 @@ public class FormService {
         List<Form> forms = formRepository.findDeletedByUserId(user.getId());
 
         return forms.stream()
-                .map(form -> new FormListDto(form.getId(), form.getFormName(), form.getStatus(), form.getCreatedAt(), form.getUpdatedAt()))
+                .map(form -> {
+                    Integer activeVersion = versionRepository
+                            .findByFormIdAndIsActiveTrue(form.getId())
+                            .map(FormVersion::getVersionNumber)
+                            .orElse(null);
+                    return FormListDto.builder()
+                            .id(form.getId())
+                            .formName(form.getFormName())
+                            .status(form.getStatus())
+                            .createdAt(form.getCreatedAt())
+                            .updatedAt(form.getUpdatedAt())
+                            .activeVersion(activeVersion)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -458,7 +486,8 @@ public class FormService {
         for (Object fieldObj : fields) {
             String type = null;
             Boolean required = null;
-            Integer minLength = null, maxLength = null, min = null, max = null, maxFileSize = null;
+            Integer minLength = null, maxLength = null, maxFileSize = null;
+            Double min = null, max = null;
             String pattern = null, beforeDate = null, afterDate = null, afterTime = null, beforeTime = null, allowedFileTypes = null;
 
             if (fieldObj instanceof FieldRequest f) {
@@ -626,6 +655,8 @@ public class FormService {
                 formField.setDefaultValue(field.getDefaultValue());
                 formField.setAfterTime(field.getAfterTime());
                 formField.setBeforeTime(field.getBeforeTime());
+                formField.setBeforeDatetime(field.getBeforeDatetime());
+                formField.setAfterDatetime(field.getAfterDatetime());
                 formField.setMaxFileSize(field.getMaxFileSize());
                 formField.setAllowedFileTypes(field.getAllowedFileTypes());
                 formField.setBeforeDate(

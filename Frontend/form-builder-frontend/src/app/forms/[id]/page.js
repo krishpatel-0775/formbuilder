@@ -339,10 +339,10 @@ export default function PublicFormPage() {
           push(name, "Enter a valid email address (e.g. user@example.com).");
       }
 
-      if (field.fieldType === "number") {
+      if (field.fieldType === "number" || field.fieldType === "decimal") {
         const numVal = Number(strVal);
         if (isNaN(numVal)) {
-          push(name, "Must be a valid number.");
+          push(name, field.fieldType === "decimal" ? "Must be a valid decimal number." : "Must be a valid number.");
         } else {
           if (field.min !== null && field.min !== undefined && numVal < Number(field.min))
             push(name, `Value must be at least ${field.min} (you entered ${numVal}).`);
@@ -373,6 +373,22 @@ export default function PublicFormPage() {
           push(name, `Time must be after ${field.afterTime}.`);
         if (field.beforeTime && strVal > field.beforeTime)
           push(name, `Time must be before ${field.beforeTime}.`);
+      }
+
+      if (field.fieldType === "datetime") {
+        const d = new Date(strVal);
+        if (!isNaN(d)) {
+          if (field.afterDatetime) {
+            const ad = new Date(field.afterDatetime);
+            if (!isNaN(ad) && d < ad) push(name, `Date/time must be after ${field.afterDatetime.replace("T", " ")}.`);
+          }
+          if (field.beforeDatetime) {
+            const bd = new Date(field.beforeDatetime);
+            if (!isNaN(bd) && d > bd) push(name, `Date/time must be before ${field.beforeDatetime.replace("T", " ")}.`);
+          }
+        } else if (strVal) {
+          push(name, "Enter a valid date and time.");
+        }
       }
 
       if (field.fieldType === "phone") {

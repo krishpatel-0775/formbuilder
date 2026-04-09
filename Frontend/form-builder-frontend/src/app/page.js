@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
     DndContext,
     closestCenter,
@@ -45,6 +45,34 @@ export default function BuilderPage() {
     const [rules, setRules] = useState([]);
     const [sidebarTab, setSidebarTab] = useState("properties"); // "properties" | "logic"
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+    const savedSnapshot = useRef(null);
+
+    useEffect(() => {
+        savedSnapshot.current = { formName: "", fields: [], rules: [] };
+    }, []);
+
+    useEffect(() => {
+        if (!savedSnapshot.current) return;
+        const current = JSON.stringify({ formName, fields, rules });
+        const saved = JSON.stringify(savedSnapshot.current);
+        setIsDirty(current !== saved);
+    }, [formName, fields, rules]);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (!isDirty) return;
+            e.preventDefault();
+            e.returnValue = "";
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [isDirty]);
+
+    useEffect(() => {
+        window._isFormDirty = isDirty;
+        return () => { window._isFormDirty = false; };
+    }, [isDirty]);
 
     const isDisplayOnly = (type) => ["page_break", "heading", "paragraph", "divider"].includes(type);
 
@@ -101,6 +129,7 @@ export default function BuilderPage() {
             defaultValue: type === "toggle" ? "false" : "",
             minLength: "", maxLength: "", min: "", max: "", pattern: "",
             beforeDate: "", afterDate: "", afterTime: "", beforeTime: "",
+            beforeDatetime: "", afterDatetime: "",
             options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
             sourceTable: "", sourceColumn: "",
         };
@@ -145,10 +174,10 @@ export default function BuilderPage() {
                         }));
                     }
                 }
-                return p.map((f) => f.id === id ? { 
-                    ...f, 
-                    [key]: value, 
-                    key: key === "label" && (!f.key || f.key === generateColumnName(f.label)) ? generateColumnName(value) : f.key 
+                return p.map((f) => f.id === id ? {
+                    ...f,
+                    [key]: value,
+                    key: key === "label" && (!f.key || f.key === generateColumnName(f.label)) ? generateColumnName(value) : f.key
                 } : f);
             });
         } else {
@@ -162,8 +191,23 @@ export default function BuilderPage() {
     };
 
     const handleNumberInput = (e, id, key) => {
-        const value = e.target.value === "" ? "" : Number(e.target.value);
-        updateField(id, key, value);
+        const v = e.target.value;
+        if (v === "" || v === "-") {
+            updateField(id, key, v);
+            return;
+        }
+
+        const field = fields.find(f => f.id === id);
+        const isIntegerField = field?.type === "number";
+
+        const isDecimal = /^-?\d*\.?\d*$/.test(v);
+        const isInteger = /^-?\d+$/.test(v);
+
+        if (["minLength", "maxLength", "maxFileSize"].includes(key) || (isIntegerField && (key === "min" || key === "max" || key === "defaultValue"))) {
+            if (isInteger) updateField(id, key, v);
+        } else {
+            if (isDecimal) updateField(id, key, v);
+        }
     };
 
     const generateColumnName = (label) => label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
@@ -181,13 +225,13 @@ export default function BuilderPage() {
                     return { name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
                 }
                 if (!field.label) throw new Error("Field label is required");
-                let fd = { 
-                    name: field.label, 
+                let fd = {
+                    name: field.label,
                     fieldKey: field.key || generateColumnName(field.label),
-                    type: field.type, 
-                    required: field.required, 
-                    isReadOnly: field.isReadOnly, 
-                    isMultiSelect: !!field.isMultiSelect 
+                    type: field.type,
+                    required: field.required,
+                    isReadOnly: field.isReadOnly,
+                    isMultiSelect: !!field.isMultiSelect
                 };
 
                 if (field.type === "toggle") {
@@ -214,9 +258,9 @@ export default function BuilderPage() {
                     if (field.maxLength) fd.maxLength = Number(field.maxLength);
                     if (field.pattern) fd.pattern = field.pattern;
                 }
-                if (field.type === "number") {
-                    if (field.min) fd.min = Number(field.min);
-                    if (field.max) fd.max = Number(field.max);
+                if (field.type === "number" || field.type === "decimal") {
+                    if (field.min !== undefined && field.min !== "") fd.min = Number(field.min);
+                    if (field.max !== undefined && field.max !== "") fd.max = Number(field.max);
                 }
                 if (field.type === "date") {
                     if (field.afterDate) fd.afterDate = field.afterDate;
@@ -225,6 +269,10 @@ export default function BuilderPage() {
                 if (field.type === "time") {
                     if (field.afterTime) fd.afterTime = field.afterTime;
                     if (field.beforeTime) fd.beforeTime = field.beforeTime;
+                }
+                if (field.type === "datetime") {
+                    if (field.afterDatetime) fd.afterDatetime = field.afterDatetime;
+                    if (field.beforeDatetime) fd.beforeDatetime = field.beforeDatetime;
                 }
                 if (field.type === "file_upload") {
                     fd.allowedFileTypes = field.allowedFileTypes;
@@ -251,7 +299,10 @@ export default function BuilderPage() {
             setTimeout(() => setShowSuccess(false), 3000);
             setFormName("");
             setFields([]);
+            setRules([]);
             setActiveFieldId(null);
+            savedSnapshot.current = { formName: "", fields: [], rules: [] };
+            setIsDirty(false);
         } catch (err) {
             alert(`❌ ${err.message}`);
         } finally {
@@ -276,6 +327,7 @@ export default function BuilderPage() {
                     saveIcon={<Rocket size={18} strokeWidth={2.5} />}
                     userRole={userRole}
                     onPreview={() => setIsPreviewOpen(true)}
+                    isDirty={isDirty}
                 />
 
                 <div onDrop={handleDrop} onDragOver={handleDragOver}

@@ -335,10 +335,10 @@ export default function FormVaultPage() {
                                             <Calendar size={15} strokeWidth={2.5} className="text-slate-300" />
                                             {mounted ? new Date(form.createdAt).toLocaleDateString() : "---"}
                                         </div>
-                                        {form.formVersionId && (
+                                        {form.activeVersion != null && (
                                              <div className="flex items-center gap-2.5">
                                                 <GitBranch size={15} strokeWidth={2.5} className="text-slate-300" />
-                                                v{form.formVersionId.slice(0, 4)}
+                                                v{form.activeVersion}
                                             </div>
                                         )}
                                     </div>

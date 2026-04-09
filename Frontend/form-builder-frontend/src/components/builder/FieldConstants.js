@@ -7,10 +7,12 @@ export const FieldIcons = {
   text: <Type size={18} />, 
   textarea: <Pilcrow size={18} />, 
   number: <Hash size={18} />,
+  decimal: <Hash size={18} />,
   email: <Mail size={18} />, 
   date: <Calendar size={18} />, 
   phone: <Phone size={18} />,
   time: <Clock size={18} />, 
+  datetime: <Calendar size={18} />,
   url: <Link size={18} />, 
   radio: <CircleDot size={18} />,
   checkbox: <CheckSquare size={18} />, 
@@ -30,7 +32,7 @@ export const StaticElementTypes = [
   { type: "page_break", label: "Pagination", desc: "For next page", color: "indigo", icon: <Layout size={16} /> },
 ];
 
-export const RegularFieldTypes = ["text", "textarea", "number", "email", "date", "phone", "time", "url", "radio", "checkbox", "select", "toggle", "file_upload"];
+export const RegularFieldTypes = ["text", "textarea", "number", "decimal", "email", "date", "phone", "time", "datetime", "url", "radio", "checkbox", "select", "toggle", "file_upload"];
 
 export const FieldCategories = [
   {
@@ -39,7 +41,7 @@ export const FieldCategories = [
   },
   {
     name: "Numbers & Contact",
-    fields: ["number", "phone"]
+    fields: ["number", "decimal", "phone"]
   },
   {
     name: "Selection & Choice",
@@ -47,7 +49,7 @@ export const FieldCategories = [
   },
   {
     name: "Date & Time",
-    fields: ["date", "time"]
+    fields: ["date", "time", "datetime"]
   },
   {
     name: "Advanced",

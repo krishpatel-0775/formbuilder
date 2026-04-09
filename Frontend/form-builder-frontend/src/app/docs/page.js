@@ -393,8 +393,9 @@ export default function DocsPage() {
                             {
                                 category: "Numbers & Contact",
                                 items: [
-                                    { type: "number", icon: Hash, desc: "Numeric values" },
-                                    { type: "phone", icon: Phone, desc: "Phone validation" }
+                                { type: "number", icon: Hash, desc: "Integer numeric values" },
+                                { type: "decimal", icon: Hash, desc: "High-precision decimals" },
+                                { type: "phone", icon: Phone, desc: "Phone validation" }
                                 ]
                             },
                             {
@@ -410,7 +411,8 @@ export default function DocsPage() {
                                 category: "Date & Time",
                                 items: [
                                     { type: "date", icon: Calendar, desc: "Date picker" },
-                                    { type: "time", icon: Clock, desc: "Time selector" }
+                                    { type: "time", icon: Clock, desc: "Time selector" },
+                                    { type: "datetime", icon: Calendar, desc: "Combined Date & Time" }
                                 ]
                             },
                             {
@@ -447,9 +449,11 @@ export default function DocsPage() {
                                 { t: "text", d: "Generic alphanumeric string" },
                                 { t: "email", d: "Strict RFC 5322 validation" },
                                 { t: "password", d: "Masked character input" },
-                                { t: "number", d: "Floating point or integer" },
+                                { t: "number", d: "Whole integer values (INT)" },
+                                { t: "decimal", d: "High-precision decimals (NUMERIC 19,4)" },
                                 { t: "date", d: "ISO 8601 YYYY-MM-DD" },
                                 { t: "time", d: "24-hour HH:mm format" },
+                                { t: "datetime", d: "ISO 8601 YYYY-MM-DDTHH:mm" },
                                 { t: "select / radio", d: "Single value from options" },
                                 { t: "checkbox", d: "JSON array of selected strings" },
                                 { t: "file_upload", d: "Persistent cloud storage URL" }
@@ -601,8 +605,10 @@ export default function DocsPage() {
                                     {[
                                         { t: "text / email", v: "\"John Doe\"" },
                                         { t: "number", v: "42" },
+                                        { t: "decimal", v: "12.3456" },
                                         { t: "checkbox / list", v: "[\"A\", \"B\"]" },
-                                        { t: "date / time", v: "\"2024-12-31\"" },
+                                        { t: "date / time", v: "\"2024-12-31\" or \"15:30\"" },
+                                        { t: "datetime", v: "\"2024-12-31T15:30:00\"" },
                                         { t: "toggle / radio", v: "\"true\"" }
                                     ].map(item => (
                                         <div key={item.t} className="flex items-center justify-between border-b border-white/5 pb-4">
@@ -676,7 +682,9 @@ export default function DocsPage() {
                             <tbody className="divide-y divide-slate-50">
                                 {[
                                     { c: "Standard Inputs", t: "String", e: "\"Jane Doe\"" },
-                                    { c: "Numeric Fields", t: "Number", e: "25" },
+                                    { c: "Numeric (Integer)", t: "Number", e: "25" },
+                                    { c: "Numeric (Decimal)", t: "Number", e: "12.3456" },
+                                    { c: "Date / Time / Datetime", t: "String", e: "\"2024-10-25T14:00\"" },
                                     { c: "Binary Options", t: "Boolean / String", e: "true / \"true\"" },
                                     { c: "Multi-Selection", t: "Array<String>", e: "[\"A\", \"B\"]" },
                                     { c: "Cloud Media", t: "String (URL)", e: "\"https://.../doc.pdf\"" }
@@ -1001,8 +1009,10 @@ export default function DocsPage() {
                                     { p: "required", a: "All Inputs", l: "Must contain a non-null, non-empty value." },
                                     { p: "pattern", a: "Text, Email, URL", l: "RegExp comparison for complex formats." },
                                     { p: "minLength / Max", a: "Text, TextArea", l: "Character count enforcement." },
-                                    { p: "min / Max", a: "Numbers", l: "Numeric range bounds (inclusive)." },
+                                    { p: "min / Max", a: "Numbers, Decimals", l: "Numeric range bounds." },
                                     { p: "before / AfterDate", a: "Date", l: "Chronological limits on selection." },
+                                    { p: "before / AfterTime", a: "Time", l: "Time-of-day constraints (HH:mm)." },
+                                    { p: "before / AfterDatetime", a: "Datetime", l: "Complete Chronological range (ISO 8601)." },
                                     { p: "maxFileSize", a: "File Upload", l: "Megabyte (MB) limit on disk size." }
                                 ].map(row => (
                                     <tr key={row.p} className="hover:bg-slate-50/50 transition-colors">

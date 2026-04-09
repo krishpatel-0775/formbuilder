@@ -36,6 +36,43 @@ export default function ClientLayout({ children }) {
         document.dispatchEvent(new CustomEvent("left-menu-state", { detail: { isOpen: isMenuOpen } }));
     }, [isCollapsed, isSidebarOpen]);
 
+    // Global navigation interceptor for unsaved changes
+    useEffect(() => {
+        const handleAnchorClick = (e) => {
+            const anchor = e.target.closest("a");
+            if (anchor && anchor.href && anchor.target !== "_blank") {
+                const targetUrl = new URL(anchor.href, window.location.origin);
+                const isInternal = targetUrl.origin === window.location.origin;
+
+                if (isInternal && window._isFormDirty) {
+                    const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+                    if (!confirmLeave) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }
+            }
+        };
+
+        const handlePopState = (e) => {
+            if (window._isFormDirty) {
+                const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+                if (!confirmLeave) {
+                    // This is a bit hacky for App Router but helps prevent back button "leaks"
+                    window.history.pushState(null, "", window.location.href);
+                }
+            }
+        };
+
+        window.addEventListener("click", handleAnchorClick, true);
+        window.addEventListener("popstate", handlePopState);
+
+        return () => {
+            window.removeEventListener("click", handleAnchorClick, true);
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, []);
+
     return (
         <div className="h-screen flex flex-col bg-background selection:bg-primary/20 overflow-hidden">
             {/* Header Navigation */}

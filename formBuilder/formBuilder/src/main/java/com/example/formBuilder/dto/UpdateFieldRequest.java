@@ -19,8 +19,8 @@ public class UpdateFieldRequest {
     private Boolean required;
     private Integer minLength;
     private Integer maxLength;
-    private Integer min;
-    private Integer max;
+    private Double min;
+    private Double max;
     private String pattern;
     private String beforeDate;
     private String afterDate;
@@ -32,6 +32,8 @@ public class UpdateFieldRequest {
     private String sourceColumn;
     private String afterTime;
     private String beforeTime;
+    private String beforeDatetime;
+    private String afterDatetime;
     private Integer maxFileSize;
     private String allowedFileTypes;
     private Boolean isReadOnly;

@@ -163,7 +163,7 @@ export function SortableFieldItem({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Field ID:</span>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Field Type: <span className="text-primary/60">{field.type}</span></span>
             {field.required && <div className="w-1 h-1 rounded-full bg-red-400" />}
         </div>
         <input 

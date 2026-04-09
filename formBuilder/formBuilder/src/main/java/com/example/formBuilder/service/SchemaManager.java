@@ -222,8 +222,10 @@ public class SchemaManager {
         return switch (field.getFieldType()) {
             case "text", "email", "radio", "select", "url", "phone" -> "VARCHAR(255)";
             case "number" -> "INT";
+            case "decimal" -> "NUMERIC(19,4)";
             case "date" -> "DATE";
             case "time" -> "TIME";
+            case "datetime" -> "TIMESTAMP";
             case "textarea", "checkbox" -> "TEXT";
             case "toggle" -> "BOOLEAN";
             case "file_upload" -> "TEXT"; // file UUID stored as text

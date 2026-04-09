@@ -2,6 +2,7 @@ package com.example.formBuilder.dto;
  
 import com.example.formBuilder.enums.FormStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
  
@@ -10,10 +11,12 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class FormListDto {
     private UUID id;
     private String formName;
     private FormStatus status;
     private java.time.LocalDateTime createdAt;
     private java.time.LocalDateTime updatedAt;
+    private Integer activeVersion;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay,
@@ -51,6 +51,30 @@ export default function EditFormPage() {
   const [rules, setRules] = useState([]);
   const [sidebarTab, setSidebarTab] = useState("properties"); // "properties" | "logic"
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const savedSnapshot = useRef(null);
+
+  useEffect(() => {
+    if (!savedSnapshot.current || isVersionActive) return;
+    const current = JSON.stringify({ formName, fields, rules: rules.map(({ _id, ...r }) => r) });
+    const saved = JSON.stringify(savedSnapshot.current);
+    setIsDirty(current !== saved);
+  }, [formName, fields, rules, isVersionActive]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  useEffect(() => {
+    window._isFormDirty = isDirty;
+    return () => { window._isFormDirty = false; };
+  }, [isDirty]);
 
   // Load form — if versionId param present, load from version endpoint
   useEffect(() => {
@@ -152,6 +176,12 @@ export default function EditFormPage() {
         console.log("Form loaded with status:", formData.status);
         setRules(rulesArr.map((r) => ({ ...r, _id: Date.now() + Math.random() })));
         setFields(loadedFields);
+        savedSnapshot.current = {
+          formName: formData.formName || "",
+          fields: loadedFields,
+          rules: rulesArr
+        };
+        setIsDirty(false);
         setIsLoading(false);
       })
       .catch((err) => { console.error(err); router.push("/forms/all"); });
@@ -213,6 +243,7 @@ export default function EditFormPage() {
       id: Date.now(), _dbId: null, label: "", type: type.toLowerCase(), required: false, defaultValue: "",
       minLength: "", maxLength: "", min: "", max: "", pattern: "",
       beforeDate: "", afterDate: "", afterTime: "", beforeTime: "",
+      beforeDatetime: "", afterDatetime: "",
       maxFileSize: type.toLowerCase() === "file_upload" ? "5" : "",
       allowedFileTypes: type.toLowerCase() === "file_upload" ? "pdf,jpg,png" : "",
       options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
@@ -268,7 +299,28 @@ export default function EditFormPage() {
     }
   };
   const removeField = (id) => { setFields(fields.filter((f) => f.id !== id)); if (activeFieldId === id) setActiveFieldId(null); };
-  const handleNumberInput = (e, id, key) => { const v = e.target.value; if (v === "" || /^\d+$/.test(v)) updateField(id, key, v); };
+  const handleNumberInput = (e, id, key) => {
+    const v = e.target.value;
+    if (v === "" || v === "-") {
+      updateField(id, key, v);
+      return;
+    }
+
+    const field = fields.find(f => f.id === id);
+    const isIntegerField = field?.type === "number";
+
+    // Check if what they are typing is a valid integer or decimal
+    const isDecimal = /^-?\d*\.?\d*$/.test(v);
+    const isInteger = /^-?\d+$/.test(v);
+
+    if (["minLength", "maxLength", "maxFileSize"].includes(key) || (isIntegerField && (key === "min" || key === "max" || key === "defaultValue"))) {
+      // Must be whole number for length/size OR for min/max/default on an integer field
+      if (isInteger) updateField(id, key, v);
+    } else {
+      // Allow decimals for min/max/default on decimal fields
+      if (isDecimal) updateField(id, key, v);
+    }
+  };
   const generateColumnName = (label) => label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 
   const publishForm = async () => {
@@ -306,14 +358,14 @@ export default function EditFormPage() {
           return { id: field._dbId ?? null, name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
         }
         if (!field.label) throw new Error("All fields must have a label.");
-        let fd = { 
-          id: field._dbId ?? null, 
-          name: field.label, 
-          fieldKey: field.key || generateColumnName(field.label), 
-          type: field.type, 
-          required: field.required, 
-          isReadOnly: field.isReadOnly, 
-          isMultiSelect: !!field.isMultiSelect 
+        let fd = {
+          id: field._dbId ?? null,
+          name: field.label,
+          fieldKey: field.key || generateColumnName(field.label),
+          type: field.type,
+          required: field.required,
+          isReadOnly: field.isReadOnly,
+          isMultiSelect: !!field.isMultiSelect
         };
 
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
@@ -334,16 +386,20 @@ export default function EditFormPage() {
           if (field.maxLength) fd.maxLength = Number(field.maxLength);
           if (field.pattern) fd.pattern = field.pattern;
         }
-        if (field.type === "number") { if (field.min) fd.min = Number(field.min); if (field.max) fd.max = Number(field.max); }
+        if (field.type === "number" || field.type === "decimal") {
+          if (field.min !== undefined && field.min !== "") fd.min = Number(field.min);
+          if (field.max !== undefined && field.max !== "") fd.max = Number(field.max);
+        }
         if (field.type === "date") { if (field.afterDate) fd.afterDate = field.afterDate; if (field.beforeDate) fd.beforeDate = field.beforeDate; }
         if (field.type === "time") { if (field.afterTime) fd.afterTime = field.afterTime; if (field.beforeTime) fd.beforeTime = field.beforeTime; }
+        if (field.type === "datetime") { if (field.afterDatetime) fd.afterDatetime = field.afterDatetime; if (field.beforeDatetime) fd.beforeDatetime = field.beforeDatetime; }
         if (field.type === "file_upload") {
           fd.maxFileSize = field.maxFileSize ? Number(field.maxFileSize) : 5;
           fd.allowedFileTypes = field.allowedFileTypes || "pdf,jpg,png";
         }
         return fd;
       });
-      const updateUrl = versionId 
+      const updateUrl = versionId
         ? ENDPOINTS.formVersion(id, versionId)
         : `${ENDPOINTS.FORMS}/${id}`;
 
@@ -393,6 +449,8 @@ export default function EditFormPage() {
         });
       } catch (e) { console.warn("Failed to save rules:", e); }
 
+      savedSnapshot.current = { formName, fields, rules: rules.map(({ _id, ...r }) => r) };
+      setIsDirty(false);
       setShowSuccess(true);
       if (!isPublishing) {
         // FIXED: Show status-dependent success message
@@ -401,12 +459,12 @@ export default function EditFormPage() {
         // But the requirement says "Make sure the save success message says..."
         // I'll update the label in the return JSX as well, or just alert for now if that's the pattern
         // Based on FormHeader props, it uses showSuccess boolean. I'll pass labels to FormHeader.
-        
-        setTimeout(() => { 
-          setShowSuccess(false); 
+
+        setTimeout(() => {
+          setShowSuccess(false);
           // FIXED: Only redirect if it's a published version save, or keep user here for draft
           if (formStatus !== "DRAFT") {
-            router.push("/forms/all"); 
+            router.push("/forms/all");
           }
         }, 1500);
       }
@@ -486,6 +544,7 @@ export default function EditFormPage() {
           userRole={userRole}
           formId={id}
           onPreview={() => setIsPreviewOpen(true)}
+          isDirty={isDirty}
         />
 
         <div

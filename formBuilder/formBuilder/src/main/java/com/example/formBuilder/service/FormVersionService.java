@@ -466,6 +466,10 @@ public class FormVersionService {
         field.setOptions(req.getOptions());
         field.setSourceTable(req.getSourceTable());
         field.setSourceColumn(req.getSourceColumn());
+        field.setAfterTime(req.getAfterTime());
+        field.setBeforeTime(req.getBeforeTime());
+        field.setBeforeDatetime(req.getBeforeDatetime());
+        field.setAfterDatetime(req.getAfterDatetime());
         field.setIsReadOnly(Boolean.TRUE.equals(req.getIsReadOnly()));
         field.setIsMultiSelect(Boolean.TRUE.equals(req.getIsMultiSelect()));
     }
@@ -750,6 +754,8 @@ public class FormVersionService {
                         .afterDate(f.getAfterDate())
                         .afterTime(f.getAfterTime())
                         .beforeTime(f.getBeforeTime())
+                        .beforeDatetime(f.getBeforeDatetime())
+                        .afterDatetime(f.getAfterDatetime())
                         .options(f.getOptions() != null ? new ArrayList<>(f.getOptions()) : null)
                         .sourceTable(f.getSourceTable())
                         .sourceColumn(f.getSourceColumn())

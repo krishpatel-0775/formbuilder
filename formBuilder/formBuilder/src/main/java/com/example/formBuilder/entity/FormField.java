@@ -33,8 +33,10 @@ public class FormField {
     private Integer minLength;
     private Integer maxLength;
 
-    private Integer min;
-    private Integer max;
+    @Column(columnDefinition = "NUMERIC(19,4)")
+    private Double min;
+    @Column(columnDefinition = "NUMERIC(19,4)")
+    private Double max;
 
     private String pattern;
 
@@ -43,6 +45,12 @@ public class FormField {
 
     private String afterTime;
     private String beforeTime;
+
+    @Column(name = "before_datetime")
+    private String beforeDatetime;
+
+    @Column(name = "after_datetime")
+    private String afterDatetime;
 
     @Column(name = "max_file_size")
     private Integer maxFileSize; // in MB

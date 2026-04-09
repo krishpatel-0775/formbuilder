@@ -321,10 +321,16 @@ export function FormFieldWrapper({
       {/* GENERIC INPUTS */}
       {!["textarea", "radio", "checkbox", "select", "toggle", "file_upload", "heading", "paragraph", "divider"].includes(field.fieldType) && (
         <input
-          type={field.fieldType === "phone" ? "tel" : field.fieldType}
+          type={field.fieldType === "phone" ? "tel" : field.fieldType === "datetime" ? "datetime-local" : (field.fieldType === "decimal" || field.fieldType === "number") ? "number" : field.fieldType}
+          step={field.fieldType === "decimal" ? "any" : field.fieldType === "number" ? "1" : undefined}
           value={value || ""}
           onChange={(e) => onChange(fieldIdentifier, e.target.value)}
-          onWheel={(e) => e.target.type === "number" && e.target.blur()} 
+          onKeyDown={(e) => {
+            if (field.fieldType === "number" && (e.key === "." || e.key === "e" || e.key === "E")) {
+              e.preventDefault();
+            }
+          }}
+          onWheel={(e) => (e.target.type === "number" || field.fieldType === "decimal") && e.target.blur()} 
           placeholder={field.placeholder || `Enter sequence for ${displayLabel.toLowerCase()}...`}
           className={`${inputCls} ${field.isReadOnly ? "opacity-60 cursor-not-allowed bg-slate-100/50" : ""}`}
           readOnly={field.isReadOnly}

@@ -21,13 +21,15 @@ public class FormFieldResponseDto {
     private Boolean required;
     private Integer minLength;
     private Integer maxLength;
-    private Integer min;
-    private Integer max;
+    private Double min;
+    private Double max;
     private String pattern;
     private LocalDate beforeDate;
     private LocalDate afterDate;
     private String afterTime;
     private String beforeTime;
+    private String beforeDatetime;
+    private String afterDatetime;
     private List<String> options;
     private String sourceTable;
     private String sourceColumn;

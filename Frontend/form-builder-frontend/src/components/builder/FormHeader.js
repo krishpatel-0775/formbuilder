@@ -30,7 +30,8 @@ export function FormHeader({
   saveIcon = <Save size={16} />,
   userRole,
   formId,
-  onPreview
+  onPreview,
+  isDirty
 }) {
   const isPublished = formStatus === "PUBLISHED";
 
@@ -123,8 +124,8 @@ export function FormHeader({
           onClick={saveForm}
           disabled={isSaving || showSuccess || isPublishing}
           className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl ${showSuccess
-              ? "bg-green-500 text-white shadow-green-500/20"
-              : "bg-slate-900 text-white hover:bg-primary shadow-slate-900/20 hover:shadow-primary/20"
+            ? "bg-green-500 text-white shadow-green-500/20"
+            : "bg-slate-900 text-white hover:bg-primary shadow-slate-900/20 hover:shadow-primary/20"
             } disabled:opacity-50`}
         >
           {showSuccess ? (
@@ -132,7 +133,12 @@ export function FormHeader({
           ) : isSaving ? (
             <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           ) : (
-            <>{saveIcon} {saveLabel}</>
+            <div className="flex items-center gap-2">
+              {isDirty && !isSaving && !showSuccess && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Unsaved changes" />
+              )}
+              {saveIcon} {saveLabel}
+            </div>
           )}
         </button>
       </div>
