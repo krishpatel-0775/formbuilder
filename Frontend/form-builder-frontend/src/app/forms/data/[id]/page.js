@@ -43,15 +43,12 @@ export default function FormDataPage() {
     setLoading(true);
     setError(null);
     try {
-      // Step 1: Check form status
+      // Step 1: Check form status and basic info
       const formRes = await fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" });
       if (!formRes.ok) throw new Error("Form not found or access denied.");
       const formJson = await formRes.json();
       const status = formJson.data?.status || "DRAFT";
       setFormStatus(status);
-      setFields(formJson.data?.fields || []);
-
-      console.log(formJson.data.formVersionId);
 
       if (status !== "PUBLISHED") {
         throw new Error("Form is either not published or access is restricted.");
@@ -63,34 +60,41 @@ export default function FormDataPage() {
         if (vRes.ok) {
           const vJson = await vRes.json();
           setVersions(vJson.data || []);
-          console.log(vJson.data)
         }
       }
 
-      if (selectedVersionId == "") {
-        setSelectedVersionId(formJson.data.formVersionId);
+      // Determine correct version to fetch metadata for
+      let currentVersionId = selectedVersionId;
+      if (!currentVersionId) {
+        currentVersionId = formJson.data.formVersionId;
+        setSelectedVersionId(currentVersionId);
       }
 
-
-      let url = showDeleted 
-        ? `${ENDPOINTS.deletedFormData(id)}?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${selectedVersionId}`
-        : `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${selectedVersionId}`;
-
-      if (selectedVersionId) {
-        const res = await fetch(url, { credentials: "include" });
-
-
-
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => null);
-          const errText = errJson ? (errJson.message || JSON.stringify(errJson)) : await res.text();
-          throw new Error(errText || `Server returned ${res.status}`);
+      if (currentVersionId) {
+        // Step 2: Fetch version-specific fields
+        const versionMetaRes = await fetch(ENDPOINTS.formVersion(id, currentVersionId), { credentials: "include" });
+        if (versionMetaRes.ok) {
+          const versionMetaJson = await versionMetaRes.json();
+          setFields(versionMetaJson.data?.fields || []);
+        } else {
+          // Fallback to form's current fields if version metadata fails
+          setFields(formJson.data?.fields || []);
         }
 
-        const json = await res.json();
+        // Step 3: Fetch submission data for this version
+        let url = showDeleted 
+          ? `${ENDPOINTS.deletedFormData(id)}?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${currentVersionId}`
+          : `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${currentVersionId}`;
 
-        const responseData = json.data || {};
-        console.log(responseData)
+        const dataRes = await fetch(url, { credentials: "include" });
+        if (!dataRes.ok) {
+          const errJson = await dataRes.json().catch(() => null);
+          const errText = errJson ? (errJson.message || JSON.stringify(errJson)) : await dataRes.text();
+          throw new Error(errText || `Server returned ${dataRes.status}`);
+        }
+
+        const dataJson = await dataRes.json();
+        const responseData = dataJson.data || {};
         setData(responseData.content || []);
         setTotalPages(responseData.totalPages || 0);
         setTotalElements(responseData.totalElements || 0);
