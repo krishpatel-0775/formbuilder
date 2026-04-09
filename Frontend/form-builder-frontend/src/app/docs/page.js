@@ -14,7 +14,8 @@ import {
     Copy,
     Check,
     Type, Hash, Mail, Calendar, Phone, Clock, Link, CircleDot, CheckSquare,
-    ListPlus, ToggleLeft, Heading, Pilcrow, Minus, Layout, SeparatorHorizontal, Menu, X, Globe
+    ListPlus, ToggleLeft, Heading, Pilcrow, Minus, Layout, SeparatorHorizontal, Menu, X, Globe,
+    Search, RefreshCw, Lock, Activity
 } from "lucide-react";
 
 const DOCS_VERSION = "v1.0.0";
@@ -22,6 +23,9 @@ const DOCS_VERSION = "v1.0.0";
 export default function DocsPage() {
     const [activeSection, setActiveSection] = useState("overview");
     const [copiedId, setCopiedId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isTryingApi, setIsTryingApi] = useState(null);
 
     // Track if scrolling is caused by a manual click to avoid intersection observer jumps
     const isManualScrolling = useRef(false);
@@ -30,12 +34,19 @@ export default function DocsPage() {
         { id: "overview", label: "Overview", icon: BookOpen },
         { id: "metadata", label: "Metadata API", icon: FileText },
         { id: "components", label: "Components", icon: ListPlus },
+        { id: "rules", label: "Rules Engine", icon: Zap },
         { id: "submission", label: "Submission API", icon: Send },
+        { id: "errors", label: "Error Handling", icon: AlertCircle },
+        { id: "upload", label: "File Upload Flow", icon: Layout },
         { id: "flow", label: "Complete Flow", icon: Zap },
         { id: "concepts", label: "Key Concepts", icon: Terminal },
         { id: "validation", label: "Validations", icon: AlertCircle },
         { id: "security", label: "Security", icon: ShieldCheck }
     ];
+
+    const filteredSections = sections.filter(section => 
+        section.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     useEffect(() => {
         const observerOptions = {
@@ -76,6 +87,7 @@ export default function DocsPage() {
             isManualScrolling.current = true;
             element.scrollIntoView({ behavior: "smooth" });
             setActiveSection(id);
+            setIsMobileMenuOpen(false);
             
             // Re-enable observer after smooth scroll completes
             setTimeout(() => {
@@ -84,15 +96,60 @@ export default function DocsPage() {
         }
     };
 
+    const handleTryApi = (id) => {
+        setIsTryingApi(id);
+        setTimeout(() => setIsTryingApi(null), 1500);
+    };
+
     return (
         <div className="flex min-h-[calc(100vh-4rem)] bg-slate-50/50">
+            {/* Mobile Header */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-50 flex items-center justify-between px-6">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+                        <Code size={18} />
+                    </div>
+                    <span className="font-black text-slate-900 tracking-tight">API Docs</span>
+                </div>
+                <button 
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="p-2 text-slate-500 hover:text-slate-900 transition-colors"
+                >
+                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+            </div>
+
+            {/* Mobile Sidebar Overlay */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Left Sidebar - Table of Contents */}
-            <aside className="w-80 hidden lg:block border-r border-slate-200 bg-white sticky top-0 h-[calc(100vh-4rem)] p-8 overflow-y-auto custom-scrollbar no-scrollbar">
+            <aside className={`
+                fixed inset-y-0 left-0 w-80 bg-white border-r border-slate-200 z-50 transform transition-transform duration-300 lg:sticky lg:top-0 lg:h-[calc(100vh-4rem)] lg:translate-x-0
+                ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+                p-8 overflow-y-auto custom-scrollbar no-scrollbar
+            `}>
                 <div className="space-y-8">
+                    {/* Search Bar */}
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Search docs..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all"
+                        />
+                    </div>
+
                     <div>
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 pl-2">Documentation</h3>
                         <nav className="space-y-1">
-                            {sections.map(section => (
+                            {filteredSections.map(section => (
                                 <button
                                     key={section.id}
                                     onClick={() => scrollToSection(section.id)}
@@ -383,6 +440,106 @@ export default function DocsPage() {
                             </div>
                         ))}
                     </div>
+                    <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm mt-12">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Technical Type Manifest</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[
+                                { t: "text", d: "Generic alphanumeric string" },
+                                { t: "email", d: "Strict RFC 5322 validation" },
+                                { t: "password", d: "Masked character input" },
+                                { t: "number", d: "Floating point or integer" },
+                                { t: "date", d: "ISO 8601 YYYY-MM-DD" },
+                                { t: "time", d: "24-hour HH:mm format" },
+                                { t: "select / radio", d: "Single value from options" },
+                                { t: "checkbox", d: "JSON array of selected strings" },
+                                { t: "file_upload", d: "Persistent cloud storage URL" }
+                            ].map(type => (
+                                <div key={type.t} className="flex flex-col gap-1">
+                                    <code className="text-xs font-black text-primary">{type.t}</code>
+                                    <span className="text-[10px] text-slate-500 font-bold">{type.d}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <div className="h-px bg-slate-200" />
+
+                {/* Rules Engine */}
+                <section id="rules" className="scroll-mt-32 space-y-12">
+                    <div className="space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                            <Zap size={12} strokeWidth={3} /> Logic Engine
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Rules Engine</h2>
+                        <p className="text-slate-500 font-medium leading-relaxed">
+                            Implement sophisticated dynamic conditional logic to control field visibility and behavior in real-time.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        <div className="space-y-8">
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Logical Operators</h4>
+                                <div className="space-y-4">
+                                    {[
+                                        { op: "EQUALS", desc: "Strict equality check" },
+                                        { op: "NOT_EQUALS", desc: "Inequality check" },
+                                        { op: "GREATER_THAN", desc: "Numeric comparison" },
+                                        { op: "CONTAINS", desc: "Substring matching" }
+                                    ].map(item => (
+                                        <div key={item.op} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                            <code className="text-xs font-black text-primary">{item.op}</code>
+                                            <span className="text-[10px] text-slate-500 font-bold">{item.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Action Types</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {["SHOW", "HIDE", "ENABLE", "DISABLE"].map(action => (
+                                        <div key={action} className="p-4 bg-slate-900 rounded-2xl text-center">
+                                            <code className="text-[10px] font-black text-emerald-400">{action}</code>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                            <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rule Definition (JSON)</span>
+                                <button 
+                                    onClick={() => handleCopy(`{ "condition": { ... }, "action": { ... } }`, "rules-json")}
+                                    className="text-slate-500 hover:text-white"
+                                >
+                                    {copiedId === "rules-json" ? <Check size={16} /> : <Copy size={16} />}
+                                </button>
+                            </div>
+                            <div className="p-8">
+<pre className="p-8 bg-slate-950/50 rounded-3xl text-sm text-primary font-mono overflow-x-auto leading-relaxed">
+{`{
+  "condition": {
+    "logicalOperator": "AND",
+    "conditions": [
+      { 
+        "field": "user_age", 
+        "operator": "GREATER_THAN", 
+        "value": "18" 
+      }
+    ]
+  },
+  "action": {
+    "type": "SHOW",
+    "targetField": "license_number"
+  }
+}`}
+</pre>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <div className="h-px bg-slate-200" />
@@ -448,8 +605,86 @@ export default function DocsPage() {
                         </div>
                     </div>
 
+                    {/* Interactive Try API Section */}
+                    <div className="bg-white border-2 border-primary/10 rounded-[2.5rem] p-1 shadow-xl shadow-primary/5 overflow-hidden">
+                        <div className="p-10 flex flex-col md:flex-row items-center gap-10">
+                            <div className="flex-1 space-y-6 text-center md:text-left">
+                                <div className="w-14 h-14 bg-primary/10 rounded-[1.5rem] flex items-center justify-center text-primary mx-auto md:mx-0">
+                                    <Terminal size={28} strokeWidth={2.5} />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Interactive Playground</h3>
+                                    <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                                        Test the submission endpoint directly with a mock payload to verify your structural mapping.
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={() => handleTryApi("submission")}
+                                    className="w-full md:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] hover:bg-black transition-all flex items-center justify-center gap-3 group"
+                                >
+                                    {isTryingApi === "submission" ? <RefreshCw className="animate-spin" size={16} /> : <Send size={16} />}
+                                    {isTryingApi === "submission" ? "Simulating..." : "Test Submission API"}
+                                </button>
+                            </div>
+                            <div className="flex-1 w-full">
+                                <div className="bg-slate-900 rounded-[2rem] p-6 relative overflow-hidden min-h-[180px] flex flex-col justify-center">
+                                    {isTryingApi === "submission" ? (
+                                        <div className="space-y-4 animate-pulse">
+                                            <div className="h-4 w-3/4 bg-white/5 rounded-full" />
+                                            <div className="h-4 w-1/2 bg-white/5 rounded-full" />
+                                            <div className="h-4 w-2/3 bg-white/5 rounded-full" />
+                                        </div>
+                                    ) : (
+                                        <pre className="text-[11px] font-mono text-emerald-400 leading-relaxed">
+                                            {isTryingApi === null && !copiedId?.includes("test") ? "// Click the button to simulate a response\n\nWaiting for payload..." : 
+                                            `{
+  "success": true,
+  "message": "Submission successful",
+  "data": {
+    "submission_id": "8c5b...",
+    "recorded_at": "${new Date().toISOString()}"
+  }
+}`}
+                                        </pre>
+                                    )}
+                                </div>
+                            </div>
+                    </div>
+                </div>
+
+                <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm mt-12">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Data Type Mapping Reference</h4>
+                    <div className="overflow-hidden">
+                        <table className="w-full text-left">
+                            <thead className="text-[10px] font-black text-slate-400 uppercase border-b border-slate-100">
+                                <tr>
+                                    <th className="pb-4">Field Category</th>
+                                    <th className="pb-4">JSON Type</th>
+                                    <th className="pb-4">Example Value</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {[
+                                    { c: "Standard Inputs", t: "String", e: "\"Jane Doe\"" },
+                                    { c: "Numeric Fields", t: "Number", e: "25" },
+                                    { c: "Binary Options", t: "Boolean / String", e: "true / \"true\"" },
+                                    { c: "Multi-Selection", t: "Array<String>", e: "[\"A\", \"B\"]" },
+                                    { c: "Cloud Media", t: "String (URL)", e: "\"https://.../doc.pdf\"" }
+                                ].map(row => (
+                                    <tr key={row.c}>
+                                        <td className="py-4 text-[11px] font-black text-slate-900">{row.c}</td>
+                                        <td className="py-4"><code className="text-[10px] font-bold text-primary">{row.t}</code></td>
+                                        <td className="py-4 font-mono text-[10px] text-emerald-600 font-bold">{row.e}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
                     {/* Example Full JSON */}
-                    <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                    <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden mt-12">
                         <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between bg-slate-950/20">
                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Comprehensive Example</span>
                             <code className="text-[10px] font-mono text-emerald-500/50">POST /api/v1/submissions</code>
@@ -471,7 +706,7 @@ export default function DocsPage() {
                         </div>
                     </div>
 
-                    <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 flex items-start gap-4">
+                    <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 flex items-start gap-4 mt-8">
                         <AlertCircle className="text-amber-500 mt-1 flex-shrink-0" size={20} />
                         <div>
                             <h4 className="text-sm font-black text-amber-900 tracking-tight">Critical Mapping Rule</h4>
@@ -483,7 +718,158 @@ export default function DocsPage() {
                     </div>
                 </section>
 
+                {/* Error Handling */}
+                <section id="errors" className="scroll-mt-32 space-y-12">
+                    <div className="space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                            <AlertCircle size={12} strokeWidth={3} /> Quality Control
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Error Handling</h2>
+                        <p className="text-slate-500 font-medium leading-relaxed">
+                            Comprehensive guide to status codes and error object structures for bulletproof integrations.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Standard Error Response</h4>
+                            <div className="bg-slate-900 rounded-[2.5rem] p-10">
+<pre className="text-xs text-primary font-mono leading-relaxed">
+{`{
+  "success": false,
+  "message": "field_name is required",
+  "data": null,
+  "status": 400,
+  "timestamp": "${new Date().toUTCString()}"
+}`}
+</pre>
+                            </div>
+                        </div>
+
+                        <div className="overflow-hidden bg-white border border-slate-100 rounded-[2.5rem] shadow-sm self-start">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
+                                    <tr>
+                                        <th className="px-6 py-5">Code</th>
+                                        <th className="px-6 py-5">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50 text-[11px] font-medium text-slate-500">
+                                    {[
+                                        { c: "VALIDATION_ERROR", d: "One or more inputs failed constraints." },
+                                        { c: "MISSING_FIELD", d: "A required technical key is absent." },
+                                        { c: "UNAUTHORIZED", d: "Bearer token is invalid or expired." },
+                                        { c: "SERVER_ERROR", d: "Unexpected processing failure." }
+                                    ].map(row => (
+                                        <tr key={row.c}>
+                                            <td className="px-6 py-4 font-black">{row.c}</td>
+                                            <td className="px-6 py-4">{row.d}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
                 <div className="h-px bg-slate-200" />
+
+                {/* File Upload Flow */}
+                <section id="upload" className="scroll-mt-32 space-y-12">
+                    <div className="space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                            <Layout size={12} strokeWidth={3} /> Advanced Media
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">File Upload Flow</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[
+                            { s: "Step 1", t: "Select & Validate", d: "User picks file. Frontend checks `maxFileSize` and `allowedFileTypes` property." },
+                            { s: "Step 2", t: "Cloud Upload", d: "Direct upload to storage or via pre-signed URL to obtain the persistent URL." },
+                            { s: "Step 3", t: "Record Reference", d: "Include the file URL in the `values` object using the field technical key." }
+                        ].map(step => (
+                            <div key={step.s} className="p-8 bg-white border border-slate-100 rounded-[2.5rem] relative overflow-hidden translate-y-0 hover:-translate-y-2 transition-transform">
+                                <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-4 block">{step.s}</span>
+                                <h4 className="text-sm font-black text-slate-900 mb-2">{step.t}</h4>
+                                <p className="text-[11px] text-slate-500 font-bold leading-relaxed">{step.d}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                        <div className="p-10 flex flex-col md:flex-row gap-10">
+                            <div className="flex-1 space-y-6">
+<pre className="text-sm text-primary font-mono leading-relaxed">
+{`{
+  "values": {
+    "full_name": "Jane User",
+    "resume_file": "https://cdn.host.com/f/394.pdf"
+  }
+}`}
+</pre>
+                            </div>
+                            <div className="flex-1 text-slate-400 text-xs font-medium space-y-4 pt-4">
+                                <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
+                                    <h5 className="text-white font-black mb-2 uppercase tracking-widest text-[10px]">Upload Parameters</h5>
+                                    <ul className="space-y-2">
+                                         <li className="flex justify-between"><span>maxFileSize</span> <span className="text-white">5 MB</span></li>
+                                        <li className="flex justify-between"><span>allowedFiles</span> <span className="text-white">.pdf, .jpg, .png, .xlsx, .xml</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+                        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Supported Media Formats</h4>
+                            <div className="space-y-6">
+                                {[
+                                    { g: "Documents", e: "pdf" },
+                                    { g: "Images", e: "jpg, png" },
+                                    { g: "Spreadsheets", e: "xlsx" },
+                                    { g: "Data Structure", e: "xml" }
+                                ].map(group => (
+                                    <div key={group.g} className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-0 last:pb-0">
+                                        <span className="text-[11px] font-black text-slate-900">{group.g}</span>
+                                        <div className="flex flex-wrap gap-1 items-center justify-end">
+                                            {group.e.split(", ").map(ext => (
+                                                <code key={ext} className="text-[9px] font-black bg-slate-50 text-slate-500 px-2 py-0.5 rounded-md border border-slate-100">.{ext}</code>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="p-10 bg-slate-900 rounded-[2.5rem] text-white space-y-8">
+                            <div>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">System Upload Limits</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                        <span className="text-[11px] font-black">Global Default</span>
+                                        <span className="text-xl font-black text-primary">5 MB</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                                        System-wide limits are enforced at the API Gateway level. Individual fields can further restrict this via the <code className="text-white">maxFileSize</code> property in the metadata.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="p-6 bg-primary/10 rounded-2xl border border-primary/20">
+                                <h5 className="flex items-center gap-2 text-xs font-black text-primary mb-2 italic">
+                                    <Zap size={14} /> Performance Note
+                                </h5>
+                                <p className="text-[10px] text-slate-300 font-medium leading-relaxed">
+                                    For files larger than 10MB, we recommend implementing chunked uploads or direct-to-S3 pre-signed URLs to bypass server timeouts.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
 
                 {/* 4. Complete Flow */}
                 <section id="flow" className="scroll-mt-32 space-y-12">
@@ -629,21 +1015,28 @@ export default function DocsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
-                            <h4 className="font-black text-slate-900 mb-4 flex items-center gap-2">
-                                <Zap className="text-primary" size={18} /> Sanitization
+                        <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm space-y-4">
+                            <h4 className="font-black text-slate-900 flex items-center gap-2">
+                                <Lock className="text-primary" size={18} /> Authentication
                             </h4>
                             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                Backend sanitizes all values in the `values` object to prevent SQL and NoSQL injection attacks.
+                                All protected endpoints require a Bearer Token in the authorization header.
                             </p>
+                            <code className="block p-3 bg-slate-50 rounded-xl text-[10px] font-mono text-primary">
+                                Authorization: Bearer &lt;jwt_token&gt;
+                            </code>
                         </div>
-                        <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
-                            <h4 className="font-black text-slate-900 mb-4 flex items-center gap-2">
-                                <ShieldCheck className="text-primary" size={18} /> CORS Policy
+                        <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm space-y-4">
+                            <h4 className="font-black text-slate-900 flex items-center gap-2">
+                                <Activity className="text-primary" size={18} /> Rate Limiting
                             </h4>
                             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                Restricted access policy ensures requests are only accepted from authorized production domains.
+                                To ensure system stability, we enforce a strict request threshold per IP/User.
                             </p>
+                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400">
+                                <span className="px-2 py-1 bg-slate-100 rounded">100 req / minute</span>
+                                <span className="px-2 py-1 bg-slate-100 rounded">Standard Tier</span>
+                            </div>
                         </div>
                     </div>
 

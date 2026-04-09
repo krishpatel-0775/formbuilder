@@ -229,24 +229,29 @@ public class SubmissionService {
                         (existing, replacement) -> existing));
 
         // Validation for final submission
-        List<String> validationErrors = new ArrayList<>();
+        java.util.Map<String, java.util.List<String>> fieldErrors = new java.util.HashMap<>();
+        
         for (String key : values.keySet()) {
-            if (!fieldMap.containsKey(key)) validationErrors.add("Invalid field: " + key);
+            if (!fieldMap.containsKey(key)) {
+                fieldErrors.computeIfAbsent("_global", k -> new java.util.ArrayList<>()).add("Invalid field: " + key);
+            }
         }
 
         for (FormField field : formFields) {
+            String key = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
             if (isDisplayOnly(field.getFieldType())) continue;
-            Object value = values.get(field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName());
+            
+            Object value = values.get(key);
             if (Boolean.TRUE.equals(field.getRequired()) && (value == null || value.toString().trim().isEmpty())) {
-                validationErrors.add(field.getFieldName() + " is required");
+                fieldErrors.computeIfAbsent(key, k -> new java.util.ArrayList<>()).add("This field is required");
                 continue;
             }
             if (value != null && !value.toString().trim().isEmpty()) {
-                validateValue(field, value, validationErrors);
+                validateValue(field, value, fieldErrors);
             }
         }
 
-        if (!validationErrors.isEmpty()) throw new ValidationException(String.join(", ", validationErrors));
+        if (!fieldErrors.isEmpty()) throw new ValidationException(fieldErrors);
         ruleEngineService.validateSubmission(form, values);
 
         // Check if an existing draft exists to update it
@@ -462,108 +467,89 @@ public class SubmissionService {
     /**
      * Validates a submitted value against the constraints defined in the form field metadata.
      */
-    private void validateValue(FormField field, Object value, List<String> errors) {
-
+    private void validateValue(FormField field, Object value, java.util.Map<String, java.util.List<String>> errors) {
+        String key = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
         String stringValue = value.toString();
 
         switch (field.getFieldType()) {
-
             case "text", "textarea", "email" -> {
-
-                if (field.getMinLength() != null &&
-                        stringValue.length() < field.getMinLength()) {
-                    errors.add(field.getFieldName() + " must be at least "
-                                    + field.getMinLength() + " characters");
+                if (field.getMinLength() != null && stringValue.length() < field.getMinLength()) {
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Minimum " + field.getMinLength() + " characters required");
                 }
-
-                if (field.getMaxLength() != null &&
-                        stringValue.length() > field.getMaxLength()) {
-                    errors.add(field.getFieldName() + " must be at most "
-                                    + field.getMaxLength() + " characters");
+                if (field.getMaxLength() != null && stringValue.length() > field.getMaxLength()) {
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Maximum " + field.getMaxLength() + " characters allowed");
                 }
-
-                if (field.getPattern() != null &&
-                        !stringValue.matches(field.getPattern())) {
-                    errors.add(field.getFieldName() + " format invalid");
+                if (field.getPattern() != null && !stringValue.matches(field.getPattern())) {
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Format invalid");
                 }
             }
-
             case "date" -> {
-
                 LocalDate inputDate = null;
-
                 try {
                     inputDate = LocalDate.parse(stringValue);
                 } catch (Exception e) {
-                    errors.add(field.getFieldName() + " must be a valid date (yyyy-MM-dd)");
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Invalid date format (yyyy-MM-dd)");
                 }
-
                 if (inputDate != null) {
-                    // AFTER validation (minimum date)
-                    if (field.getAfterDate() != null &&
-                            inputDate.isBefore(field.getAfterDate())) {
-                        errors.add(field.getFieldName() + " must be after "
-                                        + field.getAfterDate());
+                    if (field.getAfterDate() != null && inputDate.isBefore(field.getAfterDate())) {
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Must be after " + field.getAfterDate());
                     }
-
-                    // BEFORE validation (maximum date)
-                    if (field.getBeforeDate() != null &&
-                            inputDate.isAfter(field.getBeforeDate())) {
-                        errors.add(field.getFieldName() + " must be before "
-                                        + field.getBeforeDate());
+                    if (field.getBeforeDate() != null && inputDate.isAfter(field.getBeforeDate())) {
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Must be before " + field.getBeforeDate());
                     }
                 }
             }
-
             case "url" -> {
                 if (!stringValue.matches(AppConstants.URL_REGEX)) {
-                    errors.add(field.getFieldName() + " must be a valid URL (starting with http:// or https://)");
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Invalid URL format");
                 }
             }
-
             case "phone" -> {
-                // strips spaces, dashes, brackets, plus sign then checks 7–15 digits
                 String digitsOnly = stringValue.replaceAll("[\\s\\-().+]", "");
                 if (!digitsOnly.matches(AppConstants.PHONE_REGEX)) {
-                    errors.add(field.getFieldName() + " must be a valid phone number");
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Invalid phone number");
                 }
             }
-
             case "number" -> {
-
                 int number = 0;
                 boolean isNumber = true;
-
                 try {
                     number = Integer.parseInt(stringValue);
                 } catch (Exception e) {
-                    errors.add(field.getFieldName() + " must be a number");
+                    errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                          .add("Must be a valid number");
                     isNumber = false;
                 }
-
                 if (isNumber) {
-                    if (field.getMin() != null &&
-                            number < field.getMin()) {
-                        errors.add(field.getFieldName() + " must be >= "
-                                        + field.getMin());
+                    if (field.getMin() != null && number < field.getMin()) {
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Value must be at least " + field.getMin());
                     }
-
-                    if (field.getMax() != null &&
-                            number > field.getMax()) {
-                        errors.add(field.getFieldName() + " must be <= "
-                                        + field.getMax());
+                    if (field.getMax() != null && number > field.getMax()) {
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Value must be at most " + field.getMax());
                     }
                 }
             }
             case "time" -> {
                 if (field.getAfterTime() != null && !field.getAfterTime().isBlank()) {
                     if (stringValue.compareTo(field.getAfterTime()) < 0) {
-                        errors.add(field.getFieldName() + " must be after " + field.getAfterTime());
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Must be after " + field.getAfterTime());
                     }
                 }
                 if (field.getBeforeTime() != null && !field.getBeforeTime().isBlank()) {
                     if (stringValue.compareTo(field.getBeforeTime()) > 0) {
-                        errors.add(field.getFieldName() + " must be before " + field.getBeforeTime());
+                        errors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                              .add("Must be before " + field.getBeforeTime());
                     }
                 }
             }

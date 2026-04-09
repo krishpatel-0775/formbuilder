@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import java.util.List;
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,6 +20,7 @@ public class ApiResponse<T> {
     private T data;
     private Integer status;
     private String timestamp;
+    private Map<String, List<String>> errors;
 
     public static <T> ApiResponse<T> success(String message, T data) {
         return ApiResponse.<T>builder()
@@ -47,6 +51,16 @@ public class ApiResponse<T> {
                 .message(message)
                 .status(status)
                 .timestamp(new java.util.Date().toString())
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(int status, String message, Map<String, List<String>> errors) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .status(status)
+                .timestamp(new java.util.Date().toString())
+                .errors(errors)
                 .build();
     }
 }

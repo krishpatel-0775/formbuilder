@@ -482,7 +482,16 @@ export default function PublicFormPage() {
         const errorText = await res.text();
         try {
           const errorData = JSON.parse(errorText);
-          setErrors((prev) => ({ ...prev, _ruleError: [errorData.message || "Submission failed"] }));
+          if (errorData.errors && Object.keys(errorData.errors).length > 0) {
+            setErrors((prev) => ({ ...prev, ...errorData.errors }));
+            
+            // Scroll to the first error
+            const firstErrorField = Object.keys(errorData.errors)[0];
+            const el = document.getElementById(`field-${firstErrorField}`);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          } else {
+            setErrors((prev) => ({ ...prev, _ruleError: [errorData.message || "Submission failed"] }));
+          }
         } catch (e) {
           setErrors((prev) => ({ ...prev, _ruleError: [errorText || "Submission failed"] }));
         }

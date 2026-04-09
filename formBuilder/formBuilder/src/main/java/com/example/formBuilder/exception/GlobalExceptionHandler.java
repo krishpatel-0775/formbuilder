@@ -30,18 +30,23 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleValidationException(ValidationException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), ex.getErrors()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+        java.util.Map<String, java.util.List<String>> errors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        org.springframework.validation.FieldError::getField,
+                        java.util.stream.Collectors.mapping(
+                                org.springframework.validation.FieldError::getDefaultMessage,
+                                java.util.stream.Collectors.toList()
+                        )
+                ));
         
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Validation failed: " + errorMessage));
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Validation failed", errors));
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)

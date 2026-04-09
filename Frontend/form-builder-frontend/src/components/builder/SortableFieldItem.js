@@ -167,7 +167,7 @@ export function SortableFieldItem({
             {field.required && <div className="w-1 h-1 rounded-full bg-red-400" />}
         </div>
         <input 
-            placeholder="Page Divider..." 
+            placeholder="Lable..." 
             value={field.label} 
             onChange={(e) => updateField(field.id, "label", e.target.value)}
             className="w-full text-lg font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"
