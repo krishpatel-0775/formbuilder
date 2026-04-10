@@ -436,10 +436,70 @@ export default function FormVaultPage() {
                                             {mounted && form.updatedAt ? new Date(form.updatedAt).toLocaleDateString() : "---"}
                                         </td>
                                         <td className="px-10 py-6 text-right space-x-2">
-                                            <Link href={`/forms/edit/${form.id}`} className="inline-flex p-3 text-slate-400 hover:text-[var(--primary)] transition-all rounded-xl hover:bg-[var(--primary-soft)]">
+                                            {/* Primary Actions */}
+                                            <Link href={`/forms/edit/${form.id}`} className="inline-flex p-3 text-slate-400 hover:text-[var(--primary)] transition-all rounded-xl hover:bg-[var(--primary-soft)]" title="Edit Form">
                                                 <FileText size={20} />
                                             </Link>
-                                            <button onClick={() => handleDelete(form.id)} className="inline-flex p-3 text-slate-400 hover:text-red-500 transition-all rounded-xl hover:bg-red-50">
+
+                                            {form.status === "PUBLISHED" ? (
+                                                <Link
+                                                    href={`/forms/data/${form.id}`}
+                                                    className="inline-flex p-3 text-slate-400 hover:text-emerald-600 transition-all rounded-xl hover:bg-emerald-50"
+                                                    title="View Data"
+                                                >
+                                                    <ArrowUpRight size={20} />
+                                                </Link>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handlePublish(form.id)}
+                                                    disabled={publishingState[form.id]}
+                                                    className="inline-flex p-3 text-slate-400 hover:text-[var(--primary)] transition-all rounded-xl hover:bg-[var(--primary-soft)] disabled:opacity-50"
+                                                    title="Publish Form"
+                                                >
+                                                    {publishingState[form.id] ? (
+                                                        <RefreshCw size={20} className="animate-spin" />
+                                                    ) : (
+                                                        <Rocket size={20} />
+                                                    )}
+                                                </button>
+                                            )}
+
+                                            {/* Utility Actions (Visible when Published) */}
+                                            {form.status === "PUBLISHED" && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleCopyLink(form.id)}
+                                                        className={`inline-flex p-3 transition-all rounded-xl ${copiedId === form.id ? "text-emerald-600 bg-emerald-50" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+                                                        title="Copy URL"
+                                                    >
+                                                        {copiedId === form.id ? <Check size={20} /> : <Copy size={20} />}
+                                                    </button>
+                                                    <Link
+                                                        href={`/forms/${form.id}`}
+                                                        className="inline-flex p-3 text-slate-400 hover:text-slate-900 transition-all rounded-xl hover:bg-slate-100"
+                                                        title="Form Fill / Preview"
+                                                    >
+                                                        <ExternalLink size={20} />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleOpenApiModal(form)}
+                                                        className="inline-flex p-3 text-slate-400 hover:text-blue-600 transition-all rounded-xl hover:bg-blue-50"
+                                                        title="API Copy"
+                                                    >
+                                                        <Code size={20} />
+                                                    </button>
+                                                </>
+                                            )}
+
+                                            {/* History & Delete */}
+                                            <Link
+                                                href={`/forms/${form.id}/versions`}
+                                                className="inline-flex p-3 text-slate-400 hover:text-violet-600 transition-all rounded-xl hover:bg-violet-50"
+                                                title="Form Versions"
+                                            >
+                                                <GitBranch size={20} />
+                                            </Link>
+                                            <button onClick={() => handleDelete(form.id)} className="inline-flex p-3 text-slate-400 hover:text-red-500 transition-all rounded-xl hover:bg-red-50" title="Delete Form">
                                                 <Trash2 size={20} />
                                             </button>
                                         </td>
