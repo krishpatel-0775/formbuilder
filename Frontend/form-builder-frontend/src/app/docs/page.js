@@ -25,7 +25,7 @@ export default function DocsPage() {
     const [copiedId, setCopiedId] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isTryingApi, setIsTryingApi] = useState(null);
+
 
     // Track if scrolling is caused by a manual click to avoid intersection observer jumps
     const isManualScrolling = useRef(false);
@@ -96,10 +96,7 @@ export default function DocsPage() {
         }
     };
 
-    const handleTryApi = (id) => {
-        setIsTryingApi(id);
-        setTimeout(() => setIsTryingApi(null), 1500);
-    };
+
 
     return (
         <div className="flex min-h-[calc(100vh-4rem)] bg-slate-50/50">
@@ -301,18 +298,18 @@ export default function DocsPage() {
       },
       {
         "fieldName": "Date of Birth",
-        "fieldKey": "dob", "fieldType": "date",
+        "fieldKey": "date_of_birth", "fieldType": "date",
         "required": true, "beforeDate": "2006-01-01",
         "helperText": "Must be 18+"
       },
       {
-        "fieldName": "Technical Skills",
+        "fieldName": "Skills",
         "fieldKey": "skills", "fieldType": "select",
         "options": ["React", "Java", "Spring"],
         "isMultiSelect": true
       },
       {
-        "fieldName": "Resume / CV",
+        "fieldName": "Resume File",
         "fieldKey": "resume_file", "fieldType": "file_upload",
         "maxFileSize": 5, "allowedFileTypes": ".pdf,.docx"
       }
@@ -621,52 +618,7 @@ export default function DocsPage() {
                         </div>
                     </div>
 
-                    {/* Interactive Try API Section */}
-                    <div className="bg-white border-2 border-primary/10 rounded-[2.5rem] p-1 shadow-xl shadow-primary/5 overflow-hidden">
-                        <div className="p-10 flex flex-col md:flex-row items-center gap-10">
-                            <div className="flex-1 space-y-6 text-center md:text-left">
-                                <div className="w-14 h-14 bg-primary/10 rounded-[1.5rem] flex items-center justify-center text-primary mx-auto md:mx-0">
-                                    <Terminal size={28} strokeWidth={2.5} />
-                                </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Interactive Playground</h3>
-                                    <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                                        Test the submission endpoint directly with a mock payload to verify your structural mapping.
-                                    </p>
-                                </div>
-                                <button 
-                                    onClick={() => handleTryApi("submission")}
-                                    className="w-full md:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] hover:bg-black transition-all flex items-center justify-center gap-3 group"
-                                >
-                                    {isTryingApi === "submission" ? <RefreshCw className="animate-spin" size={16} /> : <Send size={16} />}
-                                    {isTryingApi === "submission" ? "Simulating..." : "Test Submission API"}
-                                </button>
-                            </div>
-                            <div className="flex-1 w-full">
-                                <div className="bg-slate-900 rounded-[2rem] p-6 relative overflow-hidden min-h-[180px] flex flex-col justify-center">
-                                    {isTryingApi === "submission" ? (
-                                        <div className="space-y-4 animate-pulse">
-                                            <div className="h-4 w-3/4 bg-white/5 rounded-full" />
-                                            <div className="h-4 w-1/2 bg-white/5 rounded-full" />
-                                            <div className="h-4 w-2/3 bg-white/5 rounded-full" />
-                                        </div>
-                                    ) : (
-                                        <pre className="text-[11px] font-mono text-emerald-400 leading-relaxed">
-                                            {isTryingApi === null && !copiedId?.includes("test") ? "// Click the button to simulate a response\n\nWaiting for payload..." : 
-                                            `{
-  "success": true,
-  "message": "Submission successful",
-  "data": {
-    "submission_id": "8c5b...",
-    "recorded_at": "2026-04-09T06:30:00.000Z"
-  }
-}`}
-                                        </pre>
-                                    )}
-                                </div>
-                            </div>
-                    </div>
-                </div>
+
 
                 <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm mt-12">
                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Data Type Mapping Reference</h4>
@@ -779,7 +731,7 @@ export default function DocsPage() {
                                     {[
                                         { c: "VALIDATION_ERROR", d: "One or more inputs failed constraints." },
                                         { c: "MISSING_FIELD", d: "A required technical key is absent." },
-                                        { c: "UNAUTHORIZED", d: "Bearer token is invalid or expired." },
+                                        { c: "UNAUTHORIZED", d: "Session is invalid or expired. Please log in." },
                                         { c: "SERVER_ERROR", d: "Unexpected processing failure." }
                                     ].map(row => (
                                         <tr key={row.c}>
@@ -1060,22 +1012,23 @@ export default function DocsPage() {
                                 <Lock className="text-primary" size={18} /> Authentication
                             </h4>
                             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                All protected endpoints require a Bearer Token in the authorization header.
+                                All protected endpoints require a valid session cookie (JSESSIONID). Ensure your client includes credentials in requests.
                             </p>
                             <code className="block p-3 bg-slate-50 rounded-xl text-[10px] font-mono text-primary">
-                                Authorization: Bearer &lt;jwt_token&gt;
+                                {`// Example fetch call
+fetch(url, { credentials: 'include' })`}
                             </code>
                         </div>
                         <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm space-y-4">
                             <h4 className="font-black text-slate-900 flex items-center gap-2">
-                                <Activity className="text-primary" size={18} /> Rate Limiting
+                                <ShieldCheck className="text-primary" size={18} /> Role-Based Access
                             </h4>
                             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                To ensure system stability, we enforce a strict request threshold per IP/User.
+                                Granular permissions control access to forms and management features.
                             </p>
                             <div className="flex items-center gap-2 text-[10px] font-black text-slate-400">
-                                <span className="px-2 py-1 bg-slate-100 rounded">100 req / minute</span>
-                                <span className="px-2 py-1 bg-slate-100 rounded">Standard Tier</span>
+                                <span className="px-2 py-1 bg-slate-100 rounded">Admin Role</span>
+                                <span className="px-2 py-1 bg-slate-100 rounded">User Role</span>
                             </div>
                         </div>
                     </div>

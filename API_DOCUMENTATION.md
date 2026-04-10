@@ -245,6 +245,31 @@ The system automatically derives the `fieldKey` from the `fieldName` (Label) usi
 
 ---
 
+---
+
+# 6. 🔐 SECURITY
+
+## 6.1 Authentication Method
+The Form Builder API uses **Session-Based Authentication**. JWT (JSON Web Tokens) are **NOT** used in this system.
+
+### How to Authenticate:
+1. **Login**: Call `/api/v1/auth/login` with your credentials. On success, the server will set a `JSESSIONID` cookie in your browser/client.
+2. **Persistent Sessions**: Subsequent requests must include this cookie.
+3. **Frontend Implementation**: When using `fetch` in a browser, you **MUST** set `credentials: 'include'` in the request options.
+
+```javascript
+// Example Authenticated Request
+const response = await fetch('http://localhost:9090/api/v1/protected-route', {
+  method: 'GET',
+  credentials: 'include', // CRITICAL: Includes the JSESSIONID cookie
+});
+```
+
+## 6.2 CSRF Protection
+While currently disabled in development, production environments may require the `X-XSRF-TOKEN` header to be sent with state-changing requests (`POST`, `PUT`, `DELETE`).
+
+---
+
 # 5. 🧑‍💻 BEST PRACTICES
 1. **Dynamic Rendering**: Do not hardcode form components. Build a generator that consumes the `fields` array.
 2. **Handle All Types**: Ensure your UI library supports all `fieldType` values defined in the metadata.

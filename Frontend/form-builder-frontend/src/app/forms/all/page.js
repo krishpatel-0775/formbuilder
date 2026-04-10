@@ -560,7 +560,7 @@ export default function FormVaultPage() {
                                 <div>
                                     <h4 className="font-black text-slate-900 text-lg tracking-tight">Sync Instructions</h4>
                                     <p className="text-sm text-slate-500 font-semibold leading-relaxed mt-1.5 italic">
-                                        Use the provided endpoints to bridge external frontends with your <span className="text-[var(--primary)] font-bold">Smart Rule Engine</span>.
+                                        Use the available APIs to integrate dynamic <span className="text-[var(--primary)] font-bold">form creation and response handling</span> into your project.
                                     </p>
                                 </div>
                             </div>

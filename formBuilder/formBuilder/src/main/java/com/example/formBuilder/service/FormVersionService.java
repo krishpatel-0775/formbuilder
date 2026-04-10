@@ -433,15 +433,21 @@ public class FormVersionService {
     private void validateFieldConsistency(UUID sourceVersionId, List<UpdateFieldRequest> incoming) {
         List<FormField> sourceFields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(sourceVersionId);
 
-        Map<String, String> nameToType = sourceFields.stream()
-                .filter(f -> f.getFieldName() != null)
-                .collect(Collectors.toMap(FormField::getFieldName, FormField::getFieldType, (a, b) -> a));
+        // Map by technical fieldKey (stable) instead of fieldName (label)
+        Map<String, String> keyToType = sourceFields.stream()
+                .filter(f -> f.getFieldKey() != null)
+                .collect(Collectors.toMap(FormField::getFieldKey, FormField::getFieldType, (a, b) -> a));
         
         for (UpdateFieldRequest req : incoming) {
-            String oldType = nameToType.get(req.getName());
+            String key = req.getFieldKey();
+            if (key == null || key.isBlank()) {
+                key = AppConstants.sanitizeKey(req.getName());
+            }
+
+            String oldType = keyToType.get(key);
             if (oldType != null && !oldType.equals(req.getType())) {
-                throw new ValidationException("Field type consistency rule: Field '" + req.getName() + 
-                        "' cannot change from " + oldType + " to " + req.getType());
+                throw new ValidationException("Field type consistency rule: Field key '" + key + 
+                        "' (Label: '" + req.getName() + "') cannot change from " + oldType + " to " + req.getType());
             }
         }
     }
