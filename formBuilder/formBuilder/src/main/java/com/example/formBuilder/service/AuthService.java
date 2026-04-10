@@ -113,6 +113,9 @@ public class AuthService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
+        user.setLastSessionId(session.getId());
+        userRepository.save(user);
+
         return new LoginResponse(user.getId(), user.getUsername(), user.getEmail());
     }
 

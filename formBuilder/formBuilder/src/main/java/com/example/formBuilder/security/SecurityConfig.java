@@ -26,6 +26,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    private final SessionControlFilter sessionControlFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,6 +34,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .userDetailsService(userDetailsService) // Specifically set UserDetailsService
+                .addFilterAfter(sessionControlFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         // Public Auth Endpoints
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register").permitAll()

@@ -67,16 +67,19 @@ export default function LoginPage() {
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Username or Email</label>
                         <input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required
+                            suppressHydrationWarning
                             className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
                             placeholder="hello@example.com" />
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Password</label>
                         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+                            suppressHydrationWarning
                             className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
                             placeholder="••••••••" />
                     </div>
                     <button type="submit" disabled={loading}
+                        suppressHydrationWarning
                         className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-violet-600 text-white p-4 rounded-xl text-sm font-black transition-all shadow-md hover:shadow-xl hover:shadow-violet-600/20 active:scale-[0.98] mt-2">
                         {loading ? <Loader2 size={18} className="animate-spin" /> : "Sign In"}
                         {!loading && <ArrowRight size={16} />}

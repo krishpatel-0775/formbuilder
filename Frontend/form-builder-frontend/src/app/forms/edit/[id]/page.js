@@ -172,7 +172,7 @@ export default function EditFormPage() {
         setIsDirty(false);
         setIsLoading(false);
       })
-      .catch((err) => { console.error(err); router.push("/forms/all"); });
+      .catch((err) => { console.log(err); router.push("/forms/all"); });
   }, [id, user, versionId]);
 
   useEffect(() => {
@@ -181,7 +181,7 @@ export default function EditFormPage() {
       fetch(`http://localhost:9090/api/v1/forms`, { credentials: "include" })
         .then(r => r.json())
         .then(r => setAvailableForms(r.data || []))
-        .catch(console.error);
+        .catch(console.log);
     }
   }, [activeFieldId, fields, user]);
 
@@ -191,7 +191,7 @@ export default function EditFormPage() {
       fetch(`http://localhost:9090/api/v1/forms/${af.sourceTable}`, { credentials: "include" })
         .then(r => r.json())
         .then(r => setSelectedFormFields(r.data?.fields || []))
-        .catch(console.error);
+        .catch(console.log);
     } else {
       setSelectedFormFields([]);
     }
@@ -452,7 +452,7 @@ export default function EditFormPage() {
       }
     } catch (err) {
       alert(`❌ ${err.message}`);
-      throw err;
+      // throw null;
     } finally {
       setIsSaving(false);
     }

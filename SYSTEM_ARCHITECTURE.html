@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture | Form Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #0ea5e9;
+            --accent: #f43f5e;
+            --green: #10b981;
+            --amber: #f59e0b;
+            --bg-dark: #0a0f1e;
+            --bg-card: #111827;
+            --bg-card2: #1a2235;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e2d45;
+            --border-light: #243450;
+            --glass: rgba(17, 24, 39, 0.85);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.7;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3, h4, h5 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+
+        code, .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82em;
+            background: rgba(99,102,241,0.1);
+            color: #a5b4fc;
+            padding: 2px 7px;
+            border-radius: 5px;
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+
+        /* ─── HERO ─── */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            padding: 3rem 2rem;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.18) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 80%, rgba(14,165,233,0.14) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.06) 0%, transparent 60%);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.3);
+            border-radius: 100px;
+            padding: 6px 18px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #a5b4fc;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .hero-badge .dot {
+            width: 6px; height: 6px;
+            background: #6366f1;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 800;
+            line-height: 1.05;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .hero-sub {
+            font-size: 1.15rem;
+            color: var(--text-dim);
+            max-width: 700px;
+            margin-bottom: 3rem;
+            animation: fadeIn 1.2s ease-out;
+        }
+
+        .hero-stack {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+
+        .stack-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 100px;
+            padding: 8px 18px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        .stack-pill .icon { font-size: 1rem; }
+
+        .scroll-arrow {
+            position: absolute;
+            bottom: 2.5rem;
+            opacity: 0.5;
+            animation: bounce 2.5s infinite;
+        }
+
+        /* ─── NAV ─── */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(10,15,30,0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 0.9rem 0;
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 0 2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.78rem;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 6px 14px;
+            border-radius: 8px;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-light);
+            background: rgba(99,102,241,0.08);
+        }
+
+        /* ─── SECTIONS ─── */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--primary-light);
+            margin-bottom: 1rem;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 20px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            line-height: 1.15;
+        }
+
+        .section-desc {
+            color: var(--text-dim);
+            max-width: 680px;
+            font-size: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        /* ─── CARDS ─── */
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-light);
+            box-shadow: 0 20px 60px -15px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.1);
+        }
+
+        .card-accent {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 3px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover .card-accent { opacity: 1; }
+        .accent-indigo { background: linear-gradient(90deg, #6366f1, #818cf8); }
+        .accent-sky    { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+        .accent-green  { background: linear-gradient(90deg, #10b981, #34d399); }
+        .accent-amber  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .accent-rose   { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+        .accent-purple { background: linear-gradient(90deg, #a855f7, #c084fc); }
+
+        .card-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .icon-indigo { background: rgba(99,102,241,0.15); }
+        .icon-sky    { background: rgba(14,165,233,0.15); }
+        .icon-green  { background: rgba(16,185,129,0.15); }
+        .icon-amber  { background: rgba(245,158,11,0.15); }
+        .icon-rose   { background: rgba(244,63,94,0.15); }
+        .icon-purple { background: rgba(168,85,247,0.15); }
+
+        .card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            color: var(--text-main);
+        }
+
+        .card p, .card li {
+            font-size: 0.88rem;
+            color: var(--text-dim);
+            line-height: 1.65;
+        }
+
+        .card ul { list-style: none; }
+        .card ul li { padding: 4px 0; }
+        .card ul li::before { content: '→ '; color: var(--primary); font-weight: 700; }
+
+        /* ─── API TABLE ─── */
+        .api-table {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .api-group-header {
+            padding: 0.75rem 1.75rem;
+            background: rgba(99,102,241,0.06);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--primary-light);
+        }
+
+        .api-row {
+            padding: 1rem 1.75rem;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            align-items: center;
+            gap: 1.25rem;
+            transition: background 0.15s;
+        }
+
+        .api-row:last-child { border-bottom: none; }
+        .api-row:hover { background: rgba(255,255,255,0.02); }
+
+        .method {
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .m-get    { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+        .m-post   { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.25); }
+        .m-put    { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+        .m-delete { background: rgba(244,63,94,0.15);  color: #fda4af; border: 1px solid rgba(244,63,94,0.25); }
+
+        .api-row .endpoint {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #93c5fd;
+            font-weight: 600;
+        }
+
+        .api-row .desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .auth-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 2px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        .auth-public  { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .auth-private { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+
+        /* ─── ENTITY SCHEMA TABLE ─── */
+        .schema-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.83rem;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .schema-table th {
+            background: rgba(99,102,241,0.08);
+            padding: 0.75rem 1.25rem;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--primary-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .schema-table td {
+            padding: 0.7rem 1.25rem;
+            border-bottom: 1px solid rgba(30,45,69,0.5);
+            color: var(--text-dim);
+            vertical-align: top;
+        }
+
+        .schema-table tr:last-child td { border-bottom: none; }
+        .schema-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+        .schema-table td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            color: #93c5fd;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .schema-table td:nth-child(2) {
+            font-family: 'JetBrains Mono', monospace;
+            color: #86efac;
+            font-size: 0.78rem;
+        }
+
+        .pk-badge {
+            font-size: 0.6rem;
+            background: rgba(99,102,241,0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,0.3);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-weight: 700;
+            margin-left: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .fk-badge {
+            font-size: 0.6rem;
+            background: rgba(14,165,233,0.15);
+            color: #7dd3fc;
+            border: 1px solid rgba(14,165,233,0.25);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-weight: 700;
+            margin-left: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── FLOW DIAGRAM ─── */
+        .flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .flow-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 2rem 1.25rem;
+            position: relative;
+        }
+
+        .flow-step:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 700;
+            z-index: 2;
+        }
+
+        .flow-num {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 20px rgba(99,102,241,0.35);
+        }
+
+        .flow-step h4 { font-size: 0.88rem; margin-bottom: 0.4rem; }
+        .flow-step p { font-size: 0.78rem; color: var(--text-muted); }
+
+        /* ─── FIELD TYPE GRID ─── */
+        .field-type-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.85rem 1rem;
+            background: var(--bg-card2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .field-type-item:hover {
+            border-color: rgba(99,102,241,0.3);
+            background: rgba(99,102,241,0.05);
+        }
+
+        .ft-icon {
+            width: 34px; height: 34px;
+            background: rgba(99,102,241,0.12);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .ft-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #a5b4fc;
+        }
+
+        .ft-db {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        /* ─── RULE ENGINE ─── */
+        .rule-box {
+            background: var(--bg-card2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+        }
+
+        .rule-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .rule-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 6px;
+        }
+
+        .tag-show   { background: rgba(14,165,233,0.12); color: #7dd3fc;  border: 1px solid rgba(14,165,233,0.2); }
+        .tag-hide   { background: rgba(100,116,139,0.12); color: #94a3b8; border: 1px solid rgba(100,116,139,0.2); }
+        .tag-req    { background: rgba(245,158,11,0.12); color: #fcd34d;  border: 1px solid rgba(245,158,11,0.2); }
+        .tag-err    { background: rgba(244,63,94,0.12);  color: #fda4af;  border: 1px solid rgba(244,63,94,0.2); }
+        .tag-op     { background: rgba(99,102,241,0.12); color: #a5b4fc;  border: 1px solid rgba(99,102,241,0.2); }
+
+        .rule-example {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.85rem 1.1rem;
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-top: 0.75rem;
+        }
+
+        .rule-example .kw { color: #c084fc; }
+        .rule-example .val { color: #34d399; }
+        .rule-example .op { color: #f9a8d4; }
+        .rule-example .field { color: #93c5fd; }
+
+        /* ─── SECURITY ─── */
+        .security-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .security-row:last-child { border-bottom: none; }
+
+        .sec-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ─── ROLES TABLE ─── */
+        .roles-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            font-size: 0.88rem;
+        }
+
+        .roles-table th {
+            background: rgba(99,102,241,0.08);
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--primary-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .roles-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dim);
+            vertical-align: top;
+        }
+
+        .roles-table tr:last-child td { border-bottom: none; }
+        .roles-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+        .role-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .role-master { background: rgba(244,63,94,0.12); color: #fda4af; border: 1px solid rgba(244,63,94,0.2); }
+        .role-user   { background: rgba(99,102,241,0.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+
+        /* ─── FRONTEND PAGES ─── */
+        .page-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-item:last-child { border-bottom: none; }
+
+        .page-route {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #93c5fd;
+            font-weight: 600;
+            min-width: 280px;
+        }
+
+        .page-desc { font-size: 0.83rem; color: var(--text-dim); }
+        .page-auth {
+            margin-left: auto;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* ─── VALIDATION FLOW ─── */
+        .val-step {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            border-left: 2px solid var(--primary);
+            margin-left: 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(99,102,241,0.03);
+            border-radius: 0 12px 12px 0;
+        }
+
+        .val-num {
+            width: 24px; height: 24px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        /* ─── SCHEMA EVOLUTION ─── */
+        .evo-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+        }
+
+        .evo-allow { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); }
+        .evo-block { background: rgba(244,63,94,0.06);  border: 1px solid rgba(244,63,94,0.15); }
+
+        .evo-icon { font-size: 1.1rem; width: 28px; flex-shrink: 0; text-align: center; }
+        .evo-text { font-size: 0.85rem; color: var(--text-dim); }
+
+        /* ─── SEPARATOR ─── */
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 0;
+        }
+
+        /* ─── ANIMATIONS ─── */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-8px); }
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.4; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            .api-row { grid-template-columns: 70px 1fr; }
+            .api-row .desc { display: none; }
+            .flow-step:not(:last-child)::after { display: none; }
+            .page-route { min-width: auto; }
+            .page-auth { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════ HERO -->
+<header class="hero">
+    <div class="hero-badge"><span class="dot"></span>Configurable Form Builder Platform</div>
+    <h1>System Architecture</h1>
+    <p class="hero-sub">A deep-dive into the Dynamic Form Builder — covering API contracts, entity design, dynamic schema management, rule engine, security, and frontend architecture.</p>
+    <div class="hero-stack">
+        <span class="stack-pill"><span class="icon">☕</span> Spring Boot 3.x + Java 21</span>
+        <span class="stack-pill"><span class="icon">⚡</span> Next.js (App Router)</span>
+        <span class="stack-pill"><span class="icon">🐘</span> PostgreSQL 17</span>
+        <span class="stack-pill"><span class="icon">🔐</span> Spring Security Sessions</span>
+        <span class="stack-pill"><span class="icon">🎨</span> TailwindCSS</span>
+        <span class="stack-pill"><span class="icon">📦</span> Maven + Node</span>
+    </div>
+    <div class="scroll-arrow">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+        </svg>
+    </div>
+</header>
+
+<!-- ════════════════════════════════════════════ NAV -->
+<nav>
+    <div class="nav-container">
+        <a href="#overview" class="nav-link">Overview</a>
+        <a href="#api" class="nav-link">APIs</a>
+        <a href="#entities" class="nav-link">Entities</a>
+        <a href="#schema" class="nav-link">Schema</a>
+        <a href="#flow" class="nav-link">Data Flow</a>
+        <a href="#validation" class="nav-link">Validation</a>
+        <a href="#rules" class="nav-link">Rule Engine</a>
+        <a href="#frontend" class="nav-link">Frontend</a>
+        <a href="#security" class="nav-link">Security</a>
+        <a href="#roles" class="nav-link">Roles</a>
+    </div>
+</nav>
+
+<!-- ════════════════════════════════════════════ OVERVIEW -->
+<section id="overview">
+    <div class="reveal">
+        <div class="section-label">Architecture Overview</div>
+        <h2 class="section-title">How the System is Built</h2>
+        <p class="section-desc">A layered, session-authenticated platform. Admins define forms visually; the backend generates real PostgreSQL tables on publish; end users fill public forms that persist to those dynamic tables.</p>
+    </div>
+
+    <div class="grid-3 reveal">
+        <div class="card">
+            <div class="card-accent accent-indigo"></div>
+            <div class="card-icon icon-indigo">☕</div>
+            <h3>Backend — Spring Boot 3</h3>
+            <ul>
+                <li>Java 21, Spring Security (session-based)</li>
+                <li>Spring Data JPA + Hibernate</li>
+                <li>JdbcTemplate for dynamic SQL</li>
+                <li>Table-per-form schema via <code>SchemaManager</code></li>
+                <li>Global exception handling via <code>@ControllerAdvice</code></li>
+                <li>Maven build, no profiles</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-sky"></div>
+            <div class="card-icon icon-sky">⚡</div>
+            <h3>Frontend — Next.js (App Router)</h3>
+            <ul>
+                <li>React 18 with App Router</li>
+                <li>TailwindCSS + custom design system</li>
+                <li>AuthContext + ThemeContext providers</li>
+                <li>Dynamic form renderer — no hardcoded fields</li>
+                <li>Client-side rule engine + visibility logic</li>
+                <li>DnD form builder (DnD Kit)</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-green"></div>
+            <div class="card-icon icon-green">🐘</div>
+            <h3>Database — PostgreSQL 17</h3>
+            <ul>
+                <li>Static tables: forms, fields, versions, users, roles</li>
+                <li>Dynamic tables: <code>form_data_{code}</code> per form</li>
+                <li>No Flyway / Liquibase — app-controlled DDL</li>
+                <li>Soft deletes on forms and submissions</li>
+                <li>UUID primary keys throughout</li>
+                <li>JSONB rules column on versions</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-amber"></div>
+            <div class="card-icon icon-amber">🔄</div>
+            <h3>Form Versioning</h3>
+            <ul>
+                <li>Each form has multiple <code>FormVersion</code> snapshots</li>
+                <li>Only one version is <code>isActive = true</code> at a time</li>
+                <li>Draft versions are editable; active is read-only</li>
+                <li>Activating a version drops existing user drafts</li>
+                <li>Every submission stores its <code>formVersionId</code></li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-rose"></div>
+            <div class="card-icon icon-rose">⚙️</div>
+            <h3>Rule Engine</h3>
+            <ul>
+                <li>JSON-stored conditional rules per version</li>
+                <li>Actions: SHOW, HIDE, REQUIRE, VALIDATION_ERROR</li>
+                <li>Operators: EQUALS, NOT_EQUALS, GT, LT, CONTAINS</li>
+                <li>AND/OR compound conditions (nested)</li>
+                <li>Evaluated on both frontend (live) and backend (submit)</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-purple"></div>
+            <div class="card-icon icon-purple">📤</div>
+            <h3>Submission Pipeline</h3>
+            <ul>
+                <li>Public <code>POST /api/v1/submissions</code> (no auth)</li>
+                <li>Draft save + resume per authenticated user</li>
+                <li>Backend validates all fields + runs rule engine</li>
+                <li>Data written to dynamic <code>form_data_*</code> table</li>
+                <li>Soft-delete + bulk restore on submissions</li>
+                <li>CSV export with injection protection</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ API ENDPOINTS -->
+<section id="api">
+    <div class="reveal">
+        <div class="section-label">REST API Contracts</div>
+        <h2 class="section-title">API Endpoints</h2>
+        <p class="section-desc">All endpoints are prefixed <code>/api/v1</code>. Public endpoints require no authentication. Protected endpoints require an active <code>JSESSIONID</code> cookie.</p>
+    </div>
+
+    <div class="api-table reveal">
+        <!-- AUTH -->
+        <div class="api-group-header">🔐 Authentication — /api/v1/auth</div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/auth/register</span>
+            <span class="auth-badge auth-public">PUBLIC</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/auth/login</span>
+            <span class="auth-badge auth-public">PUBLIC</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/auth/logout</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/auth/me</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-put">PUT</span>
+            <span class="endpoint">/api/v1/auth/profile</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/auth/profile-photo/{fileName}</span>
+            <span class="auth-badge auth-public">PUBLIC</span>
+        </div>
+
+        <!-- FORMS -->
+        <div class="api-group-header">📋 Forms — /api/v1/forms</div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/forms</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{id}</span>
+            <span class="auth-badge auth-public">PUBLIC</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/forms/publish/{id}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{id}/data</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/deleted</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{id}/deleted-data</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-delete">DEL</span>
+            <span class="endpoint">/api/v1/forms/{id}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-put">PUT</span>
+            <span class="endpoint">/api/v1/forms/restore/{id}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{id}/rules</span>
+            <span class="auth-badge auth-public">PUBLIC</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/forms/{id}/rules</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{id}/lookup/{columnName}</span>
+            <span class="auth-badge auth-public">PUBLIC</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{id}/export/csv</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+
+        <!-- VERSIONS -->
+        <div class="api-group-header">🔀 Form Versions — /api/v1/forms/{formId}/versions</div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{formId}/versions</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{formId}/versions/draft</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/forms/{formId}/versions</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/forms/{formId}/versions/{versionId}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-put">PUT</span>
+            <span class="endpoint">/api/v1/forms/{formId}/versions/{versionId}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/forms/{formId}/versions/{versionId}/activate</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/forms/{formId}/versions/{versionId}/rules</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+
+        <!-- SUBMISSIONS -->
+        <div class="api-group-header">📨 Submissions — /api/v1/submissions</div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/submissions</span>
+            <span class="auth-badge auth-public">PUBLIC</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/submissions/draft</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/submissions/draft?formId={id}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/submissions/{formId}/response/{responseId}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-delete">DEL</span>
+            <span class="endpoint">/api/v1/submissions/{formId}/response/{responseId}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-put">PUT</span>
+            <span class="endpoint">/api/v1/submissions/{formId}/response/{responseId}/restore</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/submissions/{formId}/responses/bulk-delete</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/submissions/{formId}/responses/bulk-restore</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+
+        <!-- ADMIN -->
+        <div class="api-group-header">👤 Users & Roles — /api/v1</div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/users</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/users/{userId}/roles</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/roles</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/roles</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-put">PUT</span>
+            <span class="endpoint">/api/v1/roles/{id}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-delete">DEL</span>
+            <span class="endpoint">/api/v1/roles/{id}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/roles/{roleId}/modules</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/roles/{roleId}/modules</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/modules</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/menu</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/dashboard/stats</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-post">POST</span>
+            <span class="endpoint">/api/v1/files/upload</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+        <div class="api-row">
+            <span class="method m-get">GET</span>
+            <span class="endpoint">/api/v1/files/view/{id}</span>
+            <span class="auth-badge auth-private">AUTH</span>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ ENTITIES -->
+<section id="entities">
+    <div class="reveal">
+        <div class="section-label">Data Model</div>
+        <h2 class="section-title">Entity & Database Schema</h2>
+        <p class="section-desc">Static metadata tables are managed via JPA. Dynamic submission tables are created and altered at runtime by <code>SchemaManager</code> using raw JDBC DDL.</p>
+    </div>
+
+    <div class="grid-2 reveal">
+        <div>
+            <p style="font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary-light);margin-bottom:0.75rem;">form</p>
+            <table class="schema-table">
+                <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td>id <span class="pk-badge">PK</span></td><td>UUID</td><td>Auto-generated UUID</td></tr>
+                    <tr><td>form_name</td><td>VARCHAR(255)</td><td>Display name (3–100 chars)</td></tr>
+                    <tr><td>form_code</td><td>VARCHAR(100)</td><td>Unique slug — never changes after creation</td></tr>
+                    <tr><td>table_name</td><td>VARCHAR(255)</td><td>Computed as <code>form_data_{code}</code></td></tr>
+                    <tr><td>status</td><td>VARCHAR(20)</td><td>DRAFT | PUBLISHED</td></tr>
+                    <tr><td>rules</td><td>TEXT</td><td>JSON array of legacy form-level rules</td></tr>
+                    <tr><td>is_deleted</td><td>BOOLEAN</td><td>Soft delete flag</td></tr>
+                    <tr><td>user_id <span class="fk-badge">FK</span></td><td>UUID</td><td>Owner (app_user)</td></tr>
+                    <tr><td>created_at</td><td>TIMESTAMP</td><td>Auto on create</td></tr>
+                    <tr><td>updated_at</td><td>TIMESTAMP</td><td>Auto on update</td></tr>
+                </tbody>
+            </table>
+
+            <p style="font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary-light);margin:1.5rem 0 0.75rem;">form_version</p>
+            <table class="schema-table">
+                <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td>id <span class="pk-badge">PK</span></td><td>UUID</td><td></td></tr>
+                    <tr><td>form_id <span class="fk-badge">FK</span></td><td>UUID</td><td>References form.id</td></tr>
+                    <tr><td>version_number</td><td>INTEGER</td><td>Monotonically increasing per form</td></tr>
+                    <tr><td>is_active</td><td>BOOLEAN</td><td>Only one TRUE per form at a time</td></tr>
+                    <tr><td>is_latest</td><td>BOOLEAN</td><td>Most recently created version</td></tr>
+                    <tr><td>rules</td><td>TEXT</td><td>JSON array of FormRuleDTO objects</td></tr>
+                    <tr><td>created_by</td><td>VARCHAR(100)</td><td>Username of creator</td></tr>
+                    <tr><td>created_at</td><td>TIMESTAMP</td><td></td></tr>
+                    <tr><td>updated_at</td><td>TIMESTAMP</td><td></td></tr>
+                </tbody>
+            </table>
+
+            <p style="font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary-light);margin:1.5rem 0 0.75rem;">form_submission_meta</p>
+            <table class="schema-table">
+                <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td>id <span class="pk-badge">PK</span></td><td>UUID</td><td></td></tr>
+                    <tr><td>form_id <span class="fk-badge">FK</span></td><td>UUID</td><td></td></tr>
+                    <tr><td>form_version_id</td><td>UUID</td><td>Which version was submitted against</td></tr>
+                    <tr><td>submission_table</td><td>VARCHAR(255)</td><td>Physical table name for the row</td></tr>
+                    <tr><td>submission_row_id</td><td>UUID</td><td>ID of the row in the dynamic table</td></tr>
+                    <tr><td>status</td><td>VARCHAR(20)</td><td>DRAFT | SUBMITTED</td></tr>
+                    <tr><td>submitted_by</td><td>VARCHAR(100)</td><td>Username (nullable for anonymous)</td></tr>
+                    <tr><td>submitted_at</td><td>TIMESTAMP</td><td>Null until final submit</td></tr>
+                    <tr><td>created_at</td><td>TIMESTAMP</td><td></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div>
+            <p style="font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary-light);margin-bottom:0.75rem;">form_field</p>
+            <table class="schema-table">
+                <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td>id <span class="pk-badge">PK</span></td><td>UUID</td><td></td></tr>
+                    <tr><td>field_name</td><td>VARCHAR(255)</td><td>Display label shown on UI</td></tr>
+                    <tr><td>field_key</td><td>VARCHAR(100)</td><td>Slugified column name in dynamic table</td></tr>
+                    <tr><td>field_type</td><td>VARCHAR(50)</td><td>text | number | date | email | etc.</td></tr>
+                    <tr><td>required</td><td>BOOLEAN</td><td></td></tr>
+                    <tr><td>min_length / max_length</td><td>INTEGER</td><td>For text / textarea</td></tr>
+                    <tr><td>min / max</td><td>INTEGER</td><td>For number fields</td></tr>
+                    <tr><td>pattern</td><td>VARCHAR</td><td>Regex pattern for validation</td></tr>
+                    <tr><td>before_date / after_date</td><td>DATE</td><td>Date bounds</td></tr>
+                    <tr><td>before_time / after_time</td><td>VARCHAR</td><td>Time bounds (HH:mm format)</td></tr>
+                    <tr><td>options</td><td>@ElementCollection</td><td>In <code>form_field_options</code> table</td></tr>
+                    <tr><td>source_table / source_column</td><td>VARCHAR</td><td>For dynamic lookup fields</td></tr>
+                    <tr><td>default_value</td><td>TEXT</td><td></td></tr>
+                    <tr><td>placeholder / helper_text</td><td>VARCHAR</td><td></td></tr>
+                    <tr><td>is_read_only</td><td>BOOLEAN</td><td></td></tr>
+                    <tr><td>is_multi_select</td><td>BOOLEAN</td><td>For select / checkbox fields</td></tr>
+                    <tr><td>display_order</td><td>INTEGER</td><td>Ordering within version</td></tr>
+                    <tr><td>max_file_size</td><td>INTEGER</td><td>In MB, for file_upload fields</td></tr>
+                    <tr><td>allowed_file_types</td><td>VARCHAR</td><td>Comma-separated e.g. ".pdf,.jpg"</td></tr>
+                    <tr><td>form_id <span class="fk-badge">FK</span></td><td>UUID</td><td>Legacy link to form</td></tr>
+                    <tr><td>form_version_id <span class="fk-badge">FK</span></td><td>UUID</td><td>Version this field belongs to</td></tr>
+                    <tr><td>is_deleted</td><td>BOOLEAN</td><td>Soft delete — filtered by @Where</td></tr>
+                </tbody>
+            </table>
+
+            <p style="font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary-light);margin:1.5rem 0 0.75rem;">app_user / role / user_role</p>
+            <table class="schema-table">
+                <thead><tr><th>Entity</th><th>Key Fields</th></tr></thead>
+                <tbody>
+                    <tr><td>User</td><td>id, username, password, email, name, phoneNumber, profilePictureUrl</td></tr>
+                    <tr><td>Role</td><td>id, roleName, roleDescription</td></tr>
+                    <tr><td>UserRole</td><td>id, userId (FK), roleId (FK)</td></tr>
+                    <tr><td>Module</td><td>id, moduleName, prefix, controller, action, isParent, iconCss</td></tr>
+                    <tr><td>RoleModule</td><td>id, roleId (FK), moduleId (FK)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ SCHEMA -->
+<section id="schema">
+    <div class="reveal">
+        <div class="section-label">Dynamic Schema</div>
+        <h2 class="section-title">Table-Per-Form Architecture</h2>
+        <p class="section-desc">When a form is published, <code>SchemaManager</code> creates a dedicated PostgreSQL table. Each <code>fieldKey</code> maps to a typed column. Schema evolution adds columns but never drops them.</p>
+    </div>
+
+    <div class="grid-2 reveal">
+        <div>
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-accent accent-indigo"></div>
+                <h3 style="margin-bottom:1rem;">fieldKey Slugification</h3>
+                <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">Generated by <code>AppConstants.sanitizeKey()</code>:</p>
+                <ul style="list-style:none;font-size:0.83rem;color:var(--text-dim);">
+                    <li style="padding:4px 0;">→ Trim and lowercase the label</li>
+                    <li style="padding:4px 0;">→ Spaces and hyphens become underscores <code>_</code></li>
+                    <li style="padding:4px 0;">→ Strip all non-alphanumeric characters</li>
+                    <li style="padding:4px 0;">→ Prefix <code>f_</code> if starts with a digit</li>
+                </ul>
+                <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem;margin-top:1rem;font-family:'JetBrains Mono',monospace;font-size:0.78rem;line-height:1.8;">
+                    <span style="color:#94a3b8;">"Employee Name"</span> → <span style="color:#34d399;">employee_name</span><br>
+                    <span style="color:#94a3b8;">"Phone Number (*)"</span> → <span style="color:#34d399;">phone_number</span><br>
+                    <span style="color:#94a3b8;">"123Score"</span> → <span style="color:#34d399;">f_123score</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-accent accent-green"></div>
+                <h3 style="margin-bottom:1rem;">Schema Evolution Rules</h3>
+                <div class="evo-allow"><span class="evo-icon">✅</span><span class="evo-text">Add new columns when new fields are added</span></div>
+                <div class="evo-allow"><span class="evo-icon">✅</span><span class="evo-text">Existing columns preserved when fields removed</span></div>
+                <div class="evo-allow"><span class="evo-icon">✅</span><span class="evo-text">Nullable columns for backward compatibility</span></div>
+                <div class="evo-block"><span class="evo-icon">🚫</span><span class="evo-text">Column drops never happen automatically</span></div>
+                <div class="evo-block"><span class="evo-icon">🚫</span><span class="evo-text">Schema drift at publish or submit time blocks operation</span></div>
+                <div class="evo-block"><span class="evo-icon">🚫</span><span class="evo-text">Reserved SQL keywords rejected as fieldKeys</span></div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <div class="card-accent accent-sky"></div>
+                <h3 style="margin-bottom:1rem;">Field Type → PostgreSQL Column Mapping</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div class="field-type-item"><div class="ft-icon">Tt</div><div><div class="ft-name">text / email</div><div class="ft-db">VARCHAR(255)</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">Tt</div><div><div class="ft-name">url / phone / radio</div><div class="ft-db">VARCHAR(255)</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">#</div><div><div class="ft-name">number</div><div class="ft-db">INT</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">📅</div><div><div class="ft-name">date</div><div class="ft-db">DATE</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">🕐</div><div><div class="ft-name">time</div><div class="ft-db">TIME</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">¶</div><div><div class="ft-name">textarea / checkbox</div><div class="ft-db">TEXT</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">☑</div><div><div class="ft-name">toggle</div><div class="ft-db">BOOLEAN</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">📎</div><div><div class="ft-name">file_upload</div><div class="ft-db">TEXT (UUID ref)</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">🔗</div><div><div class="ft-name">select (lookup)</div><div class="ft-db">TEXT (UUID ref)</div></div></div>
+                    <div class="field-type-item"><div class="ft-icon">—</div><div><div class="ft-name">heading / divider</div><div class="ft-db">No column (display only)</div></div></div>
+                </div>
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-top:1rem;">The dynamic table also includes system columns: <code>id</code> (UUID PK), <code>form_version_id</code>, <code>is_draft</code>, <code>is_deleted</code>, <code>submitted_by</code>, <code>created_at</code>, <code>updated_at</code>.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ DATA FLOW -->
+<section id="flow">
+    <div class="reveal">
+        <div class="section-label">Request Lifecycle</div>
+        <h2 class="section-title">Data Flow Architecture</h2>
+        <p class="section-desc">How a request travels from the browser through Spring Security, controllers, services, and into the database.</p>
+    </div>
+
+    <div class="flow-grid reveal">
+        <div class="flow-step">
+            <div class="flow-num">1</div>
+            <h4>React UI</h4>
+            <p>Next.js App Router. Sends fetch with <code>credentials: "include"</code> for JSESSIONID cookie.</p>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">2</div>
+            <h4>CORS + Security</h4>
+            <p>Spring Security filter chain. Validates session, checks role via <code>@PreAuthorize</code>.</p>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">3</div>
+            <h4>Controller</h4>
+            <p>Maps HTTP verb + path to service method. Returns <code>ApiResponse&lt;T&gt;</code> JSON wrapper.</p>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">4</div>
+            <h4>Service Layer</h4>
+            <p>Business logic. <code>FormService</code>, <code>SubmissionService</code>, <code>FormVersionService</code>, <code>RuleEngineService</code>.</p>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">5</div>
+            <h4>Repository / JDBC</h4>
+            <p>JPA repositories for static tables. <code>JdbcTemplate</code> for dynamic submission tables.</p>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">6</div>
+            <h4>PostgreSQL</h4>
+            <p>Static schema (JPA) + dynamic <code>form_data_*</code> tables (DDL generated by SchemaManager).</p>
+        </div>
+    </div>
+
+    <div class="grid-3 reveal" style="margin-top:2rem;">
+        <div class="card">
+            <div class="card-accent accent-indigo"></div>
+            <h3>Standard API Response</h3>
+            <div class="rule-example">
+{<br>
+&nbsp;&nbsp;<span class="kw">"success"</span>: <span class="val">true</span>,<br>
+&nbsp;&nbsp;<span class="kw">"message"</span>: <span class="val">"Success"</span>,<br>
+&nbsp;&nbsp;<span class="kw">"data"</span>: { ... },<br>
+&nbsp;&nbsp;<span class="kw">"status"</span>: <span class="val">200</span>,<br>
+&nbsp;&nbsp;<span class="kw">"timestamp"</span>: <span class="val">"..."</span><br>
+}
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-rose"></div>
+            <h3>Error Response</h3>
+            <div class="rule-example">
+{<br>
+&nbsp;&nbsp;<span class="kw">"success"</span>: <span class="val">false</span>,<br>
+&nbsp;&nbsp;<span class="kw">"message"</span>: <span class="val">"Validation failed: ..."</span>,<br>
+&nbsp;&nbsp;<span class="kw">"data"</span>: <span class="val">null</span>,<br>
+&nbsp;&nbsp;<span class="kw">"status"</span>: <span class="val">400</span><br>
+}
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-sky"></div>
+            <h3>Submission Payload</h3>
+            <div class="rule-example">
+{<br>
+&nbsp;&nbsp;<span class="kw">"formId"</span>: <span class="val">"uuid"</span>,<br>
+&nbsp;&nbsp;<span class="kw">"versionId"</span>: <span class="val">"uuid"</span>,<br>
+&nbsp;&nbsp;<span class="kw">"isDraft"</span>: <span class="val">false</span>,<br>
+&nbsp;&nbsp;<span class="kw">"values"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">"field_key"</span>: <span class="val">"value"</span><br>
+&nbsp;&nbsp;}<br>
+}
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ VALIDATION -->
+<section id="validation">
+    <div class="reveal">
+        <div class="section-label">Submission Pipeline</div>
+        <h2 class="section-title">Validation & Submission Flow</h2>
+        <p class="section-desc">Every form submission goes through a deterministic multi-stage validation pipeline before any data is written to the database.</p>
+    </div>
+
+    <div class="grid-2 reveal">
+        <div>
+            <h3 style="font-size:1rem;margin-bottom:1.25rem;color:var(--text-dim);font-weight:600;">Backend Submission Pipeline</h3>
+            <div class="val-step"><div class="val-num">1</div><div><strong style="font-size:0.88rem;">Version Check</strong><p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Resolve active form version. Reject if <code>versionId</code> in payload doesn't match the currently active version.</p></div></div>
+            <div class="val-step"><div class="val-num">2</div><div><strong style="font-size:0.88rem;">Field Mapping</strong><p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Build <code>fieldKey → FormField</code> map from the active version. Reject any keys not in the schema.</p></div></div>
+            <div class="val-step"><div class="val-num">3</div><div><strong style="font-size:0.88rem;">Required Fields</strong><p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Check all fields marked <code>required = true</code> have non-empty values.</p></div></div>
+            <div class="val-step"><div class="val-num">4</div><div><strong style="font-size:0.88rem;">Field-Level Validation</strong><p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>validateValue()</code> runs per field: length limits, regex patterns, date/time bounds, number ranges, email/URL/phone format checks.</p></div></div>
+            <div class="val-step"><div class="val-num">5</div><div><strong style="font-size:0.88rem;">Rule Engine</strong><p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>RuleEngineService.validateSubmission()</code> evaluates REQUIRE and VALIDATION_ERROR rules against submitted values.</p></div></div>
+            <div class="val-step"><div class="val-num">6</div><div><strong style="font-size:0.88rem;">Schema Drift Check</strong><p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Verify the dynamic table columns match the form's field definitions before writing.</p></div></div>
+            <div class="val-step"><div class="val-num">7</div><div><strong style="font-size:0.88rem;">Write to Dynamic Table</strong><p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>getSafeValue()</code> type-converts each value, then inserts/updates a row in <code>form_data_{code}</code>. A metadata row is written to <code>form_submission_meta</code>.</p></div></div>
+        </div>
+
+        <div>
+            <h3 style="font-size:1rem;margin-bottom:1.25rem;color:var(--text-dim);font-weight:600;">Field-Level Validation Rules</h3>
+            <table class="schema-table">
+                <thead><tr><th>Field Type</th><th>Validations Applied</th></tr></thead>
+                <tbody>
+                    <tr><td>text / textarea</td><td>minLength, maxLength, pattern (regex)</td></tr>
+                    <tr><td>email</td><td>minLength, maxLength, pattern, email format</td></tr>
+                    <tr><td>number</td><td>Integer.parseInt(), min, max bounds</td></tr>
+                    <tr><td>date</td><td>LocalDate.parse(), afterDate, beforeDate</td></tr>
+                    <tr><td>time</td><td>String comparison, afterTime, beforeTime</td></tr>
+                    <tr><td>url</td><td>URL_REGEX pattern match</td></tr>
+                    <tr><td>phone</td><td>Strip spaces/dashes, 7–15 digits check</td></tr>
+                    <tr><td>file_upload</td><td>maxFileSize (MB), allowedFileTypes</td></tr>
+                </tbody>
+            </table>
+
+            <div class="card" style="margin-top:1.5rem;">
+                <div class="card-accent accent-amber"></div>
+                <h3>Platform Limits</h3>
+                <ul style="font-size:0.83rem;">
+                    <li>Max 50 fields per form (configurable)</li>
+                    <li>Max 100 validation rules per form</li>
+                    <li>Max 10 pages/sections per form</li>
+                    <li>Max file upload size: 5 MB per file</li>
+                    <li>fieldKey max length: 100 characters</li>
+                    <li>Form name: 3–100 characters</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ RULE ENGINE -->
+<section id="rules">
+    <div class="reveal">
+        <div class="section-label">Conditional Logic</div>
+        <h2 class="section-title">Rule Engine</h2>
+        <p class="section-desc">Rules are stored as a JSON array in <code>form_version.rules</code>. Each rule has a condition tree (AND/OR nested) and an action. Rules are evaluated live in the browser and enforced server-side on submit.</p>
+    </div>
+
+    <div class="grid-2 reveal">
+        <div>
+            <div class="rule-box" style="margin-bottom:1.25rem;">
+                <div class="rule-header">
+                    <h4 style="font-size:0.9rem;">Action Types</h4>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
+                    <span class="rule-tag tag-show">SHOW</span>
+                    <span class="rule-tag tag-hide">HIDE</span>
+                    <span class="rule-tag tag-req">REQUIRE</span>
+                    <span class="rule-tag tag-err">VALIDATION_ERROR</span>
+                </div>
+                <p style="font-size:0.82rem;color:var(--text-muted);">SHOW/HIDE control field visibility client-side. REQUIRE dynamically makes a field mandatory. VALIDATION_ERROR throws an error with a custom message when the condition is met.</p>
+            </div>
+
+            <div class="rule-box" style="margin-bottom:1.25rem;">
+                <div class="rule-header">
+                    <h4 style="font-size:0.9rem;">Condition Operators</h4>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                    <span class="rule-tag tag-op">EQUALS</span>
+                    <span class="rule-tag tag-op">NOT_EQUALS</span>
+                    <span class="rule-tag tag-op">GREATER_THAN</span>
+                    <span class="rule-tag tag-op">LESS_THAN</span>
+                    <span class="rule-tag tag-op">CONTAINS</span>
+                </div>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-top:0.75rem;">Numeric comparisons (GT/LT) use <code>Double.parseDouble()</code> for tolerance. String comparisons are case-insensitive.</p>
+            </div>
+
+            <div class="rule-box">
+                <div class="rule-header">
+                    <h4 style="font-size:0.9rem;">Compound Conditions</h4>
+                </div>
+                <p style="font-size:0.82rem;color:var(--text-muted);">Conditions can nest using <code>logicalOperator: "AND" | "OR"</code> with a <code>conditions[]</code> array. The evaluator handles unlimited depth recursively.</p>
+            </div>
+        </div>
+
+        <div>
+            <div class="rule-box">
+                <h4 style="font-size:0.9rem;margin-bottom:1rem;">Example Rule JSON</h4>
+                <div class="rule-example">
+{<br>
+&nbsp;&nbsp;<span class="kw">"condition"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"logicalOperator"</span>: <span class="val">"AND"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"conditions"</span>: [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"field"</span>: <span class="field">"employment_type"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"operator"</span>: <span class="op">"EQUALS"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"value"</span>: <span class="val">"contract"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"field"</span>: <span class="field">"years_experience"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"operator"</span>: <span class="op">"GREATER_THAN"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"value"</span>: <span class="val">"3"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;<span class="kw">"action"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"type"</span>: <span class="op">"SHOW"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">"targetField"</span>: <span class="field">"contract_details"</span><br>
+&nbsp;&nbsp;}<br>
+}
+                </div>
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-top:1rem;">Rules are stored in <code>form_version.rules</code> as a JSON text array. Parsed by Jackson into <code>List&lt;FormRuleDTO&gt;</code> at evaluation time. The frontend parses the same JSON and runs an identical evaluator (<code>evaluateConditionNode()</code>) for live feedback.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ FRONTEND -->
+<section id="frontend">
+    <div class="reveal">
+        <div class="section-label">Next.js App Router</div>
+        <h2 class="section-title">Frontend Pages & Components</h2>
+        <p class="section-desc">All pages are under <code>src/app/</code> using the Next.js App Router. Protected routes are guarded by <code>AuthContext</code> which redirects unauthenticated users and enforces role-based access via the Module/Permission system.</p>
+    </div>
+
+    <div class="api-table reveal" style="margin-bottom:2rem;">
+        <div class="api-group-header">📄 Application Pages</div>
+        <div class="page-item"><span class="page-route">/login</span><span class="page-desc">Session login — calls POST /api/v1/auth/login, sets cookie</span><span class="page-auth auth-badge auth-public">PUBLIC</span></div>
+        <div class="page-item"><span class="page-route">/register</span><span class="page-desc">User registration with optional profile photo upload</span><span class="page-auth auth-badge auth-public">PUBLIC</span></div>
+        <div class="page-item"><span class="page-route">/dashboard</span><span class="page-desc">Stats overview: total forms, drafts, published, submissions, recent forms</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/</span><span class="page-desc">Visual form builder — drag-and-drop canvas, field palette, config panel, rule builder</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/forms/all</span><span class="page-desc">Form Vault — list, publish, delete, restore forms. API Gateway modal per form</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/forms/edit/[id]</span><span class="page-desc">Edit existing form. Auto-creates/loads draft version. Version-aware (read-only if active)</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/forms/[id]/versions</span><span class="page-desc">Version management — list all versions, activate a version, create new version</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/forms/[id]</span><span class="page-desc">Public form renderer — dynamic fields, multi-page, draft save/resume, validation</span><span class="page-auth auth-badge auth-public">PUBLIC</span></div>
+        <div class="page-item"><span class="page-route">/forms/data/[id]</span><span class="page-desc">Submission data grid — sort, paginate, bulk select, delete, restore, CSV export, XLSX</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/forms/data/[id]/[submissionId]</span><span class="page-desc">Read-only detail view of a single submission, rendered using original form version</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/profile</span><span class="page-desc">View current user profile and linked roles</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/profile/edit</span><span class="page-desc">Update name, email, phone, profile photo</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/admin/users</span><span class="page-desc">User management — list all users, assign roles</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/admin/roles</span><span class="page-desc">Role management — create, edit, delete roles, assign modules</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/admin/modules</span><span class="page-desc">Module / permission registry — manage navigation items and access control</span><span class="page-auth auth-badge auth-private">AUTH</span></div>
+        <div class="page-item"><span class="page-route">/docs</span><span class="page-desc">Developer API documentation — metadata API, submission format, field types, integration guide</span><span class="page-auth auth-badge auth-public">PUBLIC</span></div>
+    </div>
+
+    <div class="grid-3 reveal">
+        <div class="card">
+            <div class="card-accent accent-indigo"></div>
+            <h3>Form Builder Components</h3>
+            <ul>
+                <li><code>Toolbar.js</code> — Field palette with categories</li>
+                <li><code>SortableFieldItem.js</code> — DnD sortable canvas field</li>
+                <li><code>SidebarProps.js</code> — Configuration panel per field type</li>
+                <li><code>SidebarLogic.js</code> — Rule builder tab wrapper</li>
+                <li><code>FormPreview.js</code> — Live preview of the form being built</li>
+                <li><code>FormHeader.js</code> — Save, publish, preview toolbar</li>
+                <li><code>FieldConstants.js</code> — Field type definitions, icons, categories</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-sky"></div>
+            <h3>Public Form Rendering</h3>
+            <ul>
+                <li><code>FormFieldWrapper.js</code> — Renders any field type dynamically</li>
+                <li>17 supported field types rendered from metadata</li>
+                <li>Multi-page with <code>page_break</code> fields as separators</li>
+                <li>Client-side rule evaluation (<code>evaluateConditionNode</code>)</li>
+                <li>Draft auto-save and resume on page load</li>
+                <li>Field visibility + dynamic required state in real-time</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-green"></div>
+            <h3>Auth & Navigation</h3>
+            <ul>
+                <li><code>AuthContext.js</code> — Session state, route guard, permissions</li>
+                <li><code>ThemeContext.js</code> — Light/dark mode toggle</li>
+                <li><code>ProtectedRoute.js</code> — Wraps guarded routes</li>
+                <li><code>RuleBuilder.js</code> — Visual rule editor with AND/OR builder</li>
+                <li><code>Sidebar.js</code> — Left nav from Module/permission system</li>
+                <li><code>NavLinks.js</code> — Top bar links, profile, docs, logout</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card reveal" style="margin-top:1.5rem;">
+        <div class="card-accent accent-amber"></div>
+        <h3 style="margin-bottom:1rem;">Supported Field Types (17)</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
+            <div class="field-type-item"><div class="ft-icon">Tt</div><div><div class="ft-name">text</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">¶</div><div><div class="ft-name">textarea</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">#</div><div><div class="ft-name">number</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">@</div><div><div class="ft-name">email</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">📅</div><div><div class="ft-name">date</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">📱</div><div><div class="ft-name">phone</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">🕐</div><div><div class="ft-name">time</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">🔗</div><div><div class="ft-name">url</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">⭕</div><div><div class="ft-name">radio</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">☑</div><div><div class="ft-name">checkbox</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">▼</div><div><div class="ft-name">select</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">⇌</div><div><div class="ft-name">toggle</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">📎</div><div><div class="ft-name">file_upload</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">H1</div><div><div class="ft-name">heading</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">¶</div><div><div class="ft-name">paragraph</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">—</div><div><div class="ft-name">divider</div></div></div>
+            <div class="field-type-item"><div class="ft-icon">⊟</div><div><div class="ft-name">page_break</div></div></div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ SECURITY -->
+<section id="security">
+    <div class="reveal">
+        <div class="section-label">Security Framework</div>
+        <h2 class="section-title">Authentication & Protection</h2>
+        <p class="section-desc">Spring Security manages session lifecycle. No JWT — server-side session only. CORS is locked to the frontend domain. One session per user enforced server-side.</p>
+    </div>
+
+    <div class="grid-2 reveal">
+        <div class="card">
+            <div class="card-accent accent-indigo"></div>
+            <h3 style="margin-bottom:1.25rem;">Security Configuration</h3>
+            <div class="security-row">
+                <div class="sec-icon icon-green">🔑</div>
+                <div>
+                    <strong style="font-size:0.88rem;">Session-Based Auth (No JWT)</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>JSESSIONID</code> cookie. Server controls session lifecycle. <code>sessionFixation().migrateSession()</code> on login.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-amber">🔒</div>
+                <div>
+                    <strong style="font-size:0.88rem;">One Session Per User</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>maximumSessions(1)</code>. Concurrent login returns a JSON error instead of silently expiring the old session.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-sky">🌐</div>
+                <div>
+                    <strong style="font-size:0.88rem;">CORS — Strict Origin</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Restricted to <code>http://localhost:3000</code>. <code>allowCredentials = true</code> required for cookie forwarding.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-rose">🛡️</div>
+                <div>
+                    <strong style="font-size:0.88rem;">Public Endpoints</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>POST /auth/login</code>, <code>POST /auth/register</code>, <code>GET /forms/{id}</code>, <code>GET /forms/{id}/rules</code>, <code>GET /forms/{id}/lookup/**</code>, <code>POST /submissions</code> are all public. Everything else requires authentication.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-purple">🔐</div>
+                <div>
+                    <strong style="font-size:0.88rem;">Method-Level Authorization</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>@PreAuthorize("isAuthenticated()")</code> on protected controller methods. Global fallback: <code>anyRequest().authenticated()</code>.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-accent accent-rose"></div>
+            <h3 style="margin-bottom:1.25rem;">Data Integrity & Injection Protection</h3>
+            <div class="security-row">
+                <div class="sec-icon icon-green">🧹</div>
+                <div>
+                    <strong style="font-size:0.88rem;">fieldKey Validation</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;"><code>SchemaManager.validateColumnName()</code> rejects reserved SQL keywords (SELECT, FROM, WHERE, etc.) and non-alphanumeric names before any DDL is executed.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-amber">📊</div>
+                <div>
+                    <strong style="font-size:0.88rem;">CSV Injection Protection</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Any exported cell value starting with <code>=</code>, <code>+</code>, <code>-</code>, or <code>@</code> is prefixed with a single quote to neutralize Excel formula injection.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-sky">🔢</div>
+                <div>
+                    <strong style="font-size:0.88rem;">Dynamic Query Safety</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Table names are validated against <code>[a-zA-Z0-9_]+</code> before use in dynamic SQL. All user values go through parameterized JDBC prepared statements.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-rose">📁</div>
+                <div>
+                    <strong style="font-size:0.88rem;">File Upload Protection</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">File size validated against field-specific <code>maxFileSize</code> (MB). File UUID is stored in the dynamic table — the actual file binary lives in a separate <code>FileMetadata</code> store.</p>
+                </div>
+            </div>
+            <div class="security-row">
+                <div class="sec-icon icon-purple">🔑</div>
+                <div>
+                    <strong style="font-size:0.88rem;">Passwords</strong>
+                    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Stored using Spring Security's <code>BCryptPasswordEncoder</code>. Never exposed in any API response.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ ROLES -->
+<section id="roles">
+    <div class="reveal">
+        <div class="section-label">Access Control</div>
+        <h2 class="section-title">Roles & Module Permissions</h2>
+        <p class="section-desc">Access is controlled through a Role → Module mapping system. Each role is assigned a set of modules (navigation items + API access grants). The frontend sidebar and route guards read the user's module list from <code>GET /api/v1/menu</code>.</p>
+    </div>
+
+    <table class="roles-table reveal">
+        <thead>
+            <tr>
+                <th>Role</th>
+                <th>System Enum</th>
+                <th>Access Scope</th>
+                <th>Typical Permissions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="role-badge role-master">MASTER_ADMIN</span></td>
+                <td><code>SystemRole.MASTER_ADMIN</code></td>
+                <td>Global — all users and forms</td>
+                <td>Manage users, roles, modules, all forms, all submissions. Full admin panel access.</td>
+            </tr>
+            <tr>
+                <td><span class="role-badge role-user">USER</span></td>
+                <td><code>SystemRole.USER</code></td>
+                <td>Personal — own forms only</td>
+                <td>Create and manage own forms, view own submissions. No access to admin panel.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="grid-2 reveal" style="margin-top:2rem;">
+        <div class="card">
+            <div class="card-accent accent-indigo"></div>
+            <h3>Module System</h3>
+            <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">Modules are navigation and permission units stored in the <code>module</code> table. Each module has a <code>controller</code>, <code>action</code>, and <code>prefix</code> that map to frontend routes. The <code>GET /api/v1/menu</code> endpoint returns only the modules the current user's roles have access to, driving the sidebar dynamically.</p>
+            <ul>
+                <li>Modules can have parent/sub-parent hierarchy for nested menus</li>
+                <li>Icon CSS class stored per module for UI rendering</li>
+                <li>Role–Module assignment via <code>RoleModule</code> join table</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-accent accent-amber"></div>
+            <h3>Form Ownership</h3>
+            <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">Every form is owned by the user who created it via the <code>user_id</code> foreign key. <code>FormService.getAllForms()</code> scopes queries to <code>WHERE user_id = currentUser</code>, ensuring users only see their own forms. MASTER_ADMIN can access all forms.</p>
+            <ul>
+                <li>Dashboard stats are also scoped per user</li>
+                <li>Submission metadata tracks <code>submitted_by</code> username</li>
+                <li>Form ownership does not change after creation</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════ FOOTER -->
+<footer style="text-align:center;padding:4rem 2rem;color:var(--text-muted);border-top:1px solid var(--border);max-width:1280px;margin:0 auto;">
+    <p style="font-weight:700;color:var(--text-dim);margin-bottom:0.5rem;">Configurable Form Builder Platform</p>
+    <p style="font-size:0.82rem;">Spring Boot 3 · Java 21 · Next.js App Router · PostgreSQL 17 · Spring Security</p>
+    <p style="font-size:0.75rem;margin-top:1rem;opacity:0.5;">System Architecture Documentation · 2026</p>
+</footer>
+
+<script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.07 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Active nav highlight
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    const navObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => {
+                    link.style.color = '';
+                    link.style.background = '';
+                });
+                const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+                if (active) {
+                    active.style.color = '#a5b4fc';
+                    active.style.background = 'rgba(99,102,241,0.1)';
+                }
+            }
+        });
+    }, { threshold: 0.4 });
+
+    sections.forEach(s => navObserver.observe(s));
+</script>
+
+</body>
+</html>

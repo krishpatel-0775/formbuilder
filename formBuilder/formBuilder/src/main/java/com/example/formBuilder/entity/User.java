@@ -36,6 +36,8 @@ public class User {
     private String phoneNumber;
 
     private String profilePictureUrl;
+    
+    private String lastSessionId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
