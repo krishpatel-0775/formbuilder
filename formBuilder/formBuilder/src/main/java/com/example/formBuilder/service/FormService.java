@@ -203,6 +203,7 @@ public class FormService {
                 .allowedFileTypes(f.getAllowedFileTypes())
                 .isReadOnly(f.getIsReadOnly())
                 .isMultiSelect(f.getIsMultiSelect())
+                .isUnique(f.getIsUnique())
                 .build();
 
     }
@@ -674,6 +675,7 @@ public class FormService {
                 formField.setSourceColumn(field.getSourceColumn());
                 formField.setIsReadOnly(field.getIsReadOnly() != null ? field.getIsReadOnly() : false);
                 formField.setIsMultiSelect(field.getIsMultiSelect() != null ? field.getIsMultiSelect() : false);
+                formField.setIsUnique(field.getIsUnique() != null ? field.getIsUnique() : false);
             } else {
 
                 // For display-only types, store the human-readable label text in defaultValue

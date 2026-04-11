@@ -1,4 +1,4 @@
-import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListChecks, Code2, CheckCircle2, ShieldCheck } from "lucide-react";
+import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListChecks, Code2, CheckCircle2, ShieldCheck, Fingerprint } from "lucide-react";
 
 
 export function DefaultValuePanel({ activeField, updateField, handleNumberInput }) {
@@ -195,6 +195,29 @@ export function SidebarProps({
           </div>
           <div className={`w-12 h-6 rounded-full transition-all relative ${activeField.isReadOnly ? "bg-amber-500 shadow-lg shadow-amber-500/30" : "bg-slate-200"}`}>
             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-sm ${activeField.isReadOnly ? "translate-x-7 scale-110" : "translate-x-1"}`} />
+          </div>
+        </div>
+      </div>
+
+      {/* Unique Toggle */}
+      <div className="space-y-4">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Uniqueness Setting</label>
+        <div
+          onClick={() => updateField(activeField.id, "isUnique", !activeField.isUnique)}
+          className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer border transition-all duration-500 ${activeField.isUnique
+              ? "bg-rose-50/50 border-rose-200 shadow-xl shadow-rose-500/5 text-rose-900"
+              : "bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-200"
+            }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${activeField.isUnique ? "bg-rose-500 text-white" : "bg-white text-slate-300 border border-slate-100"
+              }`}>
+              <Fingerprint size={20} strokeWidth={2.5} />
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-widest">Unique Value</span>
+          </div>
+          <div className={`w-12 h-6 rounded-full transition-all relative ${activeField.isUnique ? "bg-rose-500 shadow-lg shadow-rose-500/30" : "bg-slate-200"}`}>
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-sm ${activeField.isUnique ? "translate-x-7 scale-110" : "translate-x-1"}`} />
           </div>
         </div>
       </div>

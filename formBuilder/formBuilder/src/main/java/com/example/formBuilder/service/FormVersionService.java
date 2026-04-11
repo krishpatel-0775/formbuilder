@@ -478,6 +478,7 @@ public class FormVersionService {
         field.setAfterDatetime(req.getAfterDatetime());
         field.setIsReadOnly(Boolean.TRUE.equals(req.getIsReadOnly()));
         field.setIsMultiSelect(Boolean.TRUE.equals(req.getIsMultiSelect()));
+        field.setIsUnique(Boolean.TRUE.equals(req.getIsUnique()));
     }
 
 
@@ -611,6 +612,7 @@ public class FormVersionService {
             clone.setHelperText(f.getHelperText());
             clone.setIsReadOnly(f.getIsReadOnly());
             clone.setIsMultiSelect(f.getIsMultiSelect());
+            clone.setIsUnique(f.getIsUnique());
             clone.setIsDeleted(false);
 
             clone.setForm(f.getForm());
@@ -772,6 +774,7 @@ public class FormVersionService {
                         .allowedFileTypes(f.getAllowedFileTypes())
                         .isReadOnly(f.getIsReadOnly())
                         .isMultiSelect(f.getIsMultiSelect())
+                        .isUnique(f.getIsUnique())
                         .build())
 
                 .collect(Collectors.toList());

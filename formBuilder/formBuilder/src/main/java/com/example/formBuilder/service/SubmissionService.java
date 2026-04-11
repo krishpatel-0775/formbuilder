@@ -250,6 +250,16 @@ public class SubmissionService {
             }
             if (value != null && !value.toString().trim().isEmpty()) {
                 validateValue(field, value, fieldErrors);
+
+                // Uniqueness check: only for non-draft, non-deleted records
+                if (Boolean.TRUE.equals(field.getIsUnique())) {
+                    String checkSql = "SELECT COUNT(*) FROM " + tableName + " WHERE " + key + " = ? AND is_deleted = false AND is_draft = false";
+                    Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, value.toString().trim());
+                    if (count != null && count > 0) {
+                        fieldErrors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
+                                  .add("The value '" + value + "' for field '" + field.getFieldName() + "' must be unique.");
+                    }
+                }
             }
         }
 

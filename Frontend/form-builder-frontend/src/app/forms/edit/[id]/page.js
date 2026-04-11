@@ -145,6 +145,7 @@ export default function EditFormPage() {
             sourceTable: f.sourceTable ?? "", sourceColumn: f.sourceColumn ?? "",
             isReadOnly: f.isReadOnly ?? false,
             isMultiSelect: f.isMultiSelect ?? false,
+            isUnique: f.isUnique ?? false,
             placeholder: f.placeholder ?? "",
             helperText: f.helperText ?? "",
             key: f.fieldKey || (f.fieldName ? generateColumnName(f.fieldName) : ""),
@@ -241,6 +242,7 @@ export default function EditFormPage() {
       placeholder: "",
       helperText: "",
       key: "",
+      isUnique: false
     };
 
     setFields([...fields, newField]);
@@ -353,7 +355,8 @@ export default function EditFormPage() {
           type: field.type,
           required: field.required,
           isReadOnly: field.isReadOnly,
-          isMultiSelect: !!field.isMultiSelect
+          isMultiSelect: !!field.isMultiSelect,
+          isUnique: !!field.isUnique
         };
 
         if (field.defaultValue) fd.defaultValue = field.defaultValue;

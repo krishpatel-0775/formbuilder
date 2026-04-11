@@ -132,6 +132,7 @@ export default function BuilderPage() {
             beforeDatetime: "", afterDatetime: "",
             options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
             sourceTable: "", sourceColumn: "",
+            isUnique: false
         };
         setFields([...fields, newField]);
         setActiveFieldId(newField.id);
@@ -231,7 +232,8 @@ export default function BuilderPage() {
                     type: field.type,
                     required: field.required,
                     isReadOnly: field.isReadOnly,
-                    isMultiSelect: !!field.isMultiSelect
+                    isMultiSelect: !!field.isMultiSelect,
+                    isUnique: !!field.isUnique
                 };
 
                 if (field.type === "toggle") {

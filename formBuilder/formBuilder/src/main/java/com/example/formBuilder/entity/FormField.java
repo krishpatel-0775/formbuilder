@@ -99,4 +99,7 @@ public class FormField {
 
     @Column(name = "is_multi_select")
     private Boolean isMultiSelect = false;
+
+    @Column(name = "is_unique")
+    private Boolean isUnique = false;
 }

@@ -40,4 +40,7 @@ public class UpdateFieldRequest {
     @com.fasterxml.jackson.annotation.JsonProperty("isMultiSelect")
     private Boolean isMultiSelect;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("isUnique")
+    private Boolean isUnique;
+
 }

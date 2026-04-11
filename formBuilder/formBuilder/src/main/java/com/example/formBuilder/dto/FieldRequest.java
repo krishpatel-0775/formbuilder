@@ -45,4 +45,7 @@ public class FieldRequest {
     @JsonProperty("isMultiSelect")
     private Boolean isMultiSelect;
 
+    @JsonProperty("isUnique")
+    private Boolean isUnique;
+
 }

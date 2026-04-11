@@ -312,6 +312,12 @@ export default function DocsPage() {
         "fieldName": "Resume File",
         "fieldKey": "resume_file", "fieldType": "file_upload",
         "maxFileSize": 5, "allowedFileTypes": ".pdf,.docx"
+      },
+      {
+        "fieldName": "Profile URL",
+        "fieldKey": "profile_url", "fieldType": "url",
+        "required": true, "isUnique": true,
+        "placeholder": "https://linkedin.com/..."
       }
     ]
   }
@@ -350,6 +356,7 @@ export default function DocsPage() {
                                 { k: "sourceTable", d: "Dynamic source for dropdowns." },
                                 { k: "maxFileSize", d: "Upload MB limit." },
                                 { k: "allowedFiles", d: ".pdf,.jpg etc." },
+                                { k: "isUnique", d: "Uniqueness constraint." },
                                 { k: "isReadOnly", d: "Disable editing." },
                                 { k: "isMultiSelect", d: "Multiple choice." }
                             ].map(item => (
@@ -709,6 +716,7 @@ export default function DocsPage() {
   "success": false,
   "message": "Validation failed",
   "errors": {
+    "email": ["This email has already been submitted."],
     "full_name": ["Min length is 3"],
     "_FORM_ERROR_": ["Configuration mismatch detected"]
   },
@@ -982,7 +990,8 @@ export default function DocsPage() {
                                     { p: "before / AfterDate", a: "Date", l: "Chronological limits on selection." },
                                     { p: "before / AfterTime", a: "Time", l: "Time-of-day constraints (HH:mm)." },
                                     { p: "before / AfterDatetime", a: "Datetime", l: "Complete Chronological range (ISO 8601)." },
-                                    { p: "maxFileSize", a: "File Upload", l: "Megabyte (MB) limit on disk size." }
+                                    { p: "maxFileSize", a: "File Upload", l: "Megabyte (MB) limit on disk size." },
+                                    { p: "isUnique", a: "Input Fields", l: "Server-side check for duplicate values in existing final submissions." }
                                 ].map(row => (
                                     <tr key={row.p} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-8 py-5 font-mono text-xs text-primary font-bold">{row.p}</td>
