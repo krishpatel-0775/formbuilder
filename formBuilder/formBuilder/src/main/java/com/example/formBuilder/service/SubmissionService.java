@@ -252,9 +252,11 @@ public class SubmissionService {
                 validateValue(field, value, fieldErrors);
 
                 // Uniqueness check: only for non-draft, non-deleted records
-                if (Boolean.TRUE.equals(field.getIsUnique())) {
+                // AND only if no errors were found for this field during basic validation
+                if (Boolean.TRUE.equals(field.getIsUnique()) && !fieldErrors.containsKey(key)) {
                     String checkSql = "SELECT COUNT(*) FROM " + tableName + " WHERE " + key + " = ? AND is_deleted = false AND is_draft = false";
-                    Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, value.toString().trim());
+                    Object safeValue = getSafeValue(field, value);
+                    Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, safeValue);
                     if (count != null && count > 0) {
                         fieldErrors.computeIfAbsent(key, k -> new java.util.ArrayList<>())
                                   .add("The value '" + value + "' for field '" + field.getFieldName() + "' must be unique.");
