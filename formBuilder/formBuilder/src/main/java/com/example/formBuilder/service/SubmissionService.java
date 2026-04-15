@@ -230,14 +230,15 @@ public class SubmissionService {
                         f -> f,
                         (existing, replacement) -> existing));
 
+        // Strip any keys from stale draft data that don't belong to the active version's schema.
+        // This happens when a user saved a draft under a newer version (e.g. v2 with "bio"),
+        // the admin then activates an older version (e.g. v1 without "bio"), and the frontend
+        // re-submits the cached draft data. Instead of throwing "Invalid field: bio", we
+        // silently drop those extra fields so the submission succeeds against the active version.
+        values.keySet().retainAll(fieldMap.keySet());
+
         // Validation for final submission
         java.util.Map<String, java.util.List<String>> fieldErrors = new java.util.HashMap<>();
-        
-        for (String key : values.keySet()) {
-            if (!fieldMap.containsKey(key)) {
-                fieldErrors.computeIfAbsent("_global", k -> new java.util.ArrayList<>()).add("Invalid field: " + key);
-            }
-        }
 
         for (FormField field : formFields) {
             String key = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
@@ -404,15 +405,46 @@ public class SubmissionService {
         String currentUser = SessionUtil.getCurrentUsername();
         String tableName = form.getTableName();
 
-        FormSubmissionMeta meta = metaRepository.findByFormIdAndSubmittedByAndStatus(formId, currentUser, "DRAFT")
-                .stream().findFirst().orElse(null);
+        // Resolve the currently active version so we can match the correct draft
+        // and filter out fields that no longer exist in this version.
+        FormVersion activeVersion = versionRepository.findByFormIdAndIsActiveTrue(form.getId()).orElse(null);
+        UUID activeVersionId = activeVersion != null ? activeVersion.getId() : null;
+
+        // Find the draft that matches the active version specifically.
+        // If a draft exists for a different (now inactive) version, ignore it — it's stale.
+        FormSubmissionMeta meta;
+        if (activeVersionId != null) {
+            meta = metaRepository.findByFormIdAndSubmittedByAndStatus(formId, currentUser, "DRAFT")
+                    .stream()
+                    .filter(m -> activeVersionId.equals(m.getFormVersionId()))
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            meta = metaRepository.findByFormIdAndSubmittedByAndStatus(formId, currentUser, "DRAFT")
+                    .stream()
+                    .filter(m -> m.getFormVersionId() == null)
+                    .findFirst()
+                    .orElse(null);
+        }
 
         if (meta == null) return null;
+
+        // Load the valid field keys for the active version so we can strip stale columns.
+        List<FormField> activeFields = (activeVersionId != null)
+                ? fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(activeVersionId)
+                : fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
+
+        java.util.Set<String> validKeys = activeFields.stream()
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
+                .map(f -> f.getFieldKey() != null ? f.getFieldKey() : f.getFieldName())
+                .collect(Collectors.toSet());
 
         String sql = "SELECT * FROM " + tableName + " WHERE id = ?::uuid AND is_draft = true";
         try {
             log.info("Retrieving draft for form {} and user {}", formId, currentUser);
             Map<String, Object> data = jdbcTemplate.queryForMap(sql, meta.getSubmissionRowId().toString());
+
+            // Remove internal / metadata columns
             data.remove("id");
             data.remove("is_deleted");
             data.remove("is_draft");
@@ -420,6 +452,10 @@ public class SubmissionService {
             data.remove("created_at");
             data.remove("updated_at");
             data.remove("form_version_id");
+
+            // Strip any columns that don't belong to the active version's schema
+            // (e.g. "bio" from a v2 draft when v1 is now active).
+            data.keySet().retainAll(validKeys);
 
             return DraftResponse.builder()
                     .submissionId(meta.getSubmissionRowId())
