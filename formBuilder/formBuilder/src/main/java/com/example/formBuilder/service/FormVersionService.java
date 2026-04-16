@@ -307,7 +307,7 @@ public class FormVersionService {
         Form form = checkFormOwnership(current.getFormId()); // Use ownership check
 
         // FIXED: IF form is DRAFT, update the existing version in-place
-        if (form.getStatus() == com.example.formBuilder.enums.FormStatus.DRAFT) {
+        if (form.getStatus() == FormStatus.DRAFT) {
             log.info("Draft Rules Update: Updating existing draft version v{} rules", current.getVersionNumber());
             current.setRules(rulesJson != null ? rulesJson : "[]");
             current.setUpdatedAt(LocalDateTime.now());
