@@ -12,7 +12,14 @@ export function FormFieldWrapper({
   isShowControlled = false,
   isRuleRequired = false,
   onCheckboxChange,
-  label // Added label prop for display
+  label, // Added label prop for display
+
+  // Context for recursive children
+  formData = {}, 
+  allErrors = {}, 
+  allVisibility = {}, 
+  allShowTargets = new Set(),
+  allDynamicRequired = new Set()
 }) {
   const [isOpen, setIsOpen] = useState(false); // For select field
   const fieldIdentifier = field.fieldKey || field.fieldName;
@@ -74,6 +81,69 @@ export function FormFieldWrapper({
           <div className="bg-slate-50 border border-slate-100 px-6 py-2 rounded-full shadow-sm">
             <span className="text-[10px] font-black text-slate-400 tracking-[0.2em]">{field.label || "Page Break"}</span>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── GROUP CONTAINER: Render children recursively ──
+  if (field.fieldType === "group") {
+    const children = field.children || [];
+    return (
+      <div className="group-container space-y-6 pt-6 pb-8 px-6 md:px-10 rounded-[3rem] border-2 border-slate-100/80 bg-slate-50/20 hover:bg-white/60 hover:border-primary/20 transition-all duration-700 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-slate-100 group-hover:bg-primary/20 transition-colors" />
+        
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none uppercase">
+              {displayLabel}
+            </h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+              Architectural Group Container
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-8 relative z-10">
+          {children.length > 0 ? (
+            children.map((child) => {
+              const childKey = child.fieldKey || child.fieldName;
+              return (
+                <FormFieldWrapper
+                  key={child.id}
+                  field={child}
+                  label={child.fieldName}
+                  
+                  // Context mapping
+                  value={formData[childKey]}
+                  errors={allErrors[childKey]}
+                  visibility={allVisibility[childKey] || (allShowTargets.has(childKey) ? "HIDE" : "SHOW")}
+                  isShowControlled={allShowTargets.has(childKey)}
+                  isRuleRequired={allDynamicRequired.has(childKey)}
+
+                  // Recurse context down
+                  formData={formData}
+                  allErrors={allErrors}
+                  allVisibility={allVisibility}
+                  allShowTargets={allShowTargets}
+                  allDynamicRequired={allDynamicRequired}
+
+                  // Handlers
+                  onChange={onChange}
+                  onCheckboxChange={onCheckboxChange}
+                />
+              );
+            })
+          ) : (
+            <div className="p-8 border-2 border-dashed border-slate-100 rounded-[2rem] text-center">
+              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                No components nested in this group
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );

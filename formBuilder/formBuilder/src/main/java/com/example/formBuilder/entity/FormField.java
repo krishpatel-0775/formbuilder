@@ -114,4 +114,7 @@ public class FormField {
      */
     @Column(name = "calculation_formula", columnDefinition = "TEXT")
     private String calculationFormula;
+
+    @Column(name = "parent_id")
+    private String parentId;
 }

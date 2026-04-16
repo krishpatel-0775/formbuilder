@@ -1,6 +1,6 @@
 import { 
   Type, Hash, Mail, Calendar, Phone, Clock, Link, CircleDot, CheckSquare,
-  ListPlus, ToggleLeft, ChevronRight, Heading, Pilcrow, Minus, Layout
+  ListPlus, ToggleLeft, ChevronRight, Heading, Pilcrow, Minus, Layout, Box
 } from "lucide-react";
 
 export const FieldIcons = {
@@ -23,6 +23,7 @@ export const FieldIcons = {
   heading: <Heading size={18} />,
   paragraph: <Pilcrow size={18} />,
   divider: <Minus size={18} />,
+  group: <Box size={18} />,
 };
 
 export const StaticElementTypes = [
@@ -32,7 +33,7 @@ export const StaticElementTypes = [
   { type: "page_break", label: "Pagination", desc: "For next page", color: "indigo", icon: <Layout size={16} /> },
 ];
 
-export const RegularFieldTypes = ["text", "textarea", "number", "decimal", "email", "date", "phone", "time", "datetime", "url", "radio", "checkbox", "select", "toggle", "file_upload"];
+export const RegularFieldTypes = ["text", "textarea", "number", "decimal", "email", "date", "phone", "time", "datetime", "url", "radio", "checkbox", "select", "toggle", "file_upload", "group"];
 
 export const FieldCategories = [
   {
@@ -54,5 +55,9 @@ export const FieldCategories = [
   {
     name: "Advanced",
     fields: ["file_upload"]
+  },
+  {
+    name: "Layout & Containers",
+    fields: ["group"]
   }
 ];

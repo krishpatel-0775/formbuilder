@@ -1,5 +1,9 @@
 package com.example.formBuilder.util;
 
+/**
+ * Core engine for server-side arithmetic calculations on form fields.
+ */
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;

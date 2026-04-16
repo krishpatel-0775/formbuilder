@@ -107,6 +107,7 @@ export default function BuilderPage() {
     const handleDragStart = (e, type) => e.dataTransfer.setData("fieldType", type);
 
     const handleDrop = (e) => {
+        if (e.defaultPrevented) return;
         e.preventDefault();
         const type = e.dataTransfer.getData("fieldType");
         if (!type) return;
@@ -132,9 +133,10 @@ export default function BuilderPage() {
             beforeDatetime: "", afterDatetime: "",
             options: ["radio", "checkbox", "select"].includes(type.toLowerCase()) ? ["Option 1", "Option 2"] : [],
             sourceTable: "", sourceColumn: "",
-            isUnique: false
+            isUnique: false,
+            parentId: null
         };
-        setFields([...fields, newField]);
+        setFields(prev => [...prev, newField]);
         setActiveFieldId(newField.id);
     };
 
@@ -226,6 +228,7 @@ export default function BuilderPage() {
                     return { name: `${field.type}_${idx}`, type: field.type, defaultValue: field.label || "" };
                 }
                 if (!field.label) throw new Error("Field label is required");
+                const parentField = field.parentId ? fields.find(f => f.id === field.parentId) : null;
                 let fd = {
                     name: field.label,
                     fieldKey: field.key || generateColumnName(field.label),
@@ -233,7 +236,8 @@ export default function BuilderPage() {
                     required: field.required,
                     isReadOnly: field.isReadOnly,
                     isMultiSelect: !!field.isMultiSelect,
-                    isUnique: !!field.isUnique
+                    isUnique: !!field.isUnique,
+                    parentId: parentField ? (parentField.key || generateColumnName(parentField.label)) : null
                 };
 
                 if (field.type === "toggle") {
@@ -354,15 +358,18 @@ export default function BuilderPage() {
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleSortStart} onDragEnd={handleSortEnd} onDragCancel={handleSortCancel}>
                                 <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
                                     <div className="space-y-4">
-                                        {fields.map((field, idx) => (
+                                        {fields.filter(f => !f.parentId).map((field, idx) => (
                                             <SortableFieldItem
                                                 key={field.id}
                                                 field={field}
                                                 idx={idx}
                                                 isActive={activeFieldId === field.id}
                                                 setActiveFieldId={setActiveFieldId}
+                                                activeFieldId={activeFieldId}
                                                 removeField={removeField}
                                                 updateField={updateField}
+                                                allFields={fields}
+                                                setFields={setFields}
                                             />
                                         ))}
                                     </div>

@@ -234,12 +234,39 @@ export default function PublicFormPage() {
 
         setFormConfig(data);
 
-        // Split fields into pages
-        const splitPages = splitIntoPages(data.fields || []);
+        // FIXED: Resolve parentId and Build Hierarchy for Rendering
+        const fields = (data.fields || []).map(f => ({ ...f }));
+        
+        // 1. Resolve parentId (Key string -> internal ID)
+        fields.forEach(f => {
+          if (f.parentId) {
+            const parent = fields.find(p => p.fieldKey === f.parentId);
+            if (parent) f.parentId = parent.id;
+          }
+        });
+
+        // 2. Build Tree Structure (children array for groups)
+        const fieldMap = {};
+        fields.forEach(f => {
+          f.children = [];
+          fieldMap[f.id] = f;
+        });
+
+        const rootFields = [];
+        fields.forEach(f => {
+          if (f.parentId && fieldMap[f.parentId]) {
+            fieldMap[f.parentId].children.push(f);
+          } else {
+            rootFields.push(f);
+          }
+        });
+
+        // Split fields into pages (only root-level fields are processed for pagination)
+        const splitPages = rootFields.length > 0 ? splitIntoPages(rootFields) : [];
         setPages(splitPages);
 
-        // Initialize form data
-        const initialData = getInitialFormData(data.fields);
+        // Initialize form data (use ALL fields including nested ones)
+        const initialData = getInitialFormData(fields);
         setFormData(initialData);
 
         setLoading(false);
@@ -696,19 +723,33 @@ export default function PublicFormPage() {
     .reduce((acc, [, msgs]) => acc + msgs.length, 0);
 
   const renderField = (field) => {
+    // If it's a group, we pass the computed child tree to the wrapper
+    const fieldProps = {
+      field: field,
+      label: field.fieldName,
+
+      // DATA & STATE
+      value: formData[field.fieldKey || field.fieldName],
+      formData: formData, // Global state for recursive children
+      errors: errors[field.fieldKey || field.fieldName],
+      allErrors: errors,   // Global errors for recursive children
+      
+      // LOGIC & VISIBILITY
+      visibility: fieldVisibility[field.fieldKey || field.fieldName] || (showTargetFields.has(field.fieldKey || field.fieldName) ? "HIDE" : "SHOW"),
+      allVisibility: fieldVisibility, // Global visibility for recursive children
+      isShowControlled: showTargetFields.has(field.fieldKey || field.fieldName),
+      allShowTargets: showTargetFields, // Global logic control for recursive children
+      isRuleRequired: dynamicRequiredFields.has(field.fieldKey || field.fieldName),
+      allDynamicRequired: dynamicRequiredFields, // Global required logic for recursive children
+
+      // HANDLERS
+      onChange: handleInputChange,
+      onCheckboxChange: handleCheckboxChange,
+    };
+
+    // For groups, recursive children are handled by FormFieldWrapper internally
     return (
-      <FormFieldWrapper
-        key={field.id}
-        field={field}
-        label={field.fieldName}
-        value={formData[field.fieldKey || field.fieldName]}
-        onChange={handleInputChange}
-        onCheckboxChange={handleCheckboxChange}
-        errors={errors[field.fieldKey || field.fieldName]}
-        visibility={fieldVisibility[field.fieldKey || field.fieldName] || (showTargetFields.has(field.fieldKey || field.fieldName) ? "HIDE" : "SHOW")}
-        isShowControlled={showTargetFields.has(field.fieldKey || field.fieldName)}
-        isRuleRequired={dynamicRequiredFields.has(field.fieldKey || field.fieldName)}
-      />
+      <FormFieldWrapper key={field.id} {...fieldProps} />
     );
   };
 

@@ -84,7 +84,8 @@ public class FormService {
     /** Returns true for types that are purely visual and have no DB column. */
     private static boolean isDisplayOnly(String type) {
         return type != null && (type.equals("page_break") ||
-                type.equals("heading") || type.equals("paragraph") || type.equals("divider"));
+                type.equals("heading") || type.equals("paragraph") || 
+                type.equals("divider") || type.equals("group"));
     }
 
     //private static String uuidToTableSuffix(UUID id) {
@@ -206,6 +207,7 @@ public class FormService {
                 .isUnique(f.getIsUnique())
                 .isCalculated(f.getIsCalculated())
                 .calculationFormula(f.getCalculationFormula())
+                .parentId(f.getParentId())
                 .build();
 
     }
@@ -680,6 +682,7 @@ public class FormService {
                 formField.setIsUnique(field.getIsUnique() != null ? field.getIsUnique() : false);
                 formField.setIsCalculated(field.getIsCalculated() != null ? field.getIsCalculated() : false);
                 formField.setCalculationFormula(field.getCalculationFormula());
+                formField.setParentId(field.getParentId());
             } else {
 
                 // For display-only types, store the human-readable label text in defaultValue

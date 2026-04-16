@@ -53,4 +53,5 @@ public class FieldRequest {
 
     private String calculationFormula;
 
+    private String parentId;
 }

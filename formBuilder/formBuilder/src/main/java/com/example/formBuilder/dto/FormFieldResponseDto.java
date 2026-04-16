@@ -50,4 +50,5 @@ public class FormFieldResponseDto {
 
     private String calculationFormula;
 
+    private String parentId;
 }

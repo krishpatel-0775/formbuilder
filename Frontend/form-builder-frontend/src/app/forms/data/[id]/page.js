@@ -278,8 +278,8 @@ export default function FormDataPage() {
     );
   }
 
-  const headers = fields
-      .filter(f => !["heading", "paragraph", "divider", "page_break"].includes(f.fieldType))
+    const headers = fields
+      .filter(f => !["heading", "paragraph", "divider", "page_break", "group"].includes(f.fieldType))
       .map(f => ({
         key: f.fieldKey || f.fieldName,
         label: f.fieldName

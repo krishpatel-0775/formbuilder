@@ -101,7 +101,7 @@ export function InputInstructionPanel({ activeField, updateField }) {
   const base = "w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-[13px] font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-300 shadow-sm";
 
   // Display only if the field is not a structural one (like divider, heading, paragraph)
-  const isStructural = ["heading", "paragraph", "divider", "page_break"].includes(activeField.type);
+  const isStructural = ["heading", "paragraph", "divider", "page_break", "group"].includes(activeField.type);
   if (isStructural) return null;
 
   return (
@@ -158,7 +158,11 @@ export function SidebarProps({
       <div className="space-y-4">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Required Setting</label>
         <div
-          onClick={() => updateField(activeField.id, "required", !activeField.required)}
+          onClick={() => {
+            const next = !activeField.required;
+            updateField(activeField.id, "required", next);
+            if (next) updateField(activeField.id, "isReadOnly", false);
+          }}
           className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer border transition-all duration-500 ${activeField.required
               ? "bg-primary/5 border-primary shadow-xl shadow-primary/5 text-primary"
               : "bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-200"
@@ -181,7 +185,11 @@ export function SidebarProps({
       <div className="space-y-4">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Read-Only Setting</label>
         <div
-          onClick={() => updateField(activeField.id, "isReadOnly", !activeField.isReadOnly)}
+          onClick={() => {
+            const next = !activeField.isReadOnly;
+            updateField(activeField.id, "isReadOnly", next);
+            if (next) updateField(activeField.id, "required", false);
+          }}
           className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer border transition-all duration-500 ${activeField.isReadOnly
               ? "bg-amber-50/50 border-amber-200 shadow-xl shadow-amber-500/5 text-amber-900"
               : "bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-200"
@@ -243,12 +251,14 @@ export function SidebarProps({
             updateField={updateField}
             numericFields={numericFields || []}
           />
-          <div className="w-full h-px bg-slate-100" />
         </>
       )}
 
-      {/* Constraints */}
-      <div className="space-y-8">
+      {/* Hide validation/constraints for structural and group fields */}
+      {!["heading", "paragraph", "divider", "page_break", "group"].includes(activeField.type) && (
+        <>
+          {/* Constraints */}
+          <div className="space-y-8">
         <div className="flex items-center gap-2 px-1">
           <SlidersHorizontal size={14} className="text-primary" />
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Validation Limits</label>
@@ -569,6 +579,8 @@ export function SidebarProps({
           </div>
         )}
       </div>
+    </>
+  )}
     </div>
   );
 }
@@ -597,6 +609,7 @@ export function CalculationPanel({ activeField, updateField, numericFields }) {
     updateField(activeField.id, "isCalculated", next);
     if (next) {
       updateField(activeField.id, "isReadOnly", true);
+      updateField(activeField.id, "required", false);
       if (!activeField.calculationFormula) {
         saveFormula({ operator: "+", operands: [] });
       }

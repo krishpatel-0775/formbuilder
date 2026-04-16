@@ -1,6 +1,6 @@
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, ChevronRight, Heading, Pilcrow, Minus, Sparkles } from "lucide-react";
+import { GripVertical, Trash2, ChevronRight, Heading, Pilcrow, Minus, Sparkles, Box } from "lucide-react";
 import { FieldIcons } from "./FieldConstants";
 
 export function SortableFieldItem({ 
@@ -8,8 +8,11 @@ export function SortableFieldItem({
   idx, 
   isActive, 
   setActiveFieldId, 
+  activeFieldId,
   removeField, 
-  updateField 
+  updateField,
+  allFields,
+  setFields
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
   const style = { 
@@ -119,7 +122,6 @@ export function SortableFieldItem({
       </div>
     );
   }
-
   // ── Divider static element ────────────────────────────────────────────────
   if (field.type === "divider") {
     return (
@@ -139,6 +141,116 @@ export function SortableFieldItem({
           className={`opacity-0 group-hover:opacity-100 ml-4 flex items-center justify-center w-10 h-10 rounded-xl bg-white text-red-200 hover:text-red-400 transition-all ${isDragging ? "hidden" : ""}`}>
           <Trash2 size={16} />
         </button>
+      </div>
+    );
+  }
+
+  // ── Group container element ──────────────────────────────────────────────
+  if (field.type === "group") {
+    const children = (allFields || []).filter(f => f.parentId === field.id);
+    
+    const handleGroupDrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const droppedType = e.dataTransfer.getData("fieldType");
+      if (!droppedType) return;
+
+      const newField = {
+        id: Date.now(), _dbId: null, label: "", type: droppedType.toLowerCase(), required: false, defaultValue: "",
+        minLength: "", maxLength: "", min: "", max: "", pattern: "",
+        beforeDate: "", afterDate: "", afterTime: "", beforeTime: "",
+        beforeDatetime: "", afterDatetime: "",
+        maxFileSize: droppedType.toLowerCase() === "file_upload" ? "5" : "",
+        allowedFileTypes: droppedType.toLowerCase() === "file_upload" ? "pdf,jpg,png" : "",
+        options: ["radio", "checkbox", "select"].includes(droppedType.toLowerCase()) ? ["Option 1", "Option 2"] : [],
+        sourceTable: "", sourceColumn: "",
+        isReadOnly: false,
+        isMultiSelect: false,
+        placeholder: "",
+        helperText: "",
+        key: "",
+        isUnique: false,
+        isCalculated: false,
+        calculationFormula: "",
+        parentId: field.id // NESTED! Using ID for internal stability
+      };
+
+      setFields(prev => [...prev, newField]);
+      setActiveFieldId(newField.id);
+    };
+
+    return (
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        onClick={() => setActiveFieldId(field.id)}
+        onDrop={handleGroupDrop}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        className={`group relative flex flex-col p-4 bg-white rounded-[2.5rem] border transition-all duration-500 cursor-pointer ${
+            isActive 
+            ? "border-primary shadow-[0_20px_50px_rgba(59,130,246,0.1)] ring-1 ring-primary/20" 
+            : "border-slate-100 hover:border-slate-200 hover:shadow-lg"
+        }`}
+      >
+        <div className="flex items-center gap-6 p-2">
+            <div {...attributes} {...listeners} className="flex flex-col items-center justify-center w-10 cursor-grab active:cursor-grabbing hover:bg-slate-50 p-2 rounded-xl transition-colors">
+                <span className="text-[9px] font-black text-slate-300 mb-1.5 pointer-events-none tracking-tighter">{String(idx + 1).padStart(2, '0')}</span>
+                <GripVertical size={18} className="text-slate-200 group-hover:text-primary transition-colors pointer-events-none" />
+            </div>
+
+            <div className={`w-12 h-12 flex items-center justify-center rounded-2xl border transition-all duration-500 ${
+                isActive ? "bg-primary text-white border-primary" : "bg-slate-50 text-slate-400 border-slate-100"
+            }`}>
+                {FieldIcons[field.type]}
+            </div>
+
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Container Group</span>
+                </div>
+                <input 
+                    placeholder="Group Label..." 
+                    value={field.label} 
+                    onChange={(e) => updateField(field.id, "label", e.target.value)}
+                    className="w-full text-base font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"
+                    onClick={(e) => e.stopPropagation()} 
+                />
+            </div>
+
+            <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                className={`opacity-0 group-hover:opacity-100 flex items-center justify-center w-10 h-10 rounded-xl bg-white text-red-200 hover:text-red-500 hover:shadow-lg transition-all ${isDragging ? "hidden" : ""}`}>
+                <Trash2 size={18} />
+            </button>
+        </div>
+
+        <div className={`mt-4 p-4 min-h-[100px] rounded-[2rem] border-2 border-dashed transition-all ${
+            children.length === 0 
+            ? "bg-slate-50/50 border-slate-200 flex flex-col items-center justify-center gap-2" 
+            : "bg-white border-slate-100 space-y-4"
+        }`}>
+            {children.length === 0 ? (
+                <>
+                    <Box size={24} className="text-slate-300" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Drop elements here</span>
+                </>
+            ) : (
+                <SortableContext items={children.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                    {children.map((child, cIdx) => (
+                        <SortableFieldItem 
+                            key={child.id}
+                            field={child}
+                            idx={cIdx}
+                            isActive={activeFieldId === child.id}
+                            setActiveFieldId={setActiveFieldId}
+                            removeField={removeField}
+                            updateField={updateField}
+                            allFields={allFields}
+                            setFields={setFields}
+                        />
+                    ))}
+                </SortableContext>
+            )}
+        </div>
       </div>
     );
   }

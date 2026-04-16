@@ -48,4 +48,5 @@ public class UpdateFieldRequest {
 
     private String calculationFormula;
 
+    private String parentId;
 }

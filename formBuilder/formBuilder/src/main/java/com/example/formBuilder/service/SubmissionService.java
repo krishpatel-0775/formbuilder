@@ -20,8 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,7 +27,6 @@ import java.util.stream.Collectors;
 
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class SubmissionService {
 
@@ -42,6 +39,27 @@ public class SubmissionService {
     private final FormSubmissionMetaRepository metaRepository;
     private final SchemaManager schemaManager;
     private final CalculationEngine calculationEngine;
+
+    public SubmissionService(
+            FormRepository formRepository,
+            JdbcTemplate jdbcTemplate,
+            RuleEngineService ruleEngineService,
+            UserRepository userRepository,
+            FormFieldRepository fieldRepository,
+            FormVersionRepository versionRepository,
+            FormSubmissionMetaRepository metaRepository,
+            SchemaManager schemaManager,
+            CalculationEngine calculationEngine) {
+        this.formRepository = formRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.ruleEngineService = ruleEngineService;
+        this.userRepository = userRepository;
+        this.fieldRepository = fieldRepository;
+        this.versionRepository = versionRepository;
+        this.metaRepository = metaRepository;
+        this.schemaManager = schemaManager;
+        this.calculationEngine = calculationEngine;
+    }
 
 
     private User getCurrentUser() {

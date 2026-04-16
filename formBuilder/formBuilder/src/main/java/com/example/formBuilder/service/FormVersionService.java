@@ -481,6 +481,7 @@ public class FormVersionService {
         field.setIsUnique(Boolean.TRUE.equals(req.getIsUnique()));
         field.setIsCalculated(Boolean.TRUE.equals(req.getIsCalculated()));
         field.setCalculationFormula(req.getCalculationFormula());
+        field.setParentId(req.getParentId());
     }
 
 
@@ -617,6 +618,7 @@ public class FormVersionService {
             clone.setIsUnique(f.getIsUnique());
             clone.setIsCalculated(f.getIsCalculated());
             clone.setCalculationFormula(f.getCalculationFormula());
+            clone.setParentId(f.getParentId());
             clone.setIsDeleted(false);
 
             clone.setForm(f.getForm());
@@ -781,6 +783,7 @@ public class FormVersionService {
                         .isUnique(f.getIsUnique())
                         .isCalculated(f.getIsCalculated())
                         .calculationFormula(f.getCalculationFormula())
+                        .parentId(f.getParentId())
                         .build())
 
                 .collect(Collectors.toList());

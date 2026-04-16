@@ -151,6 +151,7 @@ export default function EditFormPage() {
             placeholder: f.placeholder ?? "",
             helperText: f.helperText ?? "",
             key: f.fieldKey || (f.fieldName ? generateColumnName(f.fieldName) : ""),
+            parentId: f.parentId || null,
           };
 
         });
@@ -166,7 +167,15 @@ export default function EditFormPage() {
         // FIXED: log status for debugging
         console.log("Form loaded with status:", formData.status);
         setRules(rulesArr.map((r) => ({ ...r, _id: Date.now() + Math.random() })));
-        setFields(loadedFields);
+        // FIXED: Resolve parentId from fieldKey (string) to internal id (UUID/numeric) for existing fields
+        const resolvedFields = loadedFields.map(f => {
+          if (!f.parentId) return f;
+          // Look for parent field by its key
+          const parent = loadedFields.find(p => p.key === f.parentId);
+          return { ...f, parentId: parent ? parent.id : f.parentId };
+        });
+
+        setFields(resolvedFields);
         savedSnapshot.current = {
           formName: formData.formName || "",
           fields: loadedFields,
@@ -221,6 +230,7 @@ export default function EditFormPage() {
   };
 
   const handleDrop = (e) => {
+    if (e.defaultPrevented) return;
     e.preventDefault();
     const type = e.dataTransfer.getData("fieldType");
     if (!type) return;
@@ -246,10 +256,11 @@ export default function EditFormPage() {
       key: "",
       isUnique: false,
       isCalculated: false,
-      calculationFormula: ""
+      calculationFormula: "",
+      parentId: null
     };
 
-    setFields([...fields, newField]);
+    setFields(prev => [...prev, newField]);
     setActiveFieldId(newField.id);
   };
 
@@ -257,8 +268,33 @@ export default function EditFormPage() {
   const handleSortStart = (e) => setActiveSortId(e.active.id);
   const handleSortEnd = (e) => {
     const { active, over } = e;
-    if (active.id !== over?.id) {
-      setFields((items) => { const oi = items.findIndex((i) => i.id === active.id); const ni = items.findIndex((i) => i.id === over.id); return arrayMove(items, oi, ni); });
+    if (!over) {
+      setActiveSortId(null);
+      return;
+    }
+
+    if (active.id !== over.id) {
+      setFields((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        
+        const activeItem = items[oldIndex];
+        const overItem = items[newIndex];
+        
+        // If dropping onto a group or into an item within a group, 
+        // update the parentId to match the overItem's parentId or its key if it's a group.
+        // Actually, simple sortable move handles order. We'll handle 'nesting' via a specific 'move to group' mechanism 
+        // or by dragging OVER a group.
+        
+        let newFields = [...items];
+        
+        // Inherit parent from the item we are dropped over to maintain hierarchy level
+        if (activeItem.parentId !== overItem.parentId) {
+          activeItem.parentId = overItem.parentId;
+        }
+
+        return arrayMove(newFields, oldIndex, newIndex);
+      });
     }
     setActiveSortId(null);
   };
@@ -271,7 +307,12 @@ export default function EditFormPage() {
         if (field && field.label !== value) {
           const oldCol = field.label ? field.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
           const newCol = value ? value.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "";
+          
           if (oldCol && newCol && oldCol !== newCol) {
+            // Update children's parentId if the group key changed — though using IDs internally,
+            // we keep this for logic consistency if needed.
+            p = p.map(f => f.parentId === id ? { ...f, parentId: id } : f);
+
             setRules((prevRules) => prevRules.map((r) => {
               let newRule = { ...r };
               if (newRule.action?.targetField === oldCol) {
@@ -292,7 +333,19 @@ export default function EditFormPage() {
       setFields((p) => p.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
     }
   };
-  const removeField = (id) => { setFields(fields.filter((f) => f.id !== id)); if (activeFieldId === id) setActiveFieldId(null); };
+  const removeField = (id) => { 
+    const target = fields.find(f => f.id === id);
+    if (target?.type === 'group') {
+      // Orphan Management: Move children to root
+      setFields(prev => prev
+        .filter(f => f.id !== id)
+        .map(f => f.parentId === id ? { ...f, parentId: null } : f)
+      );
+    } else {
+      setFields(fields.filter((f) => f.id !== id)); 
+    }
+    if (activeFieldId === id) setActiveFieldId(null); 
+  };
   const handleNumberInput = (e, id, key) => {
     const v = e.target.value;
     if (v === "" || v === "-") {
@@ -361,8 +414,8 @@ export default function EditFormPage() {
           isReadOnly: field.isReadOnly,
           isMultiSelect: !!field.isMultiSelect,
           isUnique: !!field.isUnique,
-          isCalculated: !!field.isCalculated,
-          calculationFormula: field.calculationFormula || null
+          calculationFormula: field.calculationFormula || null,
+          parentId: field.parentId ? (fields.find(f => f.id === field.parentId)?.key || generateColumnName(fields.find(f => f.id === field.parentId)?.label || "")) : null
         };
 
         if (field.defaultValue) fd.defaultValue = field.defaultValue;
@@ -604,15 +657,18 @@ export default function EditFormPage() {
               >
                 <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-4">
-                    {fields.map((field, idx) => (
+                    {fields.filter(f => !f.parentId).map((field, idx) => (
                       <SortableFieldItem
                         key={field.id}
                         field={field}
                         idx={idx}
                         isActive={activeFieldId === field.id}
                         setActiveFieldId={setActiveFieldId}
+                        activeFieldId={activeFieldId}
                         removeField={removeField}
                         updateField={updateField}
+                        allFields={fields} // Pass all fields for recursive grouping
+                        setFields={setFields} // Allow SortableFieldItem to update parentId
                       />
                     ))}
                   </div>
