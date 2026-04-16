@@ -1,4 +1,4 @@
-import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListChecks, Code2, CheckCircle2, ShieldCheck, Fingerprint } from "lucide-react";
+import { SlidersHorizontal, AlertCircle, Trash2, ChevronRight, Plus, Database, ListChecks, Code2, CheckCircle2, ShieldCheck, Fingerprint, Calculator, FunctionSquare, Sigma, X } from "lucide-react";
 
 
 export function DefaultValuePanel({ activeField, updateField, handleNumberInput }) {
@@ -146,7 +146,8 @@ export function SidebarProps({
   updateField,
   handleNumberInput,
   availableForms,
-  selectedFormFields
+  selectedFormFields,
+  numericFields
 }) {
   const badgeBase = "text-[9px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-full border shadow-sm";
   const inputBase = "w-full bg-slate-50 border border-slate-100 pt-7 pb-3 px-4 rounded-2xl text-[13px] font-black text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm";
@@ -233,6 +234,18 @@ export function SidebarProps({
       <DefaultValuePanel activeField={activeField} updateField={updateField} handleNumberInput={handleNumberInput} />
 
       <div className="w-full h-px bg-slate-100" />
+
+      {/* Calculation Formula — only for number/decimal */}
+      {["number", "decimal"].includes(activeField.type) && (
+        <>
+          <CalculationPanel
+            activeField={activeField}
+            updateField={updateField}
+            numericFields={numericFields || []}
+          />
+          <div className="w-full h-px bg-slate-100" />
+        </>
+      )}
 
       {/* Constraints */}
       <div className="space-y-8">
@@ -556,6 +569,177 @@ export function SidebarProps({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Calculation Panel ──────────────────────────────────────────────────────────
+export function CalculationPanel({ activeField, updateField, numericFields }) {
+  const isNumericField = ["number", "decimal"].includes(activeField.type);
+  if (!isNumericField) return null;
+
+  // Parse stored formula or default
+  let formula = { operator: "+", operands: [] };
+  try {
+    if (activeField.calculationFormula) {
+      formula = JSON.parse(activeField.calculationFormula);
+    }
+  } catch (e) {}
+
+  const isEnabled = !!activeField.isCalculated;
+
+  const saveFormula = (updated) => {
+    updateField(activeField.id, "calculationFormula", JSON.stringify(updated));
+  };
+
+  const handleToggle = () => {
+    const next = !isEnabled;
+    updateField(activeField.id, "isCalculated", next);
+    if (next) {
+      updateField(activeField.id, "isReadOnly", true);
+      if (!activeField.calculationFormula) {
+        saveFormula({ operator: "+", operands: [] });
+      }
+    } else {
+      updateField(activeField.id, "calculationFormula", "");
+      updateField(activeField.id, "isReadOnly", false);
+    }
+  };
+
+  const handleOperatorChange = (op) => {
+    saveFormula({ ...formula, operator: op });
+  };
+
+  const toggleOperand = (key) => {
+    const current = formula.operands || [];
+    const updated = current.includes(key)
+      ? current.filter((k) => k !== key)
+      : [...current, key];
+    saveFormula({ ...formula, operands: updated });
+  };
+
+  const operatorLabel = { "+": "Sum (+)", "-": "Subtract (−)", "*": "Multiply (×)", "/": "Divide (÷)" };
+  const operatorSymbol = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+
+  const formulaPreview = () => {
+    if (!formula.operands || formula.operands.length === 0) return "— pick operands below —";
+    const sym = operatorSymbol[formula.operator] || "+";
+    return formula.operands.join(` ${sym} `);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-2 px-1">
+        <Calculator size={14} className="text-violet-500" />
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Calculated Field</label>
+      </div>
+
+      {/* Enable toggle */}
+      <div
+        onClick={handleToggle}
+        className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer border transition-all duration-500 ${
+          isEnabled
+            ? "bg-violet-50/70 border-violet-200 shadow-xl shadow-violet-500/5 text-violet-900"
+            : "bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-200"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${
+            isEnabled ? "bg-violet-500 text-white" : "bg-white text-slate-300 border border-slate-100"
+          }`}>
+            <Sigma size={20} strokeWidth={2.5} />
+          </div>
+          <div>
+            <span className="text-[11px] font-black uppercase tracking-widest block">Auto-Calculate</span>
+            {isEnabled && <span className="text-[9px] text-violet-500 font-bold uppercase tracking-wider">Read-only enforced</span>}
+          </div>
+        </div>
+        <div className={`w-12 h-6 rounded-full transition-all relative ${
+          isEnabled ? "bg-violet-500 shadow-lg shadow-violet-500/30" : "bg-slate-200"
+        }`}>
+          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-sm ${
+            isEnabled ? "translate-x-7 scale-110" : "translate-x-1"
+          }`} />
+        </div>
+      </div>
+
+      {isEnabled && (
+        <>
+          {/* Operator selector */}
+          <div className="space-y-3">
+            <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Operation</span>
+            <div className="grid grid-cols-4 gap-2">
+              {["+", "-", "*", "/"].map((op) => (
+                <button
+                  key={op}
+                  type="button"
+                  onClick={() => handleOperatorChange(op)}
+                  title={operatorLabel[op]}
+                  className={`flex items-center justify-center p-3 rounded-2xl border-2 font-black text-lg transition-all ${
+                    formula.operator === op
+                      ? "bg-violet-500 border-violet-500 text-white shadow-lg shadow-violet-500/20"
+                      : "bg-white border-slate-100 text-slate-400 hover:border-violet-200 hover:text-violet-500"
+                  }`}
+                >
+                  {operatorSymbol[op]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Operand picker */}
+          <div className="space-y-3">
+            <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase px-1">Pick Input Fields</span>
+            {numericFields && numericFields.length > 0 ? (
+              <div className="space-y-2">
+                {numericFields.map((f) => {
+                  const isSelected = (formula.operands || []).includes(f.key);
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => toggleOperand(f.key)}
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
+                        isSelected
+                          ? "bg-violet-50 border-violet-400 text-violet-900"
+                          : "bg-white border-slate-100 text-slate-500 hover:border-violet-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                          isSelected ? "border-violet-500 bg-violet-500" : "border-slate-200 bg-white"
+                        }`}>
+                          {isSelected && <CheckCircle2 size={12} strokeWidth={4} className="text-white" />}
+                        </div>
+                        <span className="text-[12px] font-black tracking-wide">{f.label}</span>
+                      </div>
+                      <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{f.type}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                <FunctionSquare size={24} className="text-slate-200 mx-auto mb-2" />
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                  No other numeric fields in this form.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Live formula preview */}
+          {formula.operands && formula.operands.length > 0 && (
+            <div className="p-5 rounded-2xl bg-violet-50/60 border border-violet-100">
+              <span className="text-[9px] font-black text-violet-500 uppercase tracking-widest block mb-2">Formula Preview</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <FunctionSquare size={14} className="text-violet-400" />
+                <code className="text-[13px] font-black text-violet-900 tracking-wide">{formulaPreview()}</code>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

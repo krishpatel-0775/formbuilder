@@ -45,4 +45,9 @@ public class FormFieldResponseDto {
     @com.fasterxml.jackson.annotation.JsonProperty("isUnique")
     private Boolean isUnique;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("isCalculated")
+    private Boolean isCalculated;
+
+    private String calculationFormula;
+
 }

@@ -1,13 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Smartphone, Monitor, Send, CheckCircle2 } from "lucide-react";
 import { FormFieldWrapper } from "./FormFieldWrapper";
+
+/** Evaluates a flat calculation formula against current formData. Returns null on error/div-by-zero. */
+function computeFormula(formulaJson, formData) {
+  if (!formulaJson) return null;
+  try {
+    const { operator, operands } = JSON.parse(formulaJson);
+    if (!operands || operands.length === 0) return null;
+
+    const resolve = (key) => {
+      const val = formData[key];
+      if (val === undefined || val === null || val === "") return 0;
+      const num = Number(val);
+      return isNaN(num) ? 0 : num;
+    };
+
+    let acc = resolve(operands[0]);
+    for (let i = 1; i < operands.length; i++) {
+      const val = resolve(operands[i]);
+      if (operator === "+") acc += val;
+      else if (operator === "-") acc -= val;
+      else if (operator === "*") acc *= val;
+      else if (operator === "/") {
+        if (val === 0) return null;
+        acc /= val;
+      }
+    }
+    return acc;
+  } catch (e) { return null; }
+}
 
 export function FormPreview({ isOpen, onClose, fields, formName }) {
   const [viewMode, setViewMode] = useState("desktop"); // "desktop" | "mobile"
   const [formData, setFormData] = useState({});
   const [submitted, setSubmitted] = useState(false);
+
+  // Real-time calculation for preview mode
+  useEffect(() => {
+    if (!fields) return;
+    const calculated = fields.filter((f) => f.isCalculated && f.calculationFormula);
+    if (calculated.length === 0) return;
+    setFormData((prev) => {
+      let updated = { ...prev };
+      let changed = false;
+      for (const f of calculated) {
+        const key = f.fieldKey || f.label || f.type;
+        const formula = f.calculationFormula;
+        // Map preview field keys: preview uses field.label as the key in formData
+        const previewData = {};
+        Object.entries(prev).forEach(([k, v]) => { previewData[k] = v; });
+        const result = computeFormula(formula, previewData);
+        let newVal = "";
+        if (result !== null) {
+          if (f.type === "number") {
+             newVal = String(Math.trunc(result));
+          } else {
+             newVal = String(result);
+          }
+        }
+        if (updated[key] !== newVal) { updated[key] = newVal; changed = true; }
+      }
+      return changed ? updated : prev;
+    });
+  }, [formData, fields]);
 
   if (!isOpen) return null;
 

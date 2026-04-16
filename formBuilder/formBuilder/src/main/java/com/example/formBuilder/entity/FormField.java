@@ -102,4 +102,16 @@ public class FormField {
 
     @Column(name = "is_unique")
     private Boolean isUnique = false;
+
+    /** When true, the value of this field is computed from other numeric fields. */
+    @Column(name = "is_calculated")
+    private Boolean isCalculated = false;
+
+    /**
+     * JSON defining the calculation formula, e.g.:
+     * {"operator":"+","operands":["field_a","field_b"]}
+     * Only relevant when isCalculated = true.
+     */
+    @Column(name = "calculation_formula", columnDefinition = "TEXT")
+    private String calculationFormula;
 }

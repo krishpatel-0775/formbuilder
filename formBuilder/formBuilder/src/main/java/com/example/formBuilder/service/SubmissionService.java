@@ -10,6 +10,7 @@ import com.example.formBuilder.repository.*;
 import com.example.formBuilder.exception.ResourceNotFoundException;
 import com.example.formBuilder.exception.ValidationException;
 import com.example.formBuilder.security.SessionUtil;
+import com.example.formBuilder.util.CalculationEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,6 +41,7 @@ public class SubmissionService {
     private final FormVersionRepository versionRepository;
     private final FormSubmissionMetaRepository metaRepository;
     private final SchemaManager schemaManager;
+    private final CalculationEngine calculationEngine;
 
 
     private User getCurrentUser() {
@@ -269,6 +271,11 @@ public class SubmissionService {
         if (!fieldErrors.isEmpty()) throw new ValidationException(fieldErrors);
         ruleEngineService.validateSubmission(form, values);
 
+        // ── Apply server-side calculations ─────────────────────────────────────
+        // Must run AFTER validation so operand values are confirmed valid,
+        // and BEFORE the INSERT/UPDATE so the correct computed value is stored.
+        applyCalculatedFields(formFields, values);
+
         // Check if an existing draft exists to update it
         UUID submissionId = null;
         try {
@@ -355,6 +362,9 @@ public class SubmissionService {
 
         Map<String, FormField> fieldMap = fields.stream()
                 .collect(Collectors.toMap(FormField::getFieldKey, f -> f, (existing, replacement) -> existing));
+
+        // ── Apply server-side calculations before the DB write ─────────────────
+        applyCalculatedFields(fields, values);
 
         if (submissionId != null) {
             // Update existing
@@ -483,6 +493,42 @@ public class SubmissionService {
             meta.setSubmittedAt(LocalDateTime.now());
         }
         metaRepository.save(meta);
+    }
+
+
+    /**
+     * Iterates all fields in the form that have {@code isCalculated = true},
+     * re-computes their value using the stored formula and the submitted operand values,
+     * and writes the result back into the {@code values} map before the DB write.
+     *
+     * <p>This is the single source of truth: whatever the frontend sends for a
+     * calculated field is always overwritten by the server-side computation.
+     */
+    private void applyCalculatedFields(List<FormField> formFields, Map<String, Object> values) {
+        for (FormField field : formFields) {
+            if (!Boolean.TRUE.equals(field.getIsCalculated())) continue;
+            if (field.getCalculationFormula() == null || field.getCalculationFormula().isBlank()) continue;
+
+            // Use the same fallback logic for the key as the DB write logic
+            String key = field.getFieldKey();
+            if (key == null || key.isBlank()) {
+                key = field.getFieldName();
+            }
+            
+            Double result = calculationEngine.compute(field.getCalculationFormula(), values);
+
+            if (result == null) {
+                values.put(key, null);
+                log.debug("[Calc] Field '{}': formula evaluation returned null", key);
+            } else {
+                if ("number".equals(field.getFieldType())) {
+                    values.put(key, result.longValue());
+                } else {
+                    values.put(key, result);
+                }
+                log.info("[Calc] Field '{}' = {} (computed)", key, result);
+            }
+        }
     }
 
     private Object getSafeValue(FormField f, Object value) {

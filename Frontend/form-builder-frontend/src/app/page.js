@@ -298,7 +298,7 @@ export default function BuilderPage() {
                 throw new Error(err.message || "Failed to save form.");
             }
             setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 3000);
+            setTimeout(() => setShowSuccess(false), 1500);
             setFormName("");
             setFields([]);
             setRules([]);

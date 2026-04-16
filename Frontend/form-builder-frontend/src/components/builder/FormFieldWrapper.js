@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2, Lock, Sparkles, X, Fingerprint } from "lucide-react";
+import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2, Lock, Sparkles, X, Fingerprint, Calculator } from "lucide-react";
 
 export function FormFieldWrapper({
   field,
@@ -106,6 +106,11 @@ export function FormFieldWrapper({
           {field.isUnique && (
             <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-600 border border-rose-100 rounded-full text-[9px] font-black uppercase tracking-wider">
               <Fingerprint size={10} strokeWidth={3} /> Unique
+            </div>
+          )}
+          {field.isCalculated && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-violet-50 text-violet-600 border border-violet-100 rounded-full text-[9px] font-black uppercase tracking-wider">
+              <Calculator size={10} strokeWidth={3} /> Calculated
             </div>
           )}
         </div>

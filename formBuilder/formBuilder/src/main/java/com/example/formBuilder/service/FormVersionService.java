@@ -479,6 +479,8 @@ public class FormVersionService {
         field.setIsReadOnly(Boolean.TRUE.equals(req.getIsReadOnly()));
         field.setIsMultiSelect(Boolean.TRUE.equals(req.getIsMultiSelect()));
         field.setIsUnique(Boolean.TRUE.equals(req.getIsUnique()));
+        field.setIsCalculated(Boolean.TRUE.equals(req.getIsCalculated()));
+        field.setCalculationFormula(req.getCalculationFormula());
     }
 
 
@@ -613,6 +615,8 @@ public class FormVersionService {
             clone.setIsReadOnly(f.getIsReadOnly());
             clone.setIsMultiSelect(f.getIsMultiSelect());
             clone.setIsUnique(f.getIsUnique());
+            clone.setIsCalculated(f.getIsCalculated());
+            clone.setCalculationFormula(f.getCalculationFormula());
             clone.setIsDeleted(false);
 
             clone.setForm(f.getForm());
@@ -775,6 +779,8 @@ public class FormVersionService {
                         .isReadOnly(f.getIsReadOnly())
                         .isMultiSelect(f.getIsMultiSelect())
                         .isUnique(f.getIsUnique())
+                        .isCalculated(f.getIsCalculated())
+                        .calculationFormula(f.getCalculationFormula())
                         .build())
 
                 .collect(Collectors.toList());

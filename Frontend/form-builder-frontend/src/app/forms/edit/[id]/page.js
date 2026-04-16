@@ -146,6 +146,8 @@ export default function EditFormPage() {
             isReadOnly: f.isReadOnly ?? false,
             isMultiSelect: f.isMultiSelect ?? false,
             isUnique: f.isUnique ?? false,
+            isCalculated: f.isCalculated ?? false,
+            calculationFormula: f.calculationFormula ?? "",
             placeholder: f.placeholder ?? "",
             helperText: f.helperText ?? "",
             key: f.fieldKey || (f.fieldName ? generateColumnName(f.fieldName) : ""),
@@ -242,7 +244,9 @@ export default function EditFormPage() {
       placeholder: "",
       helperText: "",
       key: "",
-      isUnique: false
+      isUnique: false,
+      isCalculated: false,
+      calculationFormula: ""
     };
 
     setFields([...fields, newField]);
@@ -356,7 +360,9 @@ export default function EditFormPage() {
           required: field.required,
           isReadOnly: field.isReadOnly,
           isMultiSelect: !!field.isMultiSelect,
-          isUnique: !!field.isUnique
+          isUnique: !!field.isUnique,
+          isCalculated: !!field.isCalculated,
+          calculationFormula: field.calculationFormula || null
         };
 
         if (field.defaultValue) fd.defaultValue = field.defaultValue;

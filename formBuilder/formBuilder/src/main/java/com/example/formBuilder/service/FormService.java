@@ -204,6 +204,8 @@ public class FormService {
                 .isReadOnly(f.getIsReadOnly())
                 .isMultiSelect(f.getIsMultiSelect())
                 .isUnique(f.getIsUnique())
+                .isCalculated(f.getIsCalculated())
+                .calculationFormula(f.getCalculationFormula())
                 .build();
 
     }
@@ -676,6 +678,8 @@ public class FormService {
                 formField.setIsReadOnly(field.getIsReadOnly() != null ? field.getIsReadOnly() : false);
                 formField.setIsMultiSelect(field.getIsMultiSelect() != null ? field.getIsMultiSelect() : false);
                 formField.setIsUnique(field.getIsUnique() != null ? field.getIsUnique() : false);
+                formField.setIsCalculated(field.getIsCalculated() != null ? field.getIsCalculated() : false);
+                formField.setCalculationFormula(field.getCalculationFormula());
             } else {
 
                 // For display-only types, store the human-readable label text in defaultValue

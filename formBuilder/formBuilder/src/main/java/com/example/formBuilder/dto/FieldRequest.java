@@ -48,4 +48,9 @@ public class FieldRequest {
     @JsonProperty("isUnique")
     private Boolean isUnique;
 
+    @JsonProperty("isCalculated")
+    private Boolean isCalculated;
+
+    private String calculationFormula;
+
 }

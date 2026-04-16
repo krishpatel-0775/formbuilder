@@ -85,6 +85,9 @@ export function Sidebar({
               handleNumberInput={handleNumberInput}
               availableForms={availableForms}
               selectedFormFields={selectedFormFields}
+              numericFields={fields
+                .filter((f) => ["number", "decimal"].includes(f.type) && f.id !== activeField.id)
+                .map((f) => ({ id: f.id, label: f.label || f.type, type: f.type, key: f.key || (f.label ? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "") }))}
             />
           )}
 

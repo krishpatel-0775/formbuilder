@@ -95,14 +95,33 @@ public class CalculationEngine {
     }
 
     private Double resolveNumeric(String key, Map<String, Object> values) {
+        if (key == null) return 0.0;
+        
+        // 1. Try exact match
         Object raw = values.get(key);
-        if (raw == null) return null;
+        
+        // 2. Try case-insensitive match if not found
+        if (raw == null) {
+            String target = key.toLowerCase();
+            for (Map.Entry<String, Object> entry : values.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(target)) {
+                    raw = entry.getValue();
+                    break;
+                }
+            }
+        }
+        
+        // 3. Fallback to 0.0 if still not found
+        if (raw == null) return 0.0;
+        
         String str = raw.toString().trim();
-        if (str.isEmpty()) return null;
+        if (str.isEmpty()) return 0.0;
+        
         try {
             return Double.parseDouble(str);
         } catch (NumberFormatException e) {
-            return null;
+            // Treat non-numeric content as 0.0 to prevent breaking the formula
+            return 0.0;
         }
     }
 }

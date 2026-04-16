@@ -47,6 +47,40 @@ const evaluateConditionNode = (node, values) => {
 };
 
 /**
+ * Evaluates a single flat formula against current form data.
+ * Returns null for division by zero or missing/NaN operands.
+ */
+function computeFormula(formulaJson, formData) {
+  if (!formulaJson) return null;
+  try {
+    const { operator, operands } = JSON.parse(formulaJson);
+    if (!operands || operands.length === 0) return null;
+
+    const resolve = (key) => {
+      const val = formData[key];
+      if (val === undefined || val === null || val === "") return 0;
+      const num = Number(val);
+      return isNaN(num) ? 0 : num;
+    };
+
+    let acc = resolve(operands[0]);
+    for (let i = 1; i < operands.length; i++) {
+      const val = resolve(operands[i]);
+      if (operator === "+") acc += val;
+      else if (operator === "-") acc -= val;
+      else if (operator === "*") acc *= val;
+      else if (operator === "/") {
+        if (val === 0) return null; // Division by zero still returns null
+        acc /= val;
+      }
+    }
+    return acc;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
  * Splits a flat fields array into "pages" based on page_break markers.
  * Returns an array of arrays: [ [field, field, ...], [field, ...], ... ]
  * Each inner array represents one page. Page break items themselves are excluded.
@@ -276,6 +310,40 @@ export default function PublicFormPage() {
     const timer = setTimeout(() => evaluateVisibility(formData), 300);
     return () => clearTimeout(timer);
   }, [formData, formConfig, evaluateVisibility, formRules]);
+
+  // ── Real-time computed fields ───────────────────────────────────────────────
+  // Re-run whenever formData changes to keep calculated outputs in sync.
+  useEffect(() => {
+    if (!formConfig?.fields) return;
+    const calculatedFields = formConfig.fields.filter(
+      (f) => f.isCalculated && f.calculationFormula
+    );
+    if (calculatedFields.length === 0) return;
+
+    setFormData((prev) => {
+      let updated = { ...prev };
+      let changed = false;
+      for (const f of calculatedFields) {
+        const key = f.fieldKey || f.fieldName;
+        const result = computeFormula(f.calculationFormula, prev);
+        let newVal = "";
+        if (result !== null) {
+          // If the target field is 'number', truncate to integer.
+          // Otherwise, preserve decimal as a string.
+          if (f.fieldType === "number") {
+            newVal = String(Math.trunc(result));
+          } else {
+            newVal = String(result);
+          }
+        }
+        if (updated[key] !== newVal) {
+          updated[key] = newVal;
+          changed = true;
+        }
+      }
+      return changed ? updated : prev;
+    });
+  }, [formData, formConfig]);
 
   // ── Validate only fields on the given page ─────────────────────────────────
   const validatePage = (pageFields) => {
