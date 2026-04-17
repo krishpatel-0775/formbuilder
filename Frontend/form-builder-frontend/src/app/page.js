@@ -237,6 +237,8 @@ export default function BuilderPage() {
                     isReadOnly: field.isReadOnly,
                     isMultiSelect: !!field.isMultiSelect,
                     isUnique: !!field.isUnique,
+                    isCalculated: !!field.isCalculated,
+                    calculationFormula: field.calculationFormula || null,
                     parentId: parentField ? (parentField.key || generateColumnName(parentField.label)) : null
                 };
 

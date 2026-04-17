@@ -414,6 +414,7 @@ export default function EditFormPage() {
           isReadOnly: field.isReadOnly,
           isMultiSelect: !!field.isMultiSelect,
           isUnique: !!field.isUnique,
+          isCalculated: !!field.isCalculated,
           calculationFormula: field.calculationFormula || null,
           parentId: field.parentId ? (fields.find(f => f.id === field.parentId)?.key || generateColumnName(fields.find(f => f.id === field.parentId)?.label || "")) : null
         };
