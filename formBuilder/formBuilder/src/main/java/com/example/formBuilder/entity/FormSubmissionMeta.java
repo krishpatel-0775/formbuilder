@@ -18,11 +18,13 @@ public class FormSubmissionMeta {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
  
-    @Column(name = "form_id", nullable = false)
-    private UUID formId;
- 
-    @Column(name = "form_version_id")
-    private UUID formVersionId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "form_id", nullable = false)
+    private Form form;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "form_version_id")
+    private FormVersion formVersion;
  
     @Column(name = "submission_table", nullable = false)
     private String submissionTable;

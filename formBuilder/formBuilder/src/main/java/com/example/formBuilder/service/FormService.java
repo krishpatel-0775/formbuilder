@@ -144,14 +144,14 @@ public class FormService {
     }
 
     private List<FormField> getActiveFields(Form form) {
-        return versionRepository.findByFormIdAndIsActiveTrue(form.getId())
-                .map(v -> fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(v.getId()))
+        return versionRepository.findByForm_IdAndIsActiveTrue(form.getId())
+                .map(v -> fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(v.getId()))
                 .orElseGet(form::getFields);
     }
 
 
     private String getActiveRules(Form form) {
-        return versionRepository.findByFormIdAndIsActiveTrue(form.getId())
+        return versionRepository.findByForm_IdAndIsActiveTrue(form.getId())
                 .map(FormVersion::getRules)
                 .orElseGet(form::getRules);
     }
@@ -167,7 +167,7 @@ public class FormService {
                 .createdAt(form.getCreatedAt())
                 .status(form.getStatus())
                 .rules(activeRules)
-                .formVersionId(versionRepository.findByFormIdAndIsActiveTrue(form.getId())
+                .formVersionId(versionRepository.findByForm_IdAndIsActiveTrue(form.getId())
                         .map(com.example.formBuilder.entity.FormVersion::getId)
                         .orElse(null))
                 .fields(activeFields.stream()
@@ -207,14 +207,14 @@ public class FormService {
                 .isUnique(f.getIsUnique())
                 .isCalculated(f.getIsCalculated())
                 .calculationFormula(f.getCalculationFormula())
-                .parentId(f.getParentId())
+                .parentId(f.getParent() != null ? f.getParent().getId().toString() : null)
                 .build();
 
     }
 
     private List<FormField> getFieldsForVersion(Form form, UUID versionId) {
         if (versionId != null) {
-            return fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(versionId);
+            return fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(versionId);
         }
         return getActiveFields(form);
     }
@@ -368,7 +368,7 @@ public class FormService {
         return forms.stream()
                 .map(form -> {
                     Integer activeVersion = versionRepository
-                            .findByFormIdAndIsActiveTrue(form.getId())
+                            .findByForm_IdAndIsActiveTrue(form.getId())
                             .map(FormVersion::getVersionNumber)
                             .orElse(null);
                     return FormListDto.builder()
@@ -390,7 +390,7 @@ public class FormService {
         return forms.stream()
                 .map(form -> {
                     Integer activeVersion = versionRepository
-                            .findByFormIdAndIsActiveTrue(form.getId())
+                            .findByForm_IdAndIsActiveTrue(form.getId())
                             .map(FormVersion::getVersionNumber)
                             .orElse(null);
                     return FormListDto.builder()
@@ -450,7 +450,7 @@ public class FormService {
         Form form = getFormWithPermission(id);
 
         // Find the latest non-active (draft) version for this form
-        Optional<FormVersion> draftVersionOpt = versionRepository.findByFormIdOrderByVersionNumberAsc(form.getId())
+        Optional<FormVersion> draftVersionOpt = versionRepository.findByForm_IdOrderByVersionNumberAsc(form.getId())
                 .stream()
                 .filter(v -> !Boolean.TRUE.equals(v.getIsActive()))
                 .reduce((first, second) -> second);
@@ -464,9 +464,9 @@ public class FormService {
         }
 
         // If the form has NO versions at all (e.g., just created), generate Version 1 now.
-        if (!versionRepository.existsByFormId(form.getId())) {
+        if (!versionRepository.existsByForm_Id(form.getId())) {
             // FIXED: Use findByFormIdAndFormVersionIsNull to avoid picking up unrelated fields
-            List<FormField> fields = fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(id);
+            List<FormField> fields = fieldRepository.findByForm_IdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(id);
             versionService.createInitialVersion(form.getId(), fields, form.getRules());
 
             form.setUpdatedAt(java.time.LocalDateTime.now());
@@ -631,17 +631,15 @@ public class FormService {
         formRepository.save(form);
 
         List<FormField> fieldList = new ArrayList<>();
+        Map<String, FormField> keyToField = new HashMap<>();
         List<FieldRequest> fieldRequests = request.getFields();
 
+        // 1st Pass: Create all fields and map them by key
         for (int i = 0; i < fieldRequests.size(); i++) {
             FieldRequest field = fieldRequests.get(i);
-
-
-            // Display-only fields (page_break, heading, paragraph, divider) — persist but never as DB columns
             boolean isDisplayOnlyField = isDisplayOnly(field.getType());
 
             FormField formField = new FormField();
-
             formField.setFieldName(field.getName());
             String key = field.getFieldKey();
             if (key == null || key.isBlank()) {
@@ -682,18 +680,24 @@ public class FormService {
                 formField.setIsUnique(field.getIsUnique() != null ? field.getIsUnique() : false);
                 formField.setIsCalculated(field.getIsCalculated() != null ? field.getIsCalculated() : false);
                 formField.setCalculationFormula(field.getCalculationFormula());
-                formField.setParentId(field.getParentId());
             } else {
-
-                // For display-only types, store the human-readable label text in defaultValue
-                // so the public form can render it without needing a separate column
                 formField.setDefaultValue(field.getDefaultValue());
             }
 
             formField.setDisplayOrder(i);
             formField.setForm(form);
-
+            
+            keyToField.put(formField.getFieldKey(), formField);
             fieldList.add(formField);
+        }
+
+        // 2nd Pass: Wire up parents
+        for (int i = 0; i < fieldRequests.size(); i++) {
+            FieldRequest req = fieldRequests.get(i);
+            FormField field = fieldList.get(i);
+            if (req.getParentId() != null && !req.getParentId().isBlank()) {
+                field.setParent(keyToField.get(req.getParentId()));
+            }
         }
 
         // Save the fields to the database associated with the form (but no version yet)
@@ -741,7 +745,7 @@ public class FormService {
 //            }
 //        }
 //
-//        List<FormField> existingFields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(formId);
+//        List<FormField> existingFields = fieldRepository.findByForm_IdOrderByDisplayOrderAscIdAsc(formId);
 //
 //
 //        Set<UUID> incomingIds = incoming.stream()
@@ -861,7 +865,7 @@ public class FormService {
         Form form = getFormWithPermission(formId);
         
         // Count existing field validations + new rules
-        List<FormField> fields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(formId);
+        List<FormField> fields = fieldRepository.findByForm_IdOrderByDisplayOrderAscIdAsc(formId);
         int validationCount = (rules != null) ? rules.size() : 0;
         for (FormField f : fields) {
             if (!isDisplayOnly(f.getFieldType())) {

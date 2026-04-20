@@ -183,7 +183,7 @@ export function SortableFieldItem({
       <div 
         ref={setNodeRef} 
         style={style} 
-        onClick={() => setActiveFieldId(field.id)}
+        onClick={(e) => { e.stopPropagation(); setActiveFieldId(field.id); }}
         onDrop={handleGroupDrop}
         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
         className={`group relative flex flex-col p-4 bg-white rounded-[2.5rem] border transition-all duration-500 cursor-pointer ${
@@ -213,7 +213,7 @@ export function SortableFieldItem({
                     value={field.label} 
                     onChange={(e) => updateField(field.id, "label", e.target.value)}
                     className="w-full text-base font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"
-                    onClick={(e) => e.stopPropagation()} 
+                    onClick={(e) => { e.stopPropagation(); setActiveFieldId(field.id); }} 
                 />
             </div>
 
@@ -256,7 +256,7 @@ export function SortableFieldItem({
   }
 
   return (
-    <div ref={setNodeRef} style={style} onClick={() => setActiveFieldId(field.id)}
+    <div ref={setNodeRef} style={style} onClick={(e) => { e.stopPropagation(); setActiveFieldId(field.id); }}
       className={`group relative flex items-center p-6 gap-6 bg-white rounded-[2rem] border transition-all duration-500 cursor-pointer ${
           isActive 
           ? "border-primary shadow-[0_20px_50px_rgba(59,130,246,0.1)] ring-1 ring-primary/20 -translate-y-0.5" 
@@ -283,7 +283,7 @@ export function SortableFieldItem({
             value={field.label} 
             onChange={(e) => updateField(field.id, "label", e.target.value)}
             className="w-full text-lg font-black text-slate-800 bg-transparent outline-none placeholder:text-slate-200 tracking-tight"
-            onClick={(e) => e.stopPropagation()} 
+            onClick={(e) => { e.stopPropagation(); setActiveFieldId(field.id); }} 
         />
         <div className="flex items-center gap-2 mt-3">
           {field.required && <span className={`${badgeBase} bg-red-50 border-red-100 text-red-500`}>Required</span>}

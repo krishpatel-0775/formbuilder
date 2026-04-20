@@ -97,14 +97,14 @@ public class FormVersionMigrationRunner implements ApplicationListener<Applicati
 
             // Get the active version's fields
             com.example.formBuilder.entity.FormVersion activeVersion =
-                    formVersionRepository.findByFormIdAndIsActiveTrue(form.getId()).orElse(null);
+                    formVersionRepository.findByForm_IdAndIsActiveTrue(form.getId()).orElse(null);
 
             List<com.example.formBuilder.entity.FormField> fields;
             if (activeVersion != null) {
-                fields = formFieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(activeVersion.getId());
+                fields = formFieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(activeVersion.getId());
             } else {
                 // Fallback: use legacy fields not yet associated with any version
-                fields = formFieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(form.getId());
+                fields = formFieldRepository.findByForm_IdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(form.getId());
             }
 
             List<String> missingColumns = schemaManager.detectDrift(form.getTableName(), fields);

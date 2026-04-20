@@ -55,45 +55,45 @@ public class DataSeeder implements CommandLineRunner {
         Module formVault = moduleRepository.save(Module.builder()
                 .moduleName("Form Vault")
                 .prefix("/forms/all")
-                .parentId(formsParent.getId())
+                .parentModule(formsParent)
                 .active(true)
                 .build());
 
         Module createForm = moduleRepository.save(Module.builder()
                 .moduleName("Create New Form")
                 .prefix("/")
-                .parentId(formsParent.getId())
+                .parentModule(formsParent)
                 .active(true)
                 .build());
 
         Module moduleMgmt = moduleRepository.save(Module.builder()
                 .moduleName("Module Management")
                 .prefix("/admin/modules")
-                .parentId(adminParent.getId())
+                .parentModule(adminParent)
                 .active(true)
                 .build());
 
         Module roleMgmt = moduleRepository.save(Module.builder()
                 .moduleName("Role Management")
                 .prefix("/admin/roles")
-                .parentId(adminParent.getId())
+                .parentModule(adminParent)
                 .active(true)
                 .build());
 
         // 4. Map Modules to Role
-        for (UUID modId : Arrays.asList(formsParent.getId(), adminParent.getId(), formVault.getId(), createForm.getId(), moduleMgmt.getId(), roleMgmt.getId())) {
+        for (Module m : Arrays.asList(formsParent, adminParent, formVault, createForm, moduleMgmt, roleMgmt)) {
             roleModuleRepository.save(RoleModule.builder()
-                    .roleId(adminRole.getId())
-                    .moduleId(modId)
+                    .role(adminRole)
+                    .module(m)
                     .build());
         }
 
         // 5. Assign Role to existing users (for demo)
         userRepository.findAll().forEach(user -> {
-            if (userRoleRepository.findByUserId(user.getId()).isEmpty()) {
+            if (userRoleRepository.findByUser_Id(user.getId()).isEmpty()) {
                 userRoleRepository.save(UserRole.builder()
-                        .userId(user.getId())
-                        .roleId(adminRole.getId())
+                        .user(user)
+                        .role(adminRole)
                         .build());
             }
         });

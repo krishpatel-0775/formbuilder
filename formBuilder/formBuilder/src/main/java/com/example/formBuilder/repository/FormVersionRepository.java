@@ -12,26 +12,26 @@ import java.util.UUID;
 
 public interface FormVersionRepository extends JpaRepository<FormVersion, UUID> {
 
-    List<FormVersion> findByFormIdOrderByVersionNumberAsc(UUID formId);
+    List<FormVersion> findByForm_IdOrderByVersionNumberAsc(UUID formId);
 
-    Optional<FormVersion> findFirstByFormIdOrderByVersionNumberDesc(UUID formId);
+    Optional<FormVersion> findFirstByForm_IdOrderByVersionNumberDesc(UUID formId);
 
-    Optional<FormVersion> findByFormIdAndIsActiveTrue(UUID formId);
+    Optional<FormVersion> findByForm_IdAndIsActiveTrue(UUID formId);
 
-    Optional<FormVersion> findByFormIdAndVersionNumber(UUID formId, Integer versionNumber);
+    Optional<FormVersion> findByForm_IdAndVersionNumber(UUID formId, Integer versionNumber);
     
-    Optional<FormVersion> findFirstByFormIdAndIsActiveFalseOrderByVersionNumberDesc(UUID formId);
+    Optional<FormVersion> findFirstByForm_IdAndIsActiveFalseOrderByVersionNumberDesc(UUID formId);
 
-    @Query("SELECT COALESCE(MAX(fv.versionNumber), 0) FROM FormVersion fv WHERE fv.formId = :formId")
+    @Query("SELECT COALESCE(MAX(fv.versionNumber), 0) FROM FormVersion fv WHERE fv.form.id = :formId")
     Integer findMaxVersionNumber(@Param("formId") UUID formId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("UPDATE FormVersion fv SET fv.isActive = false WHERE fv.formId = :formId AND fv.isActive = true")
+    @Query("UPDATE FormVersion fv SET fv.isActive = false WHERE fv.form.id = :formId AND fv.isActive = true")
     void deactivateAllForForm(@Param("formId") UUID formId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("UPDATE FormVersion fv SET fv.isLatest = false WHERE fv.formId = :formId AND fv.isLatest = true")
+    @Query("UPDATE FormVersion fv SET fv.isLatest = false WHERE fv.form.id = :formId AND fv.isLatest = true")
     void unsetLatestForForm(@Param("formId") UUID formId);
 
-    boolean existsByFormId(UUID formId);
+    boolean existsByForm_Id(UUID formId);
 }

@@ -43,7 +43,7 @@ public class DashboardController {
         long draftForms = formRepository.countByUserIdAndStatus(userId, FormStatus.DRAFT);
         long publishedForms = formRepository.countByUserIdAndStatus(userId, FormStatus.PUBLISHED);
         
-        long totalSubmissions = formIds.isEmpty() ? 0 : metaRepository.countByFormIdIn(formIds);
+        long totalSubmissions = formIds.isEmpty() ? 0 : metaRepository.countByForm_IdIn(formIds);
  
         List<RecentFormDto> recentForms = formRepository.findTop5ByUserIdOrderByUpdatedAtDesc(userId).stream()
                 .map(f -> RecentFormDto.builder()

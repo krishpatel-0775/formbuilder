@@ -9,11 +9,11 @@ import java.util.UUID;
 
 public interface FormFieldRepository extends JpaRepository<FormField, UUID> {
 
-    List<FormField> findByFormIdOrderByDisplayOrderAscIdAsc(UUID formId);
+    List<FormField> findByForm_IdOrderByDisplayOrderAscIdAsc(UUID formId);
     
-    List<FormField> findByFormVersionIdOrderByDisplayOrderAscIdAsc(UUID formVersionId);
+    List<FormField> findByFormVersion_IdOrderByDisplayOrderAscIdAsc(UUID formVersionId);
     
-    List<FormField> findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(UUID formId);
+    List<FormField> findByForm_IdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(UUID formId);
 
 
     // FIXED: Explicitly hard-delete fields by version ID to avoid stale data accumulation or @Where clause interference

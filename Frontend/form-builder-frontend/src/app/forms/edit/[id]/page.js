@@ -268,32 +268,33 @@ export default function EditFormPage() {
   const handleSortStart = (e) => setActiveSortId(e.active.id);
   const handleSortEnd = (e) => {
     const { active, over } = e;
-    if (!over) {
-      setActiveSortId(null);
-      return;
-    }
-
-    if (active.id !== over.id) {
+    if (active.id !== over?.id && over) {
       setFields((items) => {
         const oldIndex = items.findIndex((i) => i.id === active.id);
         const newIndex = items.findIndex((i) => i.id === over.id);
-        
+
         const activeItem = items[oldIndex];
         const overItem = items[newIndex];
-        
-        // If dropping onto a group or into an item within a group, 
-        // update the parentId to match the overItem's parentId or its key if it's a group.
-        // Actually, simple sortable move handles order. We'll handle 'nesting' via a specific 'move to group' mechanism 
-        // or by dragging OVER a group.
-        
-        let newFields = [...items];
-        
-        // Inherit parent from the item we are dropped over to maintain hierarchy level
-        if (activeItem.parentId !== overItem.parentId) {
-          activeItem.parentId = overItem.parentId;
+
+        if (!activeItem || !overItem) return items;
+
+        // FIXED: Logic to handle nesting changes during sort
+        let newParentId = activeItem.parentId;
+
+        // If dropped directly on a group header/container
+        if (overItem.type === "group") {
+          // Make it a child of this group
+          newParentId = overItem.id;
+        } else {
+          // Inherit the parent of the item we dropped on (making them siblings)
+          newParentId = overItem.parentId || null;
         }
 
-        return arrayMove(newFields, oldIndex, newIndex);
+        // Update the field with its new parent
+        const updatedItems = [...items];
+        updatedItems[oldIndex] = { ...activeItem, parentId: newParentId };
+
+        return arrayMove(updatedItems, oldIndex, newIndex);
       });
     }
     setActiveSortId(null);

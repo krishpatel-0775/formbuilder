@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface FormSubmissionMetaRepository extends JpaRepository<FormSubmissionMeta, UUID> {
     Optional<FormSubmissionMeta> findBySubmissionTableAndSubmissionRowId(String table, UUID rowId);
-    List<FormSubmissionMeta> findByFormIdOrderByCreatedAtDesc(UUID formId);
-    List<FormSubmissionMeta> findByFormIdAndSubmittedByAndStatus(UUID formId, String submittedBy, String status);
-    long countByFormIdIn(List<UUID> formIds);
+    List<FormSubmissionMeta> findByForm_IdOrderByCreatedAtDesc(UUID formId);
+    List<FormSubmissionMeta> findByForm_IdAndSubmittedByAndStatus(UUID formId, String submittedBy, String status);
+    long countByForm_IdIn(List<UUID> formIds);
 }

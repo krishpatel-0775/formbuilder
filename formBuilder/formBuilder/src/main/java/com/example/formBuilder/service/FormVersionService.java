@@ -60,7 +60,7 @@ public class FormVersionService {
      */
     public List<FormVersionDto> getVersions(UUID formId) {
         checkFormOwnership(formId);
-        return versionRepository.findByFormIdOrderByVersionNumberAsc(formId)
+        return versionRepository.findByForm_IdOrderByVersionNumberAsc(formId)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -73,7 +73,7 @@ public class FormVersionService {
         checkFormOwnership(formId);
         FormVersion version = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version " + versionId + " not found"));
-        if (!version.getFormId().equals(formId)) {
+        if (!version.getForm().getId().equals(formId)) {
             throw new ValidationException("Version does not belong to the specified form");
         }
         return toDtoWithFields(version);
@@ -96,7 +96,7 @@ public class FormVersionService {
         versionRepository.deactivateAllForForm(formId);
 
         FormVersion newVersion = FormVersion.builder()
-                .formId(formId)
+                .form(form)
                 .versionNumber(nextNumber)
                 // FIXED: New version of a DRAFT form should be INACTIVE.
                 // It only becomes active when you click Publish.
@@ -135,7 +135,7 @@ public class FormVersionService {
         String username = SessionUtil.getCurrentUsername();
 
         FormVersion v1 = FormVersion.builder()
-                .formId(formId)
+                .form(form)
                 .versionNumber(1)
                 .isActive(true)
                 .isLatest(true)
@@ -170,22 +170,22 @@ public class FormVersionService {
 
         FormVersion toActivate = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version " + versionId + " not found"));
-        if (!toActivate.getFormId().equals(formId)) {
+        if (!toActivate.getForm().getId().equals(formId)) {
             throw new ValidationException("Version does not belong to the specified form");
         }
 
-        log.info("Manually activating version {} for form {}", toActivate.getVersionNumber(), formId);
+        log.info("Manually activating version {} for form {}", toActivate.getVersionNumber(), form.getId());
         
         // Rule 8: On every activation, old drafts MUST be deleted.
         // FIXED: Only discard drafts if the form is already PUBLISHED.
         // For new draft forms, no submission table exists yet, so this would fail.
         if (form.getStatus() == FormStatus.PUBLISHED) {
-            discardDraftsForForm(formId);
+            discardDraftsForForm(form);
         } else {
-            log.info("Skipping draft cleanup for form {}: currently in {} state", formId, form.getStatus());
+            log.info("Skipping draft cleanup for form {}: currently in {} state", form.getId(), form.getStatus());
         }
 
-        versionRepository.deactivateAllForForm(formId);
+        versionRepository.deactivateAllForForm(form.getId());
         toActivate.setIsActive(true);
         versionRepository.saveAndFlush(toActivate);
 
@@ -195,10 +195,10 @@ public class FormVersionService {
         
         // Ensure DB schema reflects this version's fields
         log.info("Activating version {} for form {}. Status is {}. Pre-sync schema check.", 
-                toActivate.getVersionNumber(), formId, form.getStatus());
+                toActivate.getVersionNumber(), form.getId(), form.getStatus());
         ensureSchemaForVersion(form, toActivate);
 
-        log.info("Successfully activated version {} for form {}", toActivate.getVersionNumber(), formId);
+        log.info("Successfully activated version {} for form {}", toActivate.getVersionNumber(), form.getId());
         return toDtoWithFields(toActivate);
     }
 
@@ -214,7 +214,7 @@ public class FormVersionService {
         // FIXED: Ensure all field names are unique within the version to prevent bad SQL grammar
         validateUniqueFieldNames(incoming);
 
-        Form form = checkFormOwnership(current.getFormId()); // Use ownership check
+        Form form = checkFormOwnership(current.getForm().getId()); // Use ownership check
 
         // FIXED: IF form is DRAFT, update the existing version in-place
         if (form.getStatus() == FormStatus.DRAFT) {
@@ -223,52 +223,78 @@ public class FormVersionService {
             fieldRepository.flush(); // FIXED: Force flush to ensure old fields are deleted before saveAll
             
             List<FormField> newFields = new ArrayList<>();
+            Map<String, FormField> keyToField = new HashMap<>();
             int order = 1;
+
+            // 1st Pass: Build fields
             for (UpdateFieldRequest req : incoming) {
                 FormField field = buildFormField(req);
                 field.setFormVersion(current);
                 field.setForm(form);
                 field.setDisplayOrder(order++);
+                keyToField.put(field.getFieldKey(), field);
                 newFields.add(field);
             }
+
+            // 2nd Pass: Wire parents
+            for (int i = 0; i < incoming.size(); i++) {
+                UpdateFieldRequest req = incoming.get(i);
+                FormField field = newFields.get(i);
+                if (req.getParentId() != null && !req.getParentId().isBlank()) {
+                    field.setParent(keyToField.get(req.getParentId()));
+                }
+            }
+
             fieldRepository.saveAll(newFields);
-            log.info("Successfully saved {} new fields for draft version v{}", newFields.size(), current.getVersionNumber()); // FIXED: Added log
-            // FIXED: Do NOT call ensureSchemaForVersion for DRAFT forms (no table exists yet)
-            return toDtoWithFields(current); // FIXED: Return same version
+            log.info("Successfully saved {} new fields for draft version v{}", newFields.size(), current.getVersionNumber());
+            return toDtoWithFields(current);
         }
 
         // REUSE LOGIC: If the LATEST version for this form is very recent (< 10s) 
         // and was created by the same user, UPDATE it instead of creating another version.
-        FormVersion latest = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(current.getFormId()).orElse(current);
+        FormVersion latest = versionRepository.findFirstByForm_IdOrderByVersionNumberDesc(current.getForm().getId()).orElse(current);
         if (isRecent(latest)) {
             log.info("Edit session: Reusing very recent version v{} for fields update", latest.getVersionNumber());
-            // Clear existing fields for this version before re-saving
             fieldRepository.deleteByFormVersionId(latest.getId());
             
             List<FormField> newFields = new ArrayList<>();
+            Map<String, FormField> keyToField = new HashMap<>();
             int order = 1;
+
+            // 1st Pass
             for (UpdateFieldRequest req : incoming) {
                 FormField field = buildFormField(req);
                 field.setFormVersion(latest);
                 field.setForm(form);
                 field.setDisplayOrder(order++);
+                keyToField.put(field.getFieldKey(), field);
                 newFields.add(field);
             }
+
+            // 2nd Pass
+            for (int i = 0; i < incoming.size(); i++) {
+                UpdateFieldRequest req = incoming.get(i);
+                FormField field = newFields.get(i);
+                if (req.getParentId() != null && !req.getParentId().isBlank()) {
+                    field.setParent(keyToField.get(req.getParentId()));
+                }
+            }
+
             fieldRepository.saveAll(newFields);
             ensureSchemaForVersion(form, latest);
             return toDtoWithFields(latest);
         }
 
-        int nextNumber = versionRepository.findMaxVersionNumber(current.getFormId()) + 1;
+        int nextNumber = versionRepository.findMaxVersionNumber(current.getForm().getId()) + 1;
         
         // Rule 4.2: When a NEW version becomes ACTIVE, ALL drafts from the previous version MUST be deleted.
-        discardDraftsForVersion(current.getFormId(), current.getId());
+        discardDraftsForVersion(form, current.getId());
 
-        versionRepository.unsetLatestForForm(current.getFormId());
-        versionRepository.deactivateAllForForm(current.getFormId());
+        versionRepository.unsetLatestForForm(current.getForm().getId());
+        versionRepository.deactivateAllForForm(current.getForm().getId());
 
         FormVersion newVersion = FormVersion.builder()
-                .formId(current.getFormId())
+                .form(form)
                 .versionNumber(nextNumber)
                 .isActive(true) // Rule 2: New version automatically becomes ACTIVE.
                 .isLatest(true)
@@ -280,14 +306,28 @@ public class FormVersionService {
 
         // Save incoming fields to the NEW version
         List<FormField> newFields = new ArrayList<>();
+        Map<String, FormField> keyToField = new HashMap<>();
         int order = 1;
+        
+        // 1st Pass: Build fields
         for (UpdateFieldRequest req : incoming) {
             FormField field = buildFormField(req);
             field.setFormVersion(newVersion);
             field.setForm(form);
             field.setDisplayOrder(order++);
+            keyToField.put(field.getFieldKey(), field);
             newFields.add(field);
         }
+
+        // 2nd Pass: Wire parents
+        for (int i = 0; i < incoming.size(); i++) {
+            UpdateFieldRequest req = incoming.get(i);
+            FormField field = newFields.get(i);
+            if (req.getParentId() != null && !req.getParentId().isBlank()) {
+                field.setParent(keyToField.get(req.getParentId()));
+            }
+        }
+
         fieldRepository.saveAll(newFields);
 
         // Sync schema
@@ -295,7 +335,7 @@ public class FormVersionService {
         
         // FIXED: Removed form.setStatus(PUBLISHED). Save does not trigger publish.
 
-        log.info("Edit session: Created new active version {} for form {}", nextNumber, current.getFormId());
+        log.info("Edit session: Created new active version {} for form {}", nextNumber, current.getForm().getId());
         return toDtoWithFields(newVersion);
     }
 
@@ -304,7 +344,7 @@ public class FormVersionService {
         FormVersion current = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Version not found"));
 
-        Form form = checkFormOwnership(current.getFormId()); // Use ownership check
+        Form form = checkFormOwnership(current.getForm().getId()); // Use ownership check
 
         // FIXED: IF form is DRAFT, update the existing version in-place
         if (form.getStatus() == FormStatus.DRAFT) {
@@ -317,7 +357,7 @@ public class FormVersionService {
         }
 
         // REUSE LOGIC: Update existing if very recent
-        FormVersion latest = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(current.getFormId()).orElse(current);
+        FormVersion latest = versionRepository.findFirstByForm_IdOrderByVersionNumberDesc(current.getForm().getId()).orElse(current);
         if (isRecent(latest)) {
             log.info("Rules update: Reusing very recent version v{}", latest.getVersionNumber());
             latest.setRules(rulesJson != null ? rulesJson : "[]");
@@ -326,16 +366,16 @@ public class FormVersionService {
             return toDtoWithFields(latest);
         }
 
-        int nextNumber = versionRepository.findMaxVersionNumber(current.getFormId()) + 1;
+        int nextNumber = versionRepository.findMaxVersionNumber(current.getForm().getId()) + 1;
         
         // Rule 4.2: Discard drafts when a NEW version becomes active.
-        discardDraftsForVersion(current.getFormId(), current.getId());
+        discardDraftsForVersion(form, current.getId());
 
-        versionRepository.unsetLatestForForm(current.getFormId());
-        versionRepository.deactivateAllForForm(current.getFormId());
+        versionRepository.unsetLatestForForm(current.getForm().getId());
+        versionRepository.deactivateAllForForm(current.getForm().getId());
 
         FormVersion newVersion = FormVersion.builder()
-                .formId(current.getFormId())
+                .form(form)
                 .versionNumber(nextNumber)
                 .isActive(true)
                 .isLatest(true)
@@ -346,14 +386,14 @@ public class FormVersionService {
         newVersion = versionRepository.save(newVersion);
 
         // Clone fields from 'current' to the NEW version
-        List<FormField> currentFields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(versionId);
+        List<FormField> currentFields = fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(versionId);
 
         List<FormField> clonedFields = cloneFields(currentFields, newVersion);
         fieldRepository.saveAll(clonedFields);
         
         // FIXED: Removed form.setStatus(PUBLISHED). Rules update does not trigger publish.
  
-        log.info("Rules update: Created new active version {} for form {}", nextNumber, current.getFormId());
+        log.info("Rules update: Created new active version {} for form {}", nextNumber, current.getForm().getId());
         return toDtoWithFields(newVersion);
     }
 
@@ -398,8 +438,7 @@ public class FormVersionService {
         }
     }
 
-    private void discardDraftsForVersion(UUID formId, UUID versionId) {
-        Form form = getFormOrThrow(formId);
+    private void discardDraftsForVersion(Form form, UUID versionId) {
         String tableName = form.getTableName();
         if (tableName == null) return;
 
@@ -410,12 +449,11 @@ public class FormVersionService {
         try {
             String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE form_version_id = ?::uuid AND is_draft = true";
             int count = jdbcTemplate.update(sql, versionId.toString());
-            if (count > 0) log.info("Discarded {} drafts for version {} of form {}", count, versionId, formId);
+            if (count > 0) log.info("Discarded {} drafts for version {} of form {}", count, versionId, form.getId());
         } catch (Exception e) { log.warn("Could not discard drafts for version {}: {}", versionId, e.getMessage()); }
     }
 
-    private void discardDraftsForForm(UUID formId) {
-        Form form = getFormOrThrow(formId);
+    private void discardDraftsForForm(Form form) {
         String tableName = form.getTableName();
         if (tableName == null) return;
 
@@ -426,12 +464,12 @@ public class FormVersionService {
         try {
             String sql = "UPDATE " + tableName + " SET is_deleted = true WHERE is_draft = true";
             int count = jdbcTemplate.update(sql);
-            if (count > 0) log.info("Discarded all {} drafts for form {}", count, formId);
-        } catch (Exception e) { log.warn("Could not discard drafts for form {}: {}", formId, e.getMessage()); }
+            if (count > 0) log.info("Discarded all {} drafts for form {}", count, form.getId());
+        } catch (Exception e) { log.warn("Could not discard drafts for form {}: {}", form.getId(), e.getMessage()); }
     }
 
     private void validateFieldConsistency(UUID sourceVersionId, List<UpdateFieldRequest> incoming) {
-        List<FormField> sourceFields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(sourceVersionId);
+        List<FormField> sourceFields = fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(sourceVersionId);
 
         // Map by technical fieldKey (stable) instead of fieldName (label)
         Map<String, String> keyToType = sourceFields.stream()
@@ -481,7 +519,6 @@ public class FormVersionService {
         field.setIsUnique(Boolean.TRUE.equals(req.getIsUnique()));
         field.setIsCalculated(Boolean.TRUE.equals(req.getIsCalculated()));
         field.setCalculationFormula(req.getCalculationFormula());
-        field.setParentId(req.getParentId());
     }
 
 
@@ -499,7 +536,7 @@ public class FormVersionService {
     @Transactional
     public FormVersionDto getOrCreateDraft(UUID formId) {
         checkFormOwnership(formId);
-        Optional<FormVersion> latestOpt = versionRepository.findFirstByFormIdOrderByVersionNumberDesc(formId);
+        Optional<FormVersion> latestOpt = versionRepository.findFirstByForm_IdOrderByVersionNumberDesc(formId);
 
         if (latestOpt.isPresent()) {
             // Return the latest version. Branching (creating a new version) will only happen 
@@ -536,7 +573,7 @@ public class FormVersionService {
         // Step 2: Existing logic for version migration
         List<Form> allForms = formRepository.findAll();
         for (Form form : allForms) {
-            if (!versionRepository.existsByFormId(form.getId())) {
+            if (!versionRepository.existsByForm_Id(form.getId())) {
                 log.info("Migrating form {} to versioning model", form.getId());
                 autoCreateVersionForForm(form);
             }
@@ -549,7 +586,7 @@ public class FormVersionService {
 
     private void autoCreateVersionForForm(Form form) {
         FormVersion v1 = FormVersion.builder()
-                .formId(form.getId())
+                .form(form)
                 .versionNumber(1)
                 .isActive(form.getStatus() == FormStatus.PUBLISHED)
                 .isLatest(true) // Migrated first version is the latest
@@ -560,7 +597,7 @@ public class FormVersionService {
         v1 = versionRepository.save(v1);
 
         // Link existing fields to this version
-        List<FormField> legacyFields = fieldRepository.findByFormIdOrderByDisplayOrderAscIdAsc(form.getId());
+        List<FormField> legacyFields = fieldRepository.findByForm_IdOrderByDisplayOrderAscIdAsc(form.getId());
 
         int order = 1;
         for (FormField f : legacyFields) {
@@ -572,8 +609,8 @@ public class FormVersionService {
 
     private FormVersion resolveSourceVersion(UUID formId) {
         // prefer active version; fall back to the highest numbered version
-        return versionRepository.findByFormIdAndIsActiveTrue(formId)
-                .or(() -> versionRepository.findByFormIdOrderByVersionNumberAsc(formId)
+        return versionRepository.findByForm_IdAndIsActiveTrue(formId)
+                .or(() -> versionRepository.findByForm_IdOrderByVersionNumberAsc(formId)
                         .stream().reduce((a, b) -> b))
                 .orElse(null);
     }
@@ -582,14 +619,17 @@ public class FormVersionService {
         if (source == null) {
             // FIXED: seed from initial/legacy form fields (where version_id is null)
             // findByFormId was previously returning duplicates (v1 fields + null fields)
-            return fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
+            return fieldRepository.findByForm_IdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
         }
-        return fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(source.getId());
+        return fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(source.getId());
     }
 
     private List<FormField> cloneFields(List<FormField> source, FormVersion targetVersion) {
+        Map<String, FormField> keyToClone = new HashMap<>();
         List<FormField> clones = new ArrayList<>();
         int order = 1;
+
+        // 1. Create clones
         for (FormField f : source) {
             FormField clone = new FormField();
             clone.setFieldName(f.getFieldName());
@@ -618,15 +658,26 @@ public class FormVersionService {
             clone.setIsUnique(f.getIsUnique());
             clone.setIsCalculated(f.getIsCalculated());
             clone.setCalculationFormula(f.getCalculationFormula());
-            clone.setParentId(f.getParentId());
             clone.setIsDeleted(false);
 
             clone.setForm(f.getForm());
             clone.setFormVersion(targetVersion);
-            clone.setDisplayOrder(f.getDisplayOrder() != null ? f.getDisplayOrder() : order);
-            order++;
+            clone.setDisplayOrder(f.getDisplayOrder() != null ? f.getDisplayOrder() : order++);
+            
+            keyToClone.put(clone.getFieldKey(), clone);
             clones.add(clone);
         }
+
+        // 2. Re-wire parents within the same version
+        for (int i = 0; i < source.size(); i++) {
+            FormField original = source.get(i);
+            FormField clone = clones.get(i);
+            if (original.getParent() != null) {
+                String parentKey = original.getParent().getFieldKey();
+                clone.setParent(keyToClone.get(parentKey));
+            }
+        }
+
         return clones;
     }
 
@@ -657,7 +708,7 @@ public class FormVersionService {
             return;
         }
         
-        List<FormField> fields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(version.getId());
+        List<FormField> fields = fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(version.getId());
 
         log.info("Found {} fields for version {} of form {}", fields.size(), version.getVersionNumber(), form.getId());
         
@@ -737,7 +788,7 @@ public class FormVersionService {
     private FormVersionDto toDto(FormVersion v) {
         return FormVersionDto.builder()
                 .id(v.getId())
-                .formId(v.getFormId())
+                .formId(v.getForm().getId())
                 .versionNumber(v.getVersionNumber())
                 .isActive(v.getIsActive())
                 .isLatest(v.getIsLatest())
@@ -749,7 +800,7 @@ public class FormVersionService {
     }
 
     private FormVersionDto toDtoWithFields(FormVersion version) {
-        List<FormField> fields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(version.getId());
+        List<FormField> fields = fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(version.getId());
 
         List<FormFieldResponseDto> fieldDtos = fields.stream()
                 .filter(f -> !Boolean.TRUE.equals(f.getIsDeleted()))
@@ -783,14 +834,14 @@ public class FormVersionService {
                         .isUnique(f.getIsUnique())
                         .isCalculated(f.getIsCalculated())
                         .calculationFormula(f.getCalculationFormula())
-                        .parentId(f.getParentId())
+                        .parentId(f.getParent() != null ? f.getParent().getId().toString() : null)
                         .build())
 
                 .collect(Collectors.toList());
 
         return FormVersionDto.builder()
                 .id(version.getId())
-                .formId(version.getFormId())
+                .formId(version.getForm().getId())
                 .versionNumber(version.getVersionNumber())
                 .isActive(version.getIsActive())
                 .createdBy(version.getCreatedBy())

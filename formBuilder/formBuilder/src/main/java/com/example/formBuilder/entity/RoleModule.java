@@ -18,9 +18,11 @@ public class RoleModule {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "role_id", nullable = false)
-    private UUID roleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
-    @Column(name = "module_id", nullable = false)
-    private UUID moduleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "module_id", nullable = false)
+    private Module module;
 }

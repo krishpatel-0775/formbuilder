@@ -144,11 +144,33 @@ export default function BuilderPage() {
     const handleSortStart = (e) => setActiveSortId(e.active.id);
     const handleSortEnd = (e) => {
         const { active, over } = e;
-        if (active.id !== over?.id) {
+        if (active.id !== over?.id && over) {
             setFields((items) => {
-                const oi = items.findIndex((i) => i.id === active.id);
-                const ni = items.findIndex((i) => i.id === over.id);
-                return arrayMove(items, oi, ni);
+                const activeIndex = items.findIndex((i) => i.id === active.id);
+                const overIndex = items.findIndex((i) => i.id === over.id);
+
+                const activeField = items[activeIndex];
+                const overField = items[overIndex];
+
+                if (!activeField || !overField) return items;
+
+                // FIXED: Logic to handle nesting changes during sort
+                let newParentId = activeField.parentId;
+
+                // If dropped directly on a group header/container
+                if (overField.type === "group") {
+                    // Make it a child of this group
+                    newParentId = overField.id;
+                } else {
+                    // Inherit the parent of the item we dropped on (making them siblings)
+                    newParentId = overField.parentId || null;
+                }
+
+                // Update the field with its new parent
+                const updatedItems = [...items];
+                updatedItems[activeIndex] = { ...activeField, parentId: newParentId };
+
+                return arrayMove(updatedItems, activeIndex, overIndex);
             });
         }
         setActiveSortId(null);

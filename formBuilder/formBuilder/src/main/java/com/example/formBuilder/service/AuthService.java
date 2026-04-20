@@ -245,17 +245,15 @@ public class AuthService {
     private void assignDefaultRole(User user) {
         roleRepository.findByRoleName("FORMS_MANAGER").ifPresent(role -> {
             userRoleRepository.save(UserRole.builder()
-                    .userId(user.getId())
-                    .roleId(role.getId())
+                    .user(user)
+                    .role(role)
                     .build());
         });
     }
 
     private List<String> getUserRoles(UUID userId) {
-        return userRoleRepository.findByUserId(userId).stream()
-                .map(ur -> roleRepository.findById(ur.getRoleId())
-                        .map(Role::getRoleName)
-                        .orElse("UNKNOWN"))
+        return userRoleRepository.findByUser_Id(userId).stream()
+                .map(ur -> ur.getRole().getRoleName())
                 .collect(Collectors.toList());
     }
 

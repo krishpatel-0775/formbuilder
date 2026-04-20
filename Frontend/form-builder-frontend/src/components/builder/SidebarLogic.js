@@ -86,7 +86,7 @@ export function SidebarLogic({
         <RuleBuilder
           rules={fieldRules}
           onChange={handleFieldRulesChange}
-          fieldNames={fields.map(f => f.label? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "").filter(Boolean)}
+          fieldNames={[...new Set(fields.map(f => f.label? f.label.toLowerCase().trim().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") : "").filter(Boolean))]}
           defaultTargetField={fieldName}
           onAddRule={addFieldRule}
           isSidebar={true}

@@ -38,11 +38,13 @@ public class Module {
     @JsonProperty("isSubParent")
     private boolean isSubParent;
 
-    @Column(name = "parent_module_id")
-    private UUID parentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_module_id")
+    private Module parentModule;
 
-    @Column(name = "sub_parent_module_id")
-    private UUID subParentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sub_parent_module_id")
+    private Module subParentModule;
 
     @Column(name = "menu_icon_css")
     private String iconCss;

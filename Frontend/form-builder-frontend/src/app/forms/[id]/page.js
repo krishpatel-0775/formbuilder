@@ -173,6 +173,8 @@ export default function PublicFormPage() {
   const [draftSubmissionId, setDraftSubmissionId] = useState(null);
   const [draftBanner, setDraftBanner] = useState(null);
   const [draftSaveMessage, setDraftSaveMessage] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedData, setLastSavedData] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -305,6 +307,21 @@ export default function PublicFormPage() {
 
     fetchDraft();
   }, [id, user, formConfig]);
+
+  // ── Debounced Auto-save Effect ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!id || !user || !formConfig || !isDirty) return;
+
+    // Don't auto-save if exactly same as last save
+    const currentStr = JSON.stringify(formData);
+    if (lastSavedData === currentStr) return;
+
+    const timer = setTimeout(() => {
+      handleSaveDraft(true); // true = quiet mode (minimal UI feedback)
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [formData, user, formConfig, isDirty, lastSavedData, id]);
 
   const evaluateVisibility = useCallback((currentData) => {
     if (!formRules || formRules.length === 0) return;
@@ -538,6 +555,7 @@ export default function PublicFormPage() {
 
   const handleInputChange = (fieldName, value) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    setIsDirty(true);
     if (errors[fieldName]) {
       setErrors((prev) => { const n = { ...prev }; delete n[fieldName]; return n; });
     }
@@ -641,10 +659,10 @@ export default function PublicFormPage() {
     }
   };
 
-  const handleSaveDraft = async () => {
-    if (!formConfig) return;
+  const handleSaveDraft = async (isQuiet = false) => {
+    if (!formConfig || !user) return;
     setIsDraftSaving(true);
-    setDraftSaveMessage(null);
+    if (!isQuiet) setDraftSaveMessage(null);
 
     const submissionData = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => {
@@ -673,14 +691,18 @@ export default function PublicFormPage() {
         const json = await res.json();
         if (json.success) {
           setDraftSubmissionId(json.data.submissionId);
-          setDraftSaveMessage({ type: "success", message: "Draft saved successfully" });
-          setTimeout(() => setDraftSaveMessage(null), 3000);
+          setIsDirty(false);
+          setLastSavedData(JSON.stringify(formData));
+          if (!isQuiet) {
+            setDraftSaveMessage({ type: "success", message: "Draft saved successfully" });
+            setTimeout(() => setDraftSaveMessage(null), 3000);
+          }
         }
       } else {
-        setDraftSaveMessage({ type: "error", message: "Failed to save draft" });
+        if (!isQuiet) setDraftSaveMessage({ type: "error", message: "Failed to save draft" });
       }
     } catch (err) {
-      setDraftSaveMessage({ type: "error", message: "Connection error while saving draft" });
+      if (!isQuiet) setDraftSaveMessage({ type: "error", message: "Connection error while saving draft" });
     } finally {
       setIsDraftSaving(false);
     }
@@ -954,11 +976,32 @@ export default function PublicFormPage() {
               )}
 
               {user && (
-                <button type="button" onClick={handleSaveDraft} disabled={isDraftSaving}
-                  className="group flex items-center gap-4 px-8 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95 disabled:opacity-50">
-                  {isDraftSaving ? <Loader2 size={20} className="animate-spin" /> : <RotateCcw size={20} className="group-hover:rotate-180 transition-transform duration-500" />}
-                  {isDraftSaving ? "Saving..." : "Save Draft"}
-                </button>
+                <div className="flex items-center gap-3 px-6 py-4 rounded-[1.5rem] bg-emerald-50/50 border border-emerald-100/50">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                        {isDraftSaving ? (
+                            <Loader2 size={12} className="text-emerald-500 animate-spin" />
+                        ) : isDirty ? (
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        ) : (
+                            <CheckCircle2 size={12} className="text-emerald-500" />
+                        )}
+                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                            {isDraftSaving ? "Auto-saving..." : isDirty ? "Unsaved Changes" : "Progress Saved"}
+                        </span>
+                    </div>
+                    {draftSaveMessage && (
+                        <span className={`text-[9px] font-bold mt-0.5 ${draftSaveMessage.type === 'error' ? 'text-red-500' : 'text-emerald-400'}`}>
+                            {draftSaveMessage.message}
+                        </span>
+                    )}
+                  </div>
+                  
+                  <button type="button" onClick={() => handleSaveDraft(false)} disabled={isDraftSaving || !isDirty}
+                    className="ml-2 flex items-center justify-center w-8 h-8 rounded-xl bg-white border border-emerald-100 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-emerald-500">
+                    <RotateCcw size={14} className={isDraftSaving ? "animate-spin" : ""} />
+                  </button>
+                </div>
               )}
 
               {isLastPage ? (

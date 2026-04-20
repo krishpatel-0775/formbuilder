@@ -111,10 +111,10 @@ public class SubmissionService {
 
         // 3. Fetch Field Labels (currently just using fieldName as based on existing patterns)
         List<FormField> fields;
-        if (meta.getFormVersionId() != null) {
-            fields = fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(meta.getFormVersionId());
+        if (meta.getFormVersion() != null) {
+            fields = fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(meta.getFormVersion().getId());
         } else {
-            fields = fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
+            fields = fieldRepository.findByForm_IdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
         }
 
         Map<String, String> fieldLabels = fields.stream()
@@ -212,7 +212,7 @@ public class SubmissionService {
         String currentUser = SessionUtil.getCurrentUsername();
 
         // Resolve target version and validate against the currently active one
-        FormVersion activeVersion = versionRepository.findByFormIdAndIsActiveTrue(form.getId()).orElse(null);
+        FormVersion activeVersion = versionRepository.findByForm_IdAndIsActiveTrue(form.getId()).orElse(null);
         UUID activeVersionId = (activeVersion != null) ? activeVersion.getId() : null;
         FormVersion targetVersion;
 
@@ -231,7 +231,7 @@ public class SubmissionService {
         }
 
         List<FormField> formFields = (targetVersion != null)
-                ? fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(targetVersion.getId())
+                ? fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(targetVersion.getId())
                 : form.getFields();
 
         // ── Schema drift check ────────────────────────────────────────────────────
@@ -341,7 +341,7 @@ public class SubmissionService {
         }
 
         // Sync Metadata
-        syncMetadata(form.getId(), activeVersionId, tableName, submissionId, "SUBMITTED", currentUser);
+        syncMetadata(form, targetVersion, tableName, submissionId, "SUBMITTED", currentUser);
 
         ruleEngineService.executePostSubmissionWorkflows(form, values);
         return "Form Submitted Successfully";
@@ -355,12 +355,15 @@ public class SubmissionService {
         String currentUser = SessionUtil.getCurrentUsername();
         Map<String, Object> values = request.getData();
 
-        UUID versionId = request.getFormVersionId();
-        if (versionId == null) {
-            versionId = versionRepository.findByFormIdAndIsActiveTrue(form.getId())
-                    .map(com.example.formBuilder.entity.FormVersion::getId)
+        FormVersion targetVersion = null;
+        if (request.getFormVersionId() != null) {
+            targetVersion = versionRepository.findById(request.getFormVersionId()).orElse(null);
+        }
+        if (targetVersion == null) {
+            targetVersion = versionRepository.findByForm_IdAndIsActiveTrue(form.getId())
                     .orElse(null);
         }
+        UUID versionId = targetVersion != null ? targetVersion.getId() : null;
 
         UUID submissionId = null;
         try {
@@ -374,9 +377,9 @@ public class SubmissionService {
         } catch (Exception e) { /* no draft for this version */ }
 
         List<FormField> fields = (versionId != null) 
-                ? fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(versionId)
+                ? fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(versionId)
                 // FIXED: Use findByFormIdAndFormVersionIsNull to avoid picking up fields from drafts/versions
-                : fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(form.getId());
+                : fieldRepository.findByForm_IdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(form.getId());
 
         Map<String, FormField> fieldMap = fields.stream()
                 .collect(Collectors.toMap(FormField::getFieldKey, f -> f, (existing, replacement) -> existing));
@@ -417,7 +420,7 @@ public class SubmissionService {
             submissionId = jdbcTemplate.queryForObject(sql, UUID.class, params.toArray());
         }
 
-        syncMetadata(form.getId(), versionId, tableName, submissionId, "DRAFT", currentUser);
+        syncMetadata(form, targetVersion, tableName, submissionId, "DRAFT", currentUser);
 
         return DraftResponse.builder()
                 .submissionId(submissionId)
@@ -435,22 +438,22 @@ public class SubmissionService {
 
         // Resolve the currently active version so we can match the correct draft
         // and filter out fields that no longer exist in this version.
-        FormVersion activeVersion = versionRepository.findByFormIdAndIsActiveTrue(form.getId()).orElse(null);
+        FormVersion activeVersion = versionRepository.findByForm_IdAndIsActiveTrue(form.getId()).orElse(null);
         UUID activeVersionId = activeVersion != null ? activeVersion.getId() : null;
 
         // Find the draft that matches the active version specifically.
         // If a draft exists for a different (now inactive) version, ignore it — it's stale.
         FormSubmissionMeta meta;
         if (activeVersionId != null) {
-            meta = metaRepository.findByFormIdAndSubmittedByAndStatus(formId, currentUser, "DRAFT")
+            meta = metaRepository.findByForm_IdAndSubmittedByAndStatus(formId, currentUser, "DRAFT")
                     .stream()
-                    .filter(m -> activeVersionId.equals(m.getFormVersionId()))
+                    .filter(m -> m.getFormVersion() != null && activeVersionId.equals(m.getFormVersion().getId()))
                     .findFirst()
                     .orElse(null);
         } else {
-            meta = metaRepository.findByFormIdAndSubmittedByAndStatus(formId, currentUser, "DRAFT")
+            meta = metaRepository.findByForm_IdAndSubmittedByAndStatus(formId, currentUser, "DRAFT")
                     .stream()
-                    .filter(m -> m.getFormVersionId() == null)
+                    .filter(m -> m.getFormVersion() == null)
                     .findFirst()
                     .orElse(null);
         }
@@ -459,8 +462,8 @@ public class SubmissionService {
 
         // Load the valid field keys for the active version so we can strip stale columns.
         List<FormField> activeFields = (activeVersionId != null)
-                ? fieldRepository.findByFormVersionIdOrderByDisplayOrderAscIdAsc(activeVersionId)
-                : fieldRepository.findByFormIdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
+                ? fieldRepository.findByFormVersion_IdOrderByDisplayOrderAscIdAsc(activeVersionId)
+                : fieldRepository.findByForm_IdAndFormVersionIsNullOrderByDisplayOrderAscIdAsc(formId);
 
         java.util.Set<String> validKeys = activeFields.stream()
                 .filter(f -> !isDisplayOnly(f.getFieldType()))
@@ -487,7 +490,7 @@ public class SubmissionService {
 
             return DraftResponse.builder()
                     .submissionId(meta.getSubmissionRowId())
-                    .formVersionId(meta.getFormVersionId())
+                    .formVersionId(meta.getFormVersion() != null ? meta.getFormVersion().getId() : null)
                     .data(data)
                     .status("DRAFT")
                     .build();
@@ -496,15 +499,15 @@ public class SubmissionService {
         }
     }
 
-    private void syncMetadata(UUID formId, UUID versionId, String table, UUID rowId, String status, String user) {
+    private void syncMetadata(Form form, FormVersion version, String table, UUID rowId, String status, String user) {
         FormSubmissionMeta meta = metaRepository.findBySubmissionTableAndSubmissionRowId(table, rowId)
                 .orElse(FormSubmissionMeta.builder()
-                        .formId(formId)
+                        .form(form)
                         .submissionTable(table)
                         .submissionRowId(rowId)
                         .build());
 
-        meta.setFormVersionId(versionId);
+        meta.setFormVersion(version);
         meta.setStatus(status);
         meta.setSubmittedBy(user);
         if ("SUBMITTED".equals(status)) {

@@ -32,11 +32,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .or(() -> userRepository.findByEmail(username))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        List<UserRole> userRoles = userRoleRepository.findByUserId(user.getId());
+        List<UserRole> userRoles = userRoleRepository.findByUser_Id(user.getId());
         List<SimpleGrantedAuthority> authorities = userRoles.stream()
-                .map(ur -> roleRepository.findById(ur.getRoleId()))
-                .filter(Optional::isPresent)
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.get().getRoleName()))
+                .map(ur -> new SimpleGrantedAuthority("ROLE_" + ur.getRole().getRoleName()))
                 .collect(Collectors.toList());
 
         return new org.springframework.security.core.userdetails.User(

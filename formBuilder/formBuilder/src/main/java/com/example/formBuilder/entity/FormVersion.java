@@ -20,8 +20,9 @@ public class FormVersion {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "form_id", nullable = false)
-    private UUID formId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "form_id", nullable = false)
+    private Form form;
 
     @Column(name = "version_number", nullable = false)
     private Integer versionNumber;

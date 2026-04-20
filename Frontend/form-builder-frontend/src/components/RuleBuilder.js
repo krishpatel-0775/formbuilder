@@ -311,7 +311,7 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                             className={selectCls}
                                                         >
                                                             <option value="" disabled>Select dependency field...</option>
-                                                            {fieldNames.map((name) => <option key={name} value={name}>{name}</option>)}
+                                                            {fieldNames.map((name, idx) => <option key={`${name}-${idx}`} value={name}>{name}</option>)}
                                                         </select>
 
                                                         <div className="space-y-3">
@@ -400,7 +400,7 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                     className={selectCls}
                                                 >
                                                     <option value="" disabled>Select architectural target...</option>
-                                                    {fieldNames.map((name) => <option key={name} value={name}>{name}</option>)}
+                                                    {fieldNames.map((name, idx) => <option key={`${name}-${idx}`} value={name}>{name}</option>)}
                                                 </select>
                                             </div>
                                         )}
@@ -441,7 +441,7 @@ export default function RuleBuilder({ rules = [], onChange, fieldNames = [], def
                                                             className={selectCls}
                                                         >
                                                             <option value="" disabled>Select field to anchor error...</option>
-                                                            {fieldNames.map((name) => <option key={name} value={name}>{name}</option>)}
+                                                            {fieldNames.map((name, idx) => <option key={`${name}-${idx}`} value={name}>{name}</option>)}
                                                         </select>
                                                     </div>
                                                 )}

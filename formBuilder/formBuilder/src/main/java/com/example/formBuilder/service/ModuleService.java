@@ -38,8 +38,8 @@ public class ModuleService {
         module.setAction(moduleDetails.getAction());
         module.setParent(moduleDetails.isParent());
         module.setSubParent(moduleDetails.isSubParent());
-        module.setParentId(moduleDetails.getParentId());
-        module.setSubParentId(moduleDetails.getSubParentId());
+        module.setParentModule(moduleDetails.getParentModule());
+        module.setSubParentModule(moduleDetails.getSubParentModule());
         module.setIconCss(moduleDetails.getIconCss());
         module.setActive(moduleDetails.isActive());
 
@@ -50,11 +50,11 @@ public class ModuleService {
 
     private void normalizeModule(Module module) {
         if (module.isParent()) {
-            module.setParentId(null);
-            module.setSubParentId(null);
+            module.setParentModule(null);
+            module.setSubParentModule(null);
             module.setSubParent(false);
         } else if (module.isSubParent()) {
-            module.setSubParentId(null);
+            module.setSubParentModule(null);
             module.setParent(false);
         }
     }
@@ -74,13 +74,13 @@ public class ModuleService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<UserRole> userRoles = userRoleRepository.findByUserId(user.getId());
-        Set<UUID> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toSet());
+        List<UserRole> userRoles = userRoleRepository.findByUser_Id(user.getId());
+        Set<UUID> roleIds = userRoles.stream().map(ur -> ur.getRole().getId()).collect(Collectors.toSet());
 
         Set<UUID> moduleIds = new HashSet<>();
         for (UUID roleId : roleIds) {
-            moduleIds.addAll(roleModuleRepository.findByRoleId(roleId).stream()
-                    .map(RoleModule::getModuleId)
+            moduleIds.addAll(roleModuleRepository.findByRole_Id(roleId).stream()
+                    .map(rm -> rm.getModule().getId())
                     .collect(Collectors.toSet()));
         }
 
@@ -95,14 +95,14 @@ public class ModuleService {
         while (index < toCheck.size()) {
             UUID mid = toCheck.get(index++);
             Module m = moduleMap.get(mid);
-            if (m != null && m.getParentId() != null) {
-                if (finalModuleIds.add(m.getParentId())) {
-                    toCheck.add(m.getParentId());
+            if (m != null && m.getParentModule() != null) {
+                if (finalModuleIds.add(m.getParentModule().getId())) {
+                    toCheck.add(m.getParentModule().getId());
                 }
             }
-            if (m != null && m.getSubParentId() != null) {
-                if (finalModuleIds.add(m.getSubParentId())) {
-                    toCheck.add(m.getSubParentId());
+            if (m != null && m.getSubParentModule() != null) {
+                if (finalModuleIds.add(m.getSubParentModule().getId())) {
+                    toCheck.add(m.getSubParentModule().getId());
                 }
             }
         }
@@ -126,19 +126,19 @@ public class ModuleService {
             List<Map<String, Object>> subMenus = new ArrayList<>();
 
             List<Module> children = modules.stream()
-                    .filter(m -> parent.getId().equals(m.getParentId()))
+                    .filter(m -> parent.getId().equals(m.getParentModule() != null ? m.getParentModule().getId() : null))
                     .collect(Collectors.toList());
 
             for (Module child : children) {
                 if (child.isSubParent()) {
                     Map<String, Object> subParentNode = mapModule(child);
                     List<Map<String, Object>> subChildren = modules.stream()
-                            .filter(m -> child.getId().equals(m.getSubParentId()))
+                            .filter(m -> child.getId().equals(m.getSubParentModule() != null ? m.getSubParentModule().getId() : null))
                             .map(this::mapModule)
                             .collect(Collectors.toList());
                     subParentNode.put("children", subChildren);
                     subMenus.add(subParentNode);
-                } else if (child.getSubParentId() == null) {
+                } else if (child.getSubParentModule() == null) {
                     subMenus.add(mapModule(child));
                 }
             }
@@ -147,7 +147,7 @@ public class ModuleService {
         }
 
         List<Module> standalone = modules.stream()
-                .filter(m -> !m.isParent() && m.getParentId() == null)
+                .filter(m -> !m.isParent() && m.getParentModule() == null)
                 .collect(Collectors.toList());
         
         for (Module s : standalone) {
@@ -182,37 +182,34 @@ public class ModuleService {
         Module formsParent = findOrCreate(existing, "Forms Management", null, "file-text", true);
         Module adminParent = findOrCreate(existing, "System Admin", null, "shield", true);
 
-        Module vaultModule = findOrCreate(existing, "Form Vault", "/forms/all", "list", formsParent.getId());
-        Module createModule = findOrCreate(existing, "Create New Form", "/", "plus-circle", formsParent.getId());
+        Module vaultModule = findOrCreate(existing, "Form Vault", "/forms/all", "list", formsParent);
+        Module createModule = findOrCreate(existing, "Create New Form", "/", "plus-circle", formsParent);
         
-        findOrCreate(existing, "Module Management", "/admin/modules", "layout", adminParent.getId());
-        findOrCreate(existing, "Role Management", "/admin/roles", "shield", adminParent.getId());
-        findOrCreate(existing, "User Management", "/admin/users", "users", adminParent.getId());
+        findOrCreate(existing, "Module Management", "/admin/modules", "layout", adminParent);
+        findOrCreate(existing, "Role Management", "/admin/roles", "shield", adminParent);
+        findOrCreate(existing, "User Management", "/admin/users", "users", adminParent);
 
         existing = moduleRepository.findAll();
-        final UUID adminRoleId = adminRole.getId();
-        final UUID formsManagerRoleId = formsManagerRole.getId();
-
         for (Module m : existing) {
-            if (roleModuleRepository.findByRoleId(adminRoleId).stream()
-                    .noneMatch(rm -> rm.getModuleId().equals(m.getId()))) {
-                roleModuleRepository.save(RoleModule.builder().roleId(adminRoleId).moduleId(m.getId()).build());
+            if (roleModuleRepository.findByRole_Id(adminRole.getId()).stream()
+                    .noneMatch(rm -> rm.getModule().getId().equals(m.getId()))) {
+                roleModuleRepository.save(RoleModule.builder().role(adminRole).module(m).build());
             }
 
             if (m.getId().equals(dashboardModule.getId()) || m.getId().equals(formsParent.getId()) || m.getId().equals(vaultModule.getId()) || m.getId().equals(createModule.getId())) {
-                if (roleModuleRepository.findByRoleId(formsManagerRoleId).stream()
-                        .noneMatch(rm -> rm.getModuleId().equals(m.getId()))) {
-                    roleModuleRepository.save(RoleModule.builder().roleId(formsManagerRoleId).moduleId(m.getId()).build());
+                if (roleModuleRepository.findByRole_Id(formsManagerRole.getId()).stream()
+                        .noneMatch(rm -> rm.getModule().getId().equals(m.getId()))) {
+                    roleModuleRepository.save(RoleModule.builder().role(formsManagerRole).module(m).build());
                 }
             }
         }
 
         if (targetUsername != null) {
             userRepository.findByUsername(targetUsername).ifPresent(user -> {
-                if (userRoleRepository.findByUserId(user.getId()).isEmpty()) {
-                    boolean anyAdminExists = !userRoleRepository.findByRoleId(adminRoleId).isEmpty();
-                    UUID roleToAssign = anyAdminExists ? formsManagerRoleId : adminRoleId;
-                    userRoleRepository.save(UserRole.builder().userId(user.getId()).roleId(roleToAssign).build());
+                if (userRoleRepository.findByUser_Id(user.getId()).isEmpty()) {
+                    boolean anyAdminExists = !userRoleRepository.findByRole_Id(adminRole.getId()).isEmpty();
+                    Role roleToAssign = anyAdminExists ? formsManagerRole : adminRole;
+                    userRoleRepository.save(UserRole.builder().user(user).role(roleToAssign).build());
                 }
             });
         }
@@ -235,7 +232,7 @@ public class ModuleService {
         return moduleRepository.save(newModule);
     }
 
-    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, UUID parentId) {
+    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, Module parentModule) {
         Optional<Module> found = existing.stream()
                 .filter(m -> m.getModuleName().trim().equalsIgnoreCase(name.trim()))
                 .findFirst();
@@ -246,13 +243,13 @@ public class ModuleService {
                 .moduleName(name)
                 .prefix(prefix)
                 .iconCss(icon)
-                .parentId(parentId)
+                .parentModule(parentModule)
                 .active(true)
                 .build();
         return moduleRepository.save(newModule);
     }
 
-    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, UUID parentId, boolean isParent) {
+    private Module findOrCreate(List<Module> existing, String name, String prefix, String icon, Module parentModule, boolean isParent) {
         Optional<Module> found = existing.stream()
                 .filter(m -> m.getModuleName().trim().equalsIgnoreCase(name.trim()))
                 .findFirst();
@@ -263,7 +260,7 @@ public class ModuleService {
                 .moduleName(name)
                 .prefix(prefix)
                 .iconCss(icon)
-                .parentId(parentId)
+                .parentModule(parentModule)
                 .isParent(isParent)
                 .active(true)
                 .build();
@@ -276,14 +273,15 @@ public class ModuleService {
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
         List<Module> children = moduleRepository.findAll().stream()
-                .filter(m -> id.equals(m.getParentId()) || id.equals(m.getSubParentId()))
+                .filter(m -> id.equals(m.getParentModule() != null ? m.getParentModule().getId() : null) || 
+                            id.equals(m.getSubParentModule() != null ? m.getSubParentModule().getId() : null))
                 .collect(Collectors.toList());
         
         for (Module child : children) {
             deleteModule(child.getId());
         }
 
-        roleModuleRepository.deleteAll(roleModuleRepository.findByModuleId(id));
+        roleModuleRepository.deleteAll(roleModuleRepository.findByModule_Id(id));
         moduleRepository.delete(module);
     }
 

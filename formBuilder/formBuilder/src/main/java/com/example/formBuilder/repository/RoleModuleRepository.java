@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface RoleModuleRepository extends JpaRepository<RoleModule, UUID> {
-    List<RoleModule> findByRoleId(UUID roleId);
-    List<RoleModule> findByRoleIdIn(List<UUID> roleIds);
-    List<RoleModule> findByModuleId(UUID moduleId);
-    void deleteByRoleId(UUID roleId);
+    List<RoleModule> findByRole_Id(UUID roleId);
+    List<RoleModule> findByRole_IdIn(List<UUID> roleIds);
+    List<RoleModule> findByModule_Id(UUID moduleId);
+    void deleteByRole_Id(UUID roleId);
 }

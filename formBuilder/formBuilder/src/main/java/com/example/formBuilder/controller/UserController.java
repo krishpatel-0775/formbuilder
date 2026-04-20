@@ -1,8 +1,10 @@
 package com.example.formBuilder.controller;
 
 import com.example.formBuilder.dto.ApiResponse;
+import com.example.formBuilder.entity.Role;
 import com.example.formBuilder.entity.User;
 import com.example.formBuilder.entity.UserRole;
+import com.example.formBuilder.repository.RoleRepository;
 import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.repository.UserRoleRepository;
 import com.example.formBuilder.service.AuthService;
@@ -27,6 +29,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final RoleRepository roleRepository;
     private final AuthService authService;
 
     @GetMapping
@@ -39,9 +42,9 @@ public class UserController {
             map.put("email", user.getEmail());
             map.put("name", user.getName());
             
-            List<UUID> roles = userRoleRepository.findByUserId(user.getId())
+            List<UUID> roles = userRoleRepository.findByUser_Id(user.getId())
                     .stream()
-                    .map(UserRole::getRoleId)
+                    .map(ur -> ur.getRole().getId())
                     .collect(Collectors.toList());
             map.put("roleIds", roles);
             return map;
@@ -54,23 +57,26 @@ public class UserController {
     @Transactional
     public ResponseEntity<ApiResponse<String>> assignRoles(@PathVariable UUID userId, @RequestBody List<UUID> roleIds) {
         // Remove existing roles
-        List<UserRole> currentRoles = userRoleRepository.findByUserId(userId);
+        List<UserRole> currentRoles = userRoleRepository.findByUser_Id(userId);
         userRoleRepository.deleteAll(currentRoles);
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         // Add new roles
-        List<UserRole> newRoles = roleIds.stream().map(roleId -> 
-            UserRole.builder().userId(userId).roleId(roleId).build()
-        ).collect(Collectors.toList());
+        List<UserRole> newRoles = roleIds.stream().map(roleId -> {
+            Role role = roleRepository.findById(roleId)
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
+            return UserRole.builder().user(user).role(role).build();
+        }).collect(Collectors.toList());
         
         userRoleRepository.saveAll(newRoles);
 
         // Refresh security context if the updated user is the current user
         String currentUsername = SessionUtil.getCurrentUsername();
-        userRepository.findById(userId).ifPresent(user -> {
-            if (user.getUsername().equals(currentUsername)) {
-                authService.refreshSecurityContext(currentUsername);
-            }
-        });
+        if (user.getUsername().equals(currentUsername)) {
+            authService.refreshSecurityContext(currentUsername);
+        }
 
         return ResponseEntity.ok(ApiResponse.success("Roles updated successfully"));
     }
