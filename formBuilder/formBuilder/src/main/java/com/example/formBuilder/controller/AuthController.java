@@ -9,6 +9,7 @@ import com.example.formBuilder.dto.UpdateUserRequest;
 import com.example.formBuilder.dto.UserDetailResponse;
 import com.example.formBuilder.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -49,8 +50,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
-        authService.logout(request);
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+        authService.logout(request, response);
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 

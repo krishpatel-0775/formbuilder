@@ -10,7 +10,9 @@ import com.example.formBuilder.repository.UserRoleRepository;
 import com.example.formBuilder.repository.UserRepository;
 import com.example.formBuilder.security.SessionUtil;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
@@ -98,12 +100,18 @@ public class AuthService {
     }
 
     // ================= LOGOUT =================
-    public void logout(HttpServletRequest request) {
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
+
+        // 🔥 Remove cookie from browser
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
     }
 
     // ================= REFRESH SECURITY =================

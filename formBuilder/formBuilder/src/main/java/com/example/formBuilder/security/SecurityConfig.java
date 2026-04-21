@@ -17,6 +17,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import java.util.List;
 
@@ -31,10 +34,23 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // set the name of the attribute the CsrfToken will be populated on
+        requestHandler.setCsrfRequestAttributeName(null);
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(requestHandler)
+                        .ignoringRequestMatchers(
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/register",
+                                "/api/v1/submissions"
+                        )
+                )
                 .userDetailsService(userDetailsService) // Specifically set UserDetailsService
+                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .addFilterAfter(sessionControlFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         // Public Auth Endpoints
@@ -97,6 +113,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(AppConstants.FRONTEND_URL));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("X-XSRF-TOKEN"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

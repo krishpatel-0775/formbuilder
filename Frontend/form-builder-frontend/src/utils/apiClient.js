@@ -14,6 +14,34 @@ const apiClient = axios.create({
 });
 
 // Response Interceptor for Global Error Handling
+
+/**
+ * Utility to parse a cookie by name
+ */
+const getCookie = (name) => {
+    if (typeof document === 'undefined') return null; // Avoid SSR issues
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+    return null;
+};
+
+// Request Interceptor to inject CSRF Token
+apiClient.interceptors.request.use(
+    (config) => {
+        const methodsThatRequireCsrf = ['post', 'put', 'delete', 'patch'];
+        if (config.method && methodsThatRequireCsrf.includes(config.method.toLowerCase())) {
+            const csrfToken = getCookie('XSRF-TOKEN');
+            if (csrfToken) {
+                config.headers['X-XSRF-TOKEN'] = csrfToken;
+            }
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// Response Interceptor for Global Error Handling
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
