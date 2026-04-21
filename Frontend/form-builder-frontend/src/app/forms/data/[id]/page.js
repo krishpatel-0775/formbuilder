@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square, RotateCcw, LayoutPanelLeft } from "lucide-react";
 import Link from "next/link";
 import * as XLSX from "xlsx";
-import { ENDPOINTS } from "../../../../config/apiConfig";
+import { ENDPOINTS, API_BASE_URL } from "../../../../config/apiConfig";
+import apiClient from "../../../../utils/apiClient";
 
 /**
  * FormDataPage Component
@@ -44,9 +45,8 @@ export default function FormDataPage() {
     setError(null);
     try {
       // Step 1: Check form status and basic info
-      const formRes = await fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" });
-      if (!formRes.ok) throw new Error("Form not found or access denied.");
-      const formJson = await formRes.json();
+      const formRes = await apiClient.get(`${ENDPOINTS.FORMS}/${id}`);
+      const formJson = formRes.data;
       const status = formJson.data?.status || "DRAFT";
       setFormStatus(status);
 
@@ -56,11 +56,8 @@ export default function FormDataPage() {
 
       // Fetch versions list if not already fetched
       if (versions.length === 0) {
-        const vRes = await fetch(ENDPOINTS.formVersions(id), { credentials: "include" });
-        if (vRes.ok) {
-          const vJson = await vRes.json();
-          setVersions(vJson.data || []);
-        }
+        const vRes = await apiClient.get(ENDPOINTS.formVersions(id));
+        setVersions(vRes.data.data || []);
       }
 
       // Determine correct version to fetch metadata for
@@ -72,29 +69,30 @@ export default function FormDataPage() {
 
       if (currentVersionId) {
         // Step 2: Fetch version-specific fields
-        const versionMetaRes = await fetch(ENDPOINTS.formVersion(id, currentVersionId), { credentials: "include" });
-        if (versionMetaRes.ok) {
-          const versionMetaJson = await versionMetaRes.json();
-          setFields(versionMetaJson.data?.fields || []);
-        } else {
+        try {
+          const versionMetaRes = await apiClient.get(ENDPOINTS.formVersion(id, currentVersionId));
+          setFields(versionMetaRes.data.data?.fields || []);
+        } catch (vErr) {
           // Fallback to form's current fields if version metadata fails
           setFields(formJson.data?.fields || []);
         }
 
         // Step 3: Fetch submission data for this version
         let url = showDeleted 
-          ? `${ENDPOINTS.deletedFormData(id)}?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${currentVersionId}`
-          : `${ENDPOINTS.FORMS}/${id}/data?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}&versionId=${currentVersionId}`;
+          ? `${ENDPOINTS.deletedFormData(id)}`
+          : `${ENDPOINTS.FORMS}/${id}/data`;
 
-        const dataRes = await fetch(url, { credentials: "include" });
-        if (!dataRes.ok) {
-          const errJson = await dataRes.json().catch(() => null);
-          const errText = errJson ? (errJson.message || JSON.stringify(errJson)) : await dataRes.text();
-          throw new Error(errText || `Server returned ${dataRes.status}`);
-        }
+        const dataRes = await apiClient.get(url, {
+          params: {
+            page,
+            size,
+            sortBy,
+            direction,
+            versionId: currentVersionId
+          }
+        });
 
-        const dataJson = await dataRes.json();
-        const responseData = dataJson.data || {};
+        const responseData = dataRes.data.data || {};
         setData(responseData.content || []);
         setTotalPages(responseData.totalPages || 0);
         setTotalElements(responseData.totalElements || 0);
@@ -116,20 +114,12 @@ export default function FormDataPage() {
     if (!id) return;
     setExporting(true);
     try {
-      let url = ENDPOINTS.exportCsv(id);
-      const params = new URLSearchParams();
-      if (selectedVersionId) {
-        params.append("versionId", selectedVersionId);
-      }
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
+      const res = await apiClient.get(ENDPOINTS.exportCsv(id), {
+        params: { versionId: selectedVersionId },
+        responseType: 'blob'
+      });
 
-      const response = await fetch(url, { credentials: "include" });
-      if (!response.ok) throw new Error("Failed to export data from server");
-
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const downloadUrl = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = downloadUrl;
       const dateStr = new Date().toISOString().slice(0, 10);
@@ -175,20 +165,13 @@ export default function FormDataPage() {
     if (!confirm("Are you sure you want to delete this response?")) return;
 
     try {
-      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/response/${responseId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.ok) {
+      const res = await apiClient.delete(`${ENDPOINTS.SUBMISSIONS}/${id}/response/${responseId}`);
+      if (res.data.success) {
         fetchData();
-      } else {
-        const errorMsg = await res.text();
-        alert(`Error: ${errorMsg || "Failed to delete response"}`);
       }
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Error connecting to server");
+      alert(`Error: ${err.message || "Failed to delete response"}`);
     }
   };
 
@@ -198,23 +181,14 @@ export default function FormDataPage() {
 
     setDeleting(true);
     try {
-      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/${id}/responses/bulk-delete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedIds),
-        credentials: "include",
-      });
-
-      if (res.ok) {
+      const res = await apiClient.post(`${ENDPOINTS.SUBMISSIONS}/${id}/responses/bulk-delete`, selectedIds);
+      if (res.data.success) {
         fetchData();
         setSelectedIds([]);
-      } else {
-        const errorMsg = await res.text();
-        alert(`Error: ${errorMsg || "Failed to delete responses"}`);
       }
     } catch (err) {
       console.error("Bulk delete error:", err);
-      alert("Error connecting to server");
+      alert(`Error: ${err.message || "Failed to delete responses"}`);
     } finally {
       setDeleting(false);
     }
@@ -224,20 +198,13 @@ export default function FormDataPage() {
     if (!confirm("Restore this response?")) return;
 
     try {
-      const res = await fetch(ENDPOINTS.restoreResponse(id, responseId), {
-        method: "PUT",
-        credentials: "include",
-      });
-
-      if (res.ok) {
+      const res = await apiClient.put(ENDPOINTS.restoreResponse(id, responseId));
+      if (res.data.success) {
         fetchData();
-      } else {
-        const errorMsg = await res.text();
-        alert(`Error: ${errorMsg || "Failed to restore response"}`);
       }
     } catch (err) {
       console.error("Restore error:", err);
-      alert("Error connecting to server");
+      alert(`Error: ${err.message || "Failed to restore response"}`);
     }
   };
 
@@ -247,23 +214,14 @@ export default function FormDataPage() {
 
     setRestoring(true);
     try {
-      const res = await fetch(ENDPOINTS.bulkRestoreResponses(id), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedIds),
-        credentials: "include",
-      });
-
-      if (res.ok) {
+      const res = await apiClient.post(ENDPOINTS.bulkRestoreResponses(id), selectedIds);
+      if (res.data.success) {
         fetchData();
         setSelectedIds([]);
-      } else {
-        const errorMsg = await res.text();
-        alert(`Error: ${errorMsg || "Failed to restore responses"}`);
       }
     } catch (err) {
       console.error("Bulk restore error:", err);
-      alert("Error connecting to server");
+      alert(`Error: ${err.message || "Failed to restore responses"}`);
     } finally {
       setRestoring(false);
     }
@@ -329,7 +287,7 @@ export default function FormDataPage() {
             )}
 
             <div className="flex items-center gap-3">
-              {selectedIds.length > 0 && (
+              {!showDeleted && selectedIds.length > 0 && (
                 <button
                   onClick={deleteBulkResponses}
                   disabled={deleting}
@@ -359,13 +317,15 @@ export default function FormDataPage() {
                 </button>
               )}
 
-              <Link
-                href={`/forms/${id}`}
-                className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-100 transition-all active:scale-95 shadow-sm"
-              >
-                <ExternalLink size={18} />
-                View Form
-              </Link>
+              {!showDeleted && (
+                <Link
+                  href={`/forms/${id}`}
+                  className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-100 transition-all active:scale-95 shadow-sm"
+                >
+                  <ExternalLink size={18} />
+                  View Form
+                </Link>
+              )}
 
               <button
                 onClick={() => {
@@ -382,19 +342,20 @@ export default function FormDataPage() {
                 {showDeleted ? "Show Active" : "Restore Responses"}
               </button>
 
-              <button
-                onClick={handleExport}
-                disabled={exporting || data.length === 0}
-                className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
-              >
-                {exporting ? (
-                  <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <FileSpreadsheet size={18} className="text-emerald-600" />
-                )}
-                {exporting ? "Exporting..." : "Export CSV"}
-              </button>
-
+              {!showDeleted && (
+                <button
+                  onClick={handleExport}
+                  disabled={exporting || data.length === 0}
+                  className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+                >
+                  {exporting ? (
+                    <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <FileSpreadsheet size={18} className="text-emerald-600" />
+                  )}
+                  {exporting ? "Exporting..." : "Export CSV"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -501,7 +462,7 @@ export default function FormDataPage() {
                               ) : val !== null && val !== undefined ? (
                                 isFile ? (
                                   <a
-                                    href={`http://localhost:9090/api/v1/files/view/${val}`}
+                                    href={`${API_BASE_URL}/api/v1/files/view/${val}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}

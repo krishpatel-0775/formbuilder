@@ -11,6 +11,7 @@ import {
 import { GripVertical, AlertCircle, ArrowRight, Loader2, Save, MousePointer2, Sparkles, GitBranch, Lock } from "lucide-react";
 import { ENDPOINTS } from "../../../../config/apiConfig";
 import Link from "next/link";
+import apiClient from "../../../../utils/apiClient";
 
 // Components
 import { FieldIcons } from "../../../../components/builder/FieldConstants";
@@ -82,11 +83,10 @@ export default function EditFormPage() {
 
     // Auto-versioning: if no versionId, fetch current draft or create new one
     if (!versionId) {
-      fetch(ENDPOINTS.formDraft(id), { credentials: "include" })
-        .then(res => res.json())
-        .then(data => {
-          if (data.data?.id) {
-            router.replace(`/forms/edit/${id}?versionId=${data.data.id}`);
+      apiClient.get(ENDPOINTS.formDraft(id))
+        .then(res => {
+          if (res.data.data?.id) {
+            router.replace(`/forms/edit/${id}?versionId=${res.data.data.id}`);
           } else {
             router.push("/forms/all");
           }
@@ -99,24 +99,20 @@ export default function EditFormPage() {
     const versionUrl = `${ENDPOINTS.formVersion(id, versionId)}`;
 
     // Always fetch form metadata (name, status)
-    fetch(formUrl, { credentials: "include" })
-      .then((res) => { if (!res.ok) { router.push("/forms/all"); return null; } return res.json(); })
+    apiClient.get(formUrl)
       .then(async (res) => {
-        if (!res) return;
-        const formData = res.data;
+        const formData = res.data.data;
         setFormName(formData.formName || "");
         setFormStatus(formData.status || "DRAFT");
 
         // Determine where to load fields from
         let fieldSource = formData; // default: use form fields
         if (versionUrl) {
-          const vRes = await fetch(versionUrl, { credentials: "include" });
-          if (vRes.ok) {
-            const vJson = await vRes.json();
-            fieldSource = vJson.data; // the version, which has .fields and .rules
-            setIsVersionActive(!!vJson.data?.isActive);
-          } else {
-            // If version fetch fails (Access Denied), redirect
+          try {
+            const vRes = await apiClient.get(versionUrl);
+            fieldSource = vRes.data.data; // the version, which has .fields and .rules
+            setIsVersionActive(!!vRes.data.data?.isActive);
+          } catch (err) {
             router.push("/forms/all");
             return;
           }
@@ -190,20 +186,18 @@ export default function EditFormPage() {
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
     if (["select", "radio", "checkbox"].includes(af?.type) && user) {
-      fetch(`http://localhost:9090/api/v1/forms`, { credentials: "include" })
-        .then(r => r.json())
-        .then(r => setAvailableForms(r.data || []))
-        .catch(console.log);
+      apiClient.get(ENDPOINTS.FORMS)
+        .then(res => setAvailableForms(res.data.data || []))
+        .catch(console.error);
     }
   }, [activeFieldId, fields, user]);
 
   useEffect(() => {
     const af = fields.find((f) => f.id === activeFieldId);
     if (["select", "radio", "checkbox"].includes(af?.type) && af?.sourceTable) {
-      fetch(`http://localhost:9090/api/v1/forms/${af.sourceTable}`, { credentials: "include" })
-        .then(r => r.json())
-        .then(r => setSelectedFormFields(r.data?.fields || []))
-        .catch(console.log);
+      apiClient.get(`${ENDPOINTS.FORMS}/${af.sourceTable}`)
+        .then(res => setSelectedFormFields(res.data.data?.fields || []))
+        .catch(console.error);
     } else {
       setSelectedFormFields([]);
     }
@@ -377,13 +371,9 @@ export default function EditFormPage() {
     setIsPublishing(true);
     try {
       await saveForm();
-      const res = await fetch(`http://localhost:9090/api/v1/forms/publish/${id}`, {
-        method: "POST",
-        credentials: "include"
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Cloud synchronization failed.");
+      const res = await apiClient.post(`${ENDPOINTS.FORMS}/publish/${id}`);
+      if (!res.data.success) {
+        throw new Error(res.data.message || "Cloud synchronization failed.");
       }
       setFormStatus("PUBLISHED");
       setShowSuccess(true);
@@ -455,12 +445,10 @@ export default function EditFormPage() {
         ? ENDPOINTS.formVersion(id, versionId)
         : `${ENDPOINTS.FORMS}/${id}`;
 
-      const res = await fetch(updateUrl, {
-        method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(versionId ? formattedFields : { formName: formName.trim(), fields: formattedFields }),
-        credentials: "include"
-      });
-      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || "Failed to update form."); }
+      const res = await apiClient.put(updateUrl, versionId ? formattedFields : { formName: formName.trim(), fields: formattedFields });
+      if (!res.data.success) {
+        throw new Error(res.data.message || "Failed to update form.");
+      }
 
       // Save rules separately
       try {
@@ -489,10 +477,7 @@ export default function EditFormPage() {
           ? ENDPOINTS.formVersionRules(id, versionId)
           : ENDPOINTS.formRules(id);
 
-        await fetch(rulesUrl, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cleanRules), credentials: "include"
-        });
+        await apiClient.post(rulesUrl, cleanRules);
       } catch (e) { console.warn("Failed to save rules:", e); }
 
       savedSnapshot.current = { formName, fields, rules: rules.map(({ _id, ...r }) => r) };
@@ -526,12 +511,17 @@ export default function EditFormPage() {
     if (!window.confirm("Are you sure you want to delete this form? This action cannot be undone and will preserve the dynamic table data.")) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`http://localhost:9090/api/v1/forms/${id}`, { method: "DELETE", credentials: "include" });
-      if (!res.ok) { const errorMsg = await res.text(); throw new Error(errorMsg || "Failed to delete form."); }
+      const res = await apiClient.delete(`${ENDPOINTS.FORMS}/${id}`);
+      if (!res.data.success) {
+        throw new Error(res.data.message || "Failed to delete form.");
+      }
       setShowSuccess(true);
       setTimeout(() => { setShowSuccess(false); router.push("/forms/all"); }, 1000);
-    } catch (err) { alert(`❌ ${err.message}`); }
-    finally { setIsSaving(false); }
+    } catch (err) {
+      alert(`❌ ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const isRightSidebarOpen = activeField && !isDisplayOnly(activeField.type);

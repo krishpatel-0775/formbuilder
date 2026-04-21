@@ -16,7 +16,8 @@ import {
   Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { ENDPOINTS } from "../../../../../config/apiConfig";
+import { ENDPOINTS, API_BASE_URL } from "../../../../../config/apiConfig";
+import apiClient from "../../../../../utils/apiClient";
 
 /**
  * SubmissionDetailPage Component
@@ -36,20 +37,13 @@ export default function SubmissionDetailPage() {
 
     const fetchDetail = async () => {
       try {
-        const res = await fetch(ENDPOINTS.submissionDetail(id, submissionId), { 
-          credentials: "include" 
-        });
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => ({}));
-          throw new Error(errJson.message || "Failed to fetch submission details");
-        }
-        const json = await res.json();
-        setSubmission(json.data);
+        const res = await apiClient.get(ENDPOINTS.submissionDetail(id, submissionId));
+        setSubmission(res.data.data);
       } catch (err) {
-        if (!err.message.includes("please restore form first")) {
+        if (!err.message?.includes("restore form first")) {
           console.error("Fetch error:", err);
         }
-        setError(err.message);
+        setError(err.response?.data?.message || err.message);
       } finally {
         setLoading(false);
       }
@@ -78,7 +72,7 @@ export default function SubmissionDetailPage() {
             <AlertCircle size={40} />
           </div>
           <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">
-            {error?.includes("plze restore form first") ? "Restore Required" : "Access Denied"}
+            {error?.includes("restore form first") ? "Restore Required" : "Access Denied"}
           </h2>
           <p className="text-slate-500 font-medium mb-8 leading-relaxed">
             {error || "The requested submission record could not be found or you do not have permission to view it."}
@@ -177,7 +171,7 @@ export default function SubmissionDetailPage() {
                                         <span className="text-slate-300 italic text-lg">No response provided</span>
                                     ) : isFile ? (
                                         <a 
-                                            href={`http://localhost:9090/api/v1/files/view/${value}`} 
+                                            href={`${API_BASE_URL}/api/v1/files/view/${value}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center gap-3 px-6 py-3 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-2xl hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all text-xs font-black uppercase tracking-widest shadow-sm group/file"

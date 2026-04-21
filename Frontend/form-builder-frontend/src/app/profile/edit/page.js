@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { API_BASE_URL, ENDPOINTS } from "../../../config/apiConfig";
-import { ArrowLeft, Loader2, User, Mail, Phone, Camera, Save, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, User, Mail, Phone, Save, ShieldCheck } from "lucide-react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
+import apiClient from "../../../utils/apiClient";
 
 export default function EditProfilePage() {
     const { user, refetchAuth } = useAuth();
@@ -15,9 +16,7 @@ export default function EditProfilePage() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
-    const [profilePicture, setProfilePicture] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null);
-    
+
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
@@ -28,19 +27,8 @@ export default function EditProfilePage() {
             setFullName(user.fullName || "");
             setEmail(user.email || "");
             setPhoneNumber(user.phoneNumber || "");
-            if (user.profilePictureUrl) {
-                setPreviewUrl(`${API_BASE_URL}${user.profilePictureUrl}`);
-            }
         }
     }, [user]);
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setProfilePicture(file);
-            setPreviewUrl(URL.createObjectURL(file));
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -48,7 +36,6 @@ export default function EditProfilePage() {
         setSuccess("");
         setLoading(true);
 
-        const formData = new FormData();
         const requestData = {
             username,
             fullName,
@@ -56,31 +43,18 @@ export default function EditProfilePage() {
             phoneNumber
         };
 
-        // Spring Boot expects the JSON part as a Blob with application/json type for @RequestPart
-        formData.append("request", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
-        
-        if (profilePicture) {
-            formData.append("profilePicture", profilePicture);
-        }
-
         try {
-            const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
-                method: "PUT",
-                body: formData,
-                credentials: "include"
-            });
+            const res = await apiClient.put(`/api/v1/auth/profile`, requestData);
 
-            const data = await res.json();
-            if (res.ok && data.success) {
+            if (res.data.success) {
                 setSuccess("Profile updated successfully!");
                 await refetchAuth();
                 setTimeout(() => router.push("/profile"), 1500);
             } else {
-                setError(data.message || "Failed to update profile");
+                setError(res.data.message || "Failed to update profile");
             }
         } catch (err) {
-            console.error(err);
-            setError("Network error occurred.");
+            setError(err.message || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
@@ -107,35 +81,6 @@ export default function EditProfilePage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
-                    {/* Profile Picture Upload */}
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="relative group">
-                            <div className="h-32 w-32 rounded-[2.5rem] bg-slate-50 border-2 border-slate-100 flex items-center justify-center text-slate-300 overflow-hidden shadow-inner group-hover:border-primary/30 transition-all">
-                                {previewUrl ? (
-                                    <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
-                                ) : (
-                                    <User size={64} strokeWidth={1} />
-                                )}
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                    <Camera color="white" size={32} />
-                                </div>
-                            </div>
-                            <input 
-                                type="file" 
-                                id="profile-picture" 
-                                accept="image/*" 
-                                className="hidden" 
-                                onChange={handleFileChange}
-                            />
-                            <label 
-                                htmlFor="profile-picture" 
-                                className="absolute -bottom-2 -right-2 h-10 w-10 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shadow-primary/20 border-4 border-white cursor-pointer hover:scale-110 active:scale-95 transition-all"
-                            >
-                                <Camera size={18} />
-                            </label>
-                        </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Click icon to change photo</p>
-                    </div>
 
                     {error && (
                         <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 flex items-start gap-3">

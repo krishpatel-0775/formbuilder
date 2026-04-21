@@ -2,7 +2,6 @@
 
 import { useAuth } from "../../context/AuthContext";
 import { User, Mail, Shield, Briefcase, Phone, Edit3 } from "lucide-react";
-import { API_BASE_URL } from "../../config/apiConfig";
 import NextLink from "next/link";
 
 export default function ProfilePage() {
@@ -17,15 +16,7 @@ export default function ProfilePage() {
                 <div className="text-center space-y-6">
                     <div className="relative inline-block group">
                         <div className="h-32 w-32 rounded-[2.5rem] bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 mx-auto shadow-sm overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/10">
-                            {user.profilePictureUrl ? (
-                                <img
-                                    src={`${API_BASE_URL}${user.profilePictureUrl}`}
-                                    alt={user.username}
-                                    className="h-full w-full object-cover"
-                                />
-                            ) : (
-                                <User size={64} strokeWidth={1} />
-                            )}
+                            <User size={64} strokeWidth={1} />
                         </div>
                         <div className="absolute -bottom-2 -right-2 h-10 w-10 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shadow-primary/20 border-4 border-white">
                             <Shield size={18} />

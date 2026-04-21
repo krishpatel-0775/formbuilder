@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { AlertCircle, CheckCircle2, Star, Zap, ChevronRight, Upload, File, Loader2, Lock, Sparkles, X, Fingerprint, Calculator } from "lucide-react";
+import { ENDPOINTS, API_BASE_URL } from "../../config/apiConfig";
+import apiClient from "../../utils/apiClient";
 
 export function FormFieldWrapper({
   field,
@@ -478,21 +480,15 @@ function FileUploadItem({ field, value, onChange, hasError, inputCls }) {
     formData.append("fieldId", field._dbId || field.id);
 
     try {
-      const res = await fetch("http://localhost:9090/api/v1/files/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include"
+      const res = await apiClient.post(ENDPOINTS.FILES_UPLOAD, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
-      if (res.ok) {
-        const json = await res.json();
-        onChange(fieldIdentifier, json.data.toString());
-      } else {
-        const err = await res.json();
-        setUploadError(err.message || "Upload failed");
+      if (res.data.success) {
+        onChange(fieldIdentifier, res.data.data.toString());
       }
     } catch (err) {
-      setUploadError("Connection error during upload");
+      setUploadError(err.response?.data?.message || "Upload failed");
     } finally {
       setUploading(false);
     }

@@ -31,6 +31,7 @@ import { FormHeader } from "../components/builder/FormHeader";
 import { Sidebar } from "../components/builder/Sidebar";
 import { FormPreview } from "../components/builder/FormPreview";
 import { ENDPOINTS } from "../config/apiConfig";
+import apiClient from "../utils/apiClient";
 
 export default function BuilderPage() {
     const userRole = "SYSTEM_ADMIN";
@@ -81,18 +82,16 @@ export default function BuilderPage() {
 
     useEffect(() => {
         if (["select", "radio", "checkbox"].includes(activeField?.type)) {
-            fetch(ENDPOINTS.FORMS, { credentials: "include" })
-                .then(r => r.json())
-                .then(r => setAvailableForms(r.data || []))
+            apiClient.get(ENDPOINTS.FORMS)
+                .then(res => setAvailableForms(res.data.data || []))
                 .catch(console.error);
         }
     }, [activeField?.id, activeField?.type]);
 
     useEffect(() => {
         if (["select", "radio", "checkbox"].includes(activeField?.type) && activeField?.sourceTable) {
-            fetch(`${ENDPOINTS.FORMS}/${activeField.sourceTable}`, { credentials: "include" })
-                .then(r => r.json())
-                .then(r => setSelectedFormFields(r.data?.fields || []))
+            apiClient.get(`${ENDPOINTS.FORMS}/${activeField.sourceTable}`)
+                .then(res => setSelectedFormFields(res.data.data?.fields || []))
                 .catch(console.error);
         } else {
             setSelectedFormFields([]);
@@ -311,30 +310,24 @@ export default function BuilderPage() {
                 return fd;
             });
 
-            const res = await fetch(ENDPOINTS.FORMS, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    formName: formName.trim(),
-                    fields: formattedFields,
-                    rules
-                }),
-                credentials: "include"
+            const res = await apiClient.post(ENDPOINTS.FORMS, {
+                formName: formName.trim(),
+                fields: formattedFields,
+                rules
             });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.message || "Failed to save form.");
+
+            if (res.data.success) {
+                setShowSuccess(true);
+                setTimeout(() => setShowSuccess(false), 1500);
+                setFormName("");
+                setFields([]);
+                setRules([]);
+                setActiveFieldId(null);
+                savedSnapshot.current = { formName: "", fields: [], rules: [] };
+                setIsDirty(false);
             }
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 1500);
-            setFormName("");
-            setFields([]);
-            setRules([]);
-            setActiveFieldId(null);
-            savedSnapshot.current = { formName: "", fields: [], rules: [] };
-            setIsDirty(false);
         } catch (err) {
-            alert(`❌ ${err.message}`);
+            alert(`❌ ${err.response?.data?.message || err.message}`);
         } finally {
             setIsPublishing(false);
         }

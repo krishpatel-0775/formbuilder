@@ -29,12 +29,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
@@ -49,27 +45,13 @@ public class AuthService {
     private final UserDetailsService userDetailsService;
     private final ModuleService moduleService;
 
-    @org.springframework.beans.factory.annotation.Value("${app.upload.profile-photo-dir}")
-    private String profilePhotoDir;
-
-    @PostConstruct
-    public void init() {
-        File dir = new File(profilePhotoDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-    }
 
     // ================= REGISTER =================
     @Transactional
-    public String register(RegisterRequest request, MultipartFile profilePicture) {
+    public String register(RegisterRequest request) {
         validateNewUser(request);
 
         User user = buildUserFromRequest(request);
-
-        if (profilePicture != null && !profilePicture.isEmpty()) {
-            user.setProfilePictureUrl(saveProfilePicture(profilePicture));
-        }
 
         User savedUser = userRepository.save(user);
         assignDefaultRole(savedUser);
@@ -79,16 +61,12 @@ public class AuthService {
 
     // ================= UPDATE PROFILE =================
     @Transactional
-    public void updateProfile(UUID userId, UpdateUserRequest request, MultipartFile profilePicture) {
+    public void updateProfile(UUID userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ValidationException("User not found"));
 
         validateUpdateUser(user, request);
         updateUserFields(user, request);
-
-        if (profilePicture != null && !profilePicture.isEmpty()) {
-            user.setProfilePictureUrl(saveProfilePicture(profilePicture));
-        }
 
         userRepository.save(user);
     }
@@ -172,9 +150,6 @@ public class AuthService {
                 .fullName(user.getName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .profilePictureUrl(user.getProfilePictureUrl() != null
-                        ? "/api/v1/auth/profile-photo/" + user.getProfilePictureUrl()
-                        : null)
                 .menu(menu)
                 .permissions(permissions)
                 .roles(roles)
@@ -221,26 +196,6 @@ public class AuthService {
         user.setPhoneNumber(request.getPhoneNumber());
     }
 
-    private String saveProfilePicture(MultipartFile file) {
-        try {
-            String originalFileName = file.getOriginalFilename();
-            String extension = "";
-
-            if (originalFileName != null && originalFileName.contains(".")) {
-                extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-            }
-
-            String fileName = UUID.randomUUID() + extension;
-            Path filePath = Paths.get(profilePhotoDir, fileName);
-
-            Files.copy(file.getInputStream(), filePath);
-
-            return fileName;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to save profile picture: " + e.getMessage());
-        }
-    }
 
     private void assignDefaultRole(User user) {
         roleRepository.findByRoleName("FORMS_MANAGER").ifPresent(role -> {

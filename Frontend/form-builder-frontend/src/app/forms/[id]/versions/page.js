@@ -8,6 +8,7 @@ import {
   Loader2, Shield, AlertTriangle, ChevronRight
 } from "lucide-react";
 import { ENDPOINTS } from "../../../../config/apiConfig";
+import apiClient from "../../../../utils/apiClient";
 
 export default function FormVersionsPage() {
   const { id } = useParams();
@@ -24,21 +25,17 @@ export default function FormVersionsPage() {
     setError(null);
     try {
       const [formRes, verRes] = await Promise.all([
-        fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" }),
-        fetch(ENDPOINTS.formVersions(id), { credentials: "include" }),
+        apiClient.get(`${ENDPOINTS.FORMS}/${id}`),
+        apiClient.get(ENDPOINTS.formVersions(id)),
       ]);
-      if (!formRes.ok || !verRes.ok) {
-        router.push("/forms/all");
-        return;
-      }
       
-      const formJson = await formRes.json();
-      setFormName(formJson.data?.formName || `Form #${id}`);
-
-      const verJson = await verRes.json();
-      setVersions((verJson.data || []).reverse()); // latest first
+      setFormName(formRes.data.data?.formName || `Form #${id}`);
+      setVersions((verRes.data.data || []).reverse()); // latest first
     } catch (e) {
       setError(e.message);
+      if (e.response?.status === 404) {
+        router.push("/forms/all");
+      }
     } finally {
       setLoading(false);
     }
@@ -50,18 +47,8 @@ export default function FormVersionsPage() {
     if (!confirm("Create a new version by cloning the latest version?")) return;
     setCreating(true);
     try {
-      const res = await fetch(ENDPOINTS.formVersions(id), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Failed to create version.");
-      }
-      const data = await res.json();
-      const newVersionId = data.data?.id;
+      const res = await apiClient.post(ENDPOINTS.formVersions(id), {});
+      const newVersionId = res.data.data?.id;
       await fetchData();
       // Navigate to edit the new draft version
       if (newVersionId) {
@@ -81,14 +68,7 @@ export default function FormVersionsPage() {
 
     setActivating(versionId);
     try {
-      const res = await fetch(ENDPOINTS.activateVersion(id, versionId), {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Failed to activate version.");
-      }
+      await apiClient.post(ENDPOINTS.activateVersion(id, versionId));
       await fetchData();
     } catch (e) {
       alert(`❌ ${e.message}`);

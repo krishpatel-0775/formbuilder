@@ -29,8 +29,8 @@ import {
     X,
     Grid
 } from "lucide-react";
-import { ENDPOINTS } from "../../../config/apiConfig";
-
+import { ENDPOINTS, API_BASE_URL } from "../../../config/apiConfig";
+import apiClient from "../../../utils/apiClient";
 
 export default function FormVaultPage() {
     const [forms, setForms] = useState([]);
@@ -49,7 +49,6 @@ export default function FormVaultPage() {
     const [selectedFormForLinks, setSelectedFormForLinks] = useState(null);
     const [copiedLinkType, setCopiedLinkType] = useState(null); // 'metadata' | 'submission' | 'json'
 
-
     useEffect(() => {
         setMounted(true);
         fetchForms();
@@ -57,12 +56,9 @@ export default function FormVaultPage() {
 
     const fetchForms = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/v1/forms", {
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (data.success) {
-                setForms(data.data || []);
+            const res = await apiClient.get(ENDPOINTS.FORMS);
+            if (res.data.success) {
+                setForms(res.data.data || []);
             }
         } catch (err) {
             console.error("Error fetching forms:", err);
@@ -74,12 +70,9 @@ export default function FormVaultPage() {
     const fetchDeletedForms = async () => {
         setFetchingDeleted(true);
         try {
-            const res = await fetch(ENDPOINTS.DELETED_FORMS, {
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (data.success) {
-                setDeletedForms(data.data || []);
+            const res = await apiClient.get(ENDPOINTS.DELETED_FORMS);
+            if (res.data.success) {
+                setDeletedForms(res.data.data || []);
             }
         } catch (err) {
             console.error("Error fetching deleted forms:", err);
@@ -90,64 +83,51 @@ export default function FormVaultPage() {
 
     const handleRestore = async (id) => {
         try {
-            const res = await fetch(ENDPOINTS.restoreForm(id), {
-                method: "PUT",
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
+            const res = await apiClient.put(ENDPOINTS.restoreForm(id));
+            if (res.data.success) {
                 setDeletedForms(prev => prev.filter(f => f.id !== id));
                 fetchForms(); // Refresh the main list
                 alert("✅ Form restored successfully!");
             } else {
-                alert(`❌ ${data.message || "Failed to restore form."}`);
+                alert(`❌ ${res.data.message || "Failed to restore form."}`);
             }
         } catch (err) {
             console.error("Error restoring form:", err);
-            alert("❌ An unexpected error occurred while restoring the form.");
+            alert(`❌ ${err.message || "An unexpected error occurred while restoring the form."}`);
         }
     };
 
-
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure ? This action is irreversible.")) return;
+        if (!window.confirm("Are you sure? This action is irreversible.")) return;
 
         try {
-            const res = await fetch(`http://localhost:9090/api/v1/forms/${id}`, {
-                method: "DELETE",
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
+            const res = await apiClient.delete(`${ENDPOINTS.FORMS}/${id}`);
+            if (res.data.success) {
                 setForms(prev => prev.filter(f => f.id !== id));
             } else {
-                alert(`❌ ${data.message || "Failed to delete form."}`);
+                alert(`❌ ${res.data.message || "Failed to delete form."}`);
             }
         } catch (err) {
             console.error("Error deleting form:", err);
-            alert("❌ An unexpected error occurred while deleting the form.");
+            alert(`❌ ${err.message || "An unexpected error occurred while deleting the form."}`);
         }
     };
 
     const handlePublish = async (id) => {
-        if (!window.confirm("Are you want to publish this form ?")) return;
+        if (!window.confirm("Do you want to publish this form?")) return;
 
         setPublishingState(prev => ({ ...prev, [id]: true }));
         try {
-            const res = await fetch(`http://localhost:9090/api/v1/forms/publish/${id}`, {
-                method: "POST",
-                credentials: "include"
-            });
+            const res = await apiClient.post(`${ENDPOINTS.FORMS}/publish/${id}`);
 
-            if (res.ok) {
+            if (res.data.success) {
                 setForms(prev => prev.map(f => f.id === id ? { ...f, status: "PUBLISHED" } : f));
             } else {
-                const err = await res.json().catch(() => ({}));
-                alert(`❌ ${err.message || "Cloud synchronization failed."}`);
+                alert(`❌ ${res.data.message || "Cloud synchronization failed."}`);
             }
         } catch (err) {
             console.error("Error publishing form:", err);
-            alert("❌ An unexpected error occurred during synchronization.");
+            alert(`❌ ${err.message || "An unexpected error occurred during synchronization."}`);
         } finally {
             setPublishingState(prev => ({ ...prev, [id]: false }));
         }
@@ -636,10 +616,10 @@ export default function FormVaultPage() {
                                 </div>
                                 <div className="relative group">
                                     <div className="w-full pl-8 pr-24 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl text-[12px] font-bold text-slate-600 font-mono break-all leading-loose shadow-inner">
-                                        <span className="text-[var(--primary)] mr-3 font-[900]">GET</span> {`http://localhost:9090/api/v1/forms/${selectedFormForLinks.id}`}
+                                        <span className="text-[var(--primary)] mr-3 font-[900]">GET</span> {`${API_BASE_URL}/forms/${selectedFormForLinks.id}`}
                                     </div>
                                     <button 
-                                        onClick={() => handleCopyApiLink(`http://localhost:9090/api/v1/forms/${selectedFormForLinks.id}`, 'metadata')}
+                                        onClick={() => handleCopyApiLink(`${API_BASE_URL}/forms/${selectedFormForLinks.id}`, 'metadata')}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 p-4 bg-white border border-slate-200 rounded-[1.25rem] text-slate-400 hover:text-[var(--primary)] hover:border-[#2463eb44] transition-all shadow-xl shadow-slate-200/20 active:scale-90"
                                     >
                                         {copiedLinkType === 'metadata' ? <Check size={20} className="text-emerald-500" strokeWidth={3} /> : <Copy size={20} strokeWidth={2.5} />}
@@ -655,10 +635,10 @@ export default function FormVaultPage() {
                                 </div>
                                 <div className="relative group">
                                     <div className="w-full pl-8 pr-24 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl text-[12px] font-bold text-slate-600 font-mono break-all leading-loose shadow-inner">
-                                        <span className="text-emerald-500 mr-3 font-[900]">POST</span> http://localhost:9090/api/v1/submissions
+                                        <span className="text-emerald-500 mr-3 font-[900]">POST</span> {`${API_BASE_URL}/submissions`}
                                     </div>
                                     <button 
-                                        onClick={() => handleCopyApiLink("http://localhost:9090/api/v1/submissions", 'submission')}
+                                        onClick={() => handleCopyApiLink(`${API_BASE_URL}/submissions`, 'submission')}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 p-4 bg-white border border-slate-200 rounded-[1.25rem] text-slate-400 hover:text-[var(--primary)] hover:border-[#2463eb44] transition-all shadow-xl shadow-slate-200/20 active:scale-90"
                                     >
                                         {copiedLinkType === 'submission' ? <Check size={20} className="text-emerald-500" strokeWidth={3} /> : <Copy size={20} strokeWidth={2.5} />}

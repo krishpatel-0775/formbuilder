@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ENDPOINTS } from "../../../config/apiConfig";
 import { FormFieldWrapper } from "../../../components/builder/FormFieldWrapper";
 import { useAuth } from "../../../context/AuthContext";
+import apiClient from "../../../utils/apiClient";
 
 const evaluateConditionNode = (node, values) => {
   if (!node) return false;
@@ -179,14 +180,9 @@ export default function PublicFormPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${ENDPOINTS.FORMS}/${id}`, { credentials: "include" })
+    apiClient.get(`${ENDPOINTS.FORMS}/${id}`)
       .then(async (res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then(async (res) => {
-        if (!res) { setLoading(false); return; }
-        const data = res.data;
+        const data = res.data.data;
 
         if (data.status !== "PUBLISHED") { setLoading(false); return; }
 
@@ -196,11 +192,8 @@ export default function PublicFormPage() {
             data.fields.map(async (field) => {
               if (["select", "radio", "checkbox"].includes(field.fieldType) && field.sourceTable && field.sourceColumn) {
                 try {
-                  const optRes = await fetch(`${ENDPOINTS.FORMS}/${field.sourceTable}/lookup/${field.sourceColumn}`, { credentials: "include" });
-                  if (optRes.ok) {
-                    const optJson = await optRes.json();
-                    field.options = optJson.data || [];
-                  }
+                  const optRes = await apiClient.get(`${ENDPOINTS.FORMS}/${field.sourceTable}/lookup/${field.sourceColumn}`);
+                  field.options = optRes.data.data || [];
                 } catch (err) {
                   console.error("Failed to fetch dynamic options for", field.fieldName, err);
                 }
@@ -285,19 +278,16 @@ export default function PublicFormPage() {
 
     const fetchDraft = async () => {
       try {
-        const draftRes = await fetch(`${ENDPOINTS.SUBMISSIONS}/draft?formId=${id}`, { credentials: "include" });
-        if (draftRes.ok) {
-          const draftJson = await draftRes.json();
-          if (draftJson.success && draftJson.data) {
-            const draft = draftJson.data;
-            const activeVersion = formConfig.formVersionId || null;
-            if (activeVersion === null || draft.formVersionId === activeVersion) {
-              setFormData(prev => ({ ...prev, ...draft.data }));
-              setDraftSubmissionId(draft.submissionId);
-              setDraftBanner({ type: "success", message: "You have a saved draft. Resuming where you left off." });
-            } else {
-              setDraftBanner({ type: "warning", message: "Your previous draft was for an older version of this form and cannot be restored." });
-            }
+        const res = await apiClient.get(`${ENDPOINTS.SUBMISSIONS}/draft`, { params: { formId: id } });
+        if (res.data.success && res.data.data) {
+          const draft = res.data.data;
+          const activeVersion = formConfig.formVersionId || null;
+          if (activeVersion === null || draft.formVersionId === activeVersion) {
+            setFormData(prev => ({ ...prev, ...draft.data }));
+            setDraftSubmissionId(draft.submissionId);
+            setDraftBanner({ type: "success", message: "You have a saved draft. Resuming where you left off." });
+          } else {
+            setDraftBanner({ type: "warning", message: "Your previous draft was for an older version of this form and cannot be restored." });
           }
         }
       } catch (err) {
@@ -608,52 +598,39 @@ export default function PublicFormPage() {
     );
 
     try {
-      const res = await fetch(ENDPOINTS.SUBMISSIONS, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: id, versionId: formConfig.formVersionId, values: submissionData }),
-        credentials: "include"
+      const res = await apiClient.post(ENDPOINTS.SUBMISSIONS, { 
+        formId: id, 
+        versionId: formConfig.formVersionId, 
+        values: submissionData 
       });
 
-      if (res.ok) {
-        if (user) {
-          setIsSubmitted(true);
-          window.scrollTo({ top: 0, behavior: "smooth" });
+      if (res.data.success) {
+        setIsSubmitted(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
 
+        if (user) {
           setTimeout(() => {
             router.push("/forms/all");
           }, 1200);
-        } else {
-          setIsSubmitted(true);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-      } else {
-        const errorText = await res.text();
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.errors && Object.keys(errorData.errors).length > 0) {
-             setErrors((prev) => ({ ...prev, ...errorData.errors }));
-             
-             // Check for form-level errors
-             if (errorData.errors["_FORM_ERROR_"]) {
-               setErrors((prev) => ({ ...prev, _ruleError: errorData.errors["_FORM_ERROR_"] }));
-             }
-            
-            // Scroll to the first field error if any
-            const fieldError = Object.keys(errorData.errors).find(k => k !== "_FORM_ERROR_");
-            if (fieldError) {
-                const el = document.getElementById(`field-${fieldError}`);
-                if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          } else {
-            setErrors((prev) => ({ ...prev, _ruleError: [errorData.message || "Submission failed"] }));
-          }
-        } catch (e) {
-          setErrors((prev) => ({ ...prev, _ruleError: [errorText || "Submission failed"] }));
         }
       }
     } catch (err) {
-      alert("Connection failed. Check backend/CORS settings.");
+      const errorData = err.response?.data;
+      if (errorData?.errors && Object.keys(errorData.errors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...errorData.errors }));
+        
+        if (errorData.errors["_FORM_ERROR_"]) {
+          setErrors((prev) => ({ ...prev, _ruleError: errorData.errors["_FORM_ERROR_"] }));
+        }
+        
+        const fieldError = Object.keys(errorData.errors).find(k => k !== "_FORM_ERROR_");
+        if (fieldError) {
+          const el = document.getElementById(`field-${fieldError}`);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      } else {
+        setErrors((prev) => ({ ...prev, _ruleError: [err.message || "Submission failed"] }));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -676,33 +653,23 @@ export default function PublicFormPage() {
     const activeVersionId = formConfig.formVersionId || null;
 
     try {
-      const res = await fetch(`${ENDPOINTS.SUBMISSIONS}/draft`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formId: id,
-          formVersionId: activeVersionId,
-          data: submissionData
-        }),
-        credentials: "include"
+      const res = await apiClient.post(`${ENDPOINTS.SUBMISSIONS}/draft`, {
+        formId: id,
+        formVersionId: activeVersionId,
+        data: submissionData
       });
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success) {
-          setDraftSubmissionId(json.data.submissionId);
-          setIsDirty(false);
-          setLastSavedData(JSON.stringify(formData));
-          if (!isQuiet) {
-            setDraftSaveMessage({ type: "success", message: "Draft saved successfully" });
-            setTimeout(() => setDraftSaveMessage(null), 3000);
-          }
+      if (res.data.success) {
+        setDraftSubmissionId(res.data.data.submissionId);
+        setIsDirty(false);
+        setLastSavedData(JSON.stringify(formData));
+        if (!isQuiet) {
+          setDraftSaveMessage({ type: "success", message: "Draft saved successfully" });
+          setTimeout(() => setDraftSaveMessage(null), 3000);
         }
-      } else {
-        if (!isQuiet) setDraftSaveMessage({ type: "error", message: "Failed to save draft" });
       }
     } catch (err) {
-      if (!isQuiet) setDraftSaveMessage({ type: "error", message: "Connection error while saving draft" });
+      if (!isQuiet) setDraftSaveMessage({ type: "error", message: err.message || "Failed to save draft" });
     } finally {
       setIsDraftSaving(false);
     }

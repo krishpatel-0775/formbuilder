@@ -16,25 +16,28 @@ import {
   ArrowRight
 } from "lucide-react";
 import NextLink from "next/link";
- 
+import apiClient from "../../utils/apiClient";
+
 export default function Dashboard() {
     const { user } = useAuth();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
- 
+
     useEffect(() => {
-        fetch(ENDPOINTS.DASHBOARD_STATS, { credentials: "include" })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    setStats(data.data);
+        const fetchStats = async () => {
+            try {
+                const res = await apiClient.get(ENDPOINTS.DASHBOARD_STATS);
+                if (res.data.success) {
+                    setStats(res.data.data);
                 }
-                setLoading(false);
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error("Failed to fetch dashboard stats", err);
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        fetchStats();
     }, []);
  
     if (loading) {

@@ -19,7 +19,6 @@ public class UserDetailResponse {
     private String fullName;
     private String email;
     private String phoneNumber;
-    private String profilePictureUrl;
     private List<String> permissions; // Flat list of prefixes/module names
     private List<String> roles; // List of assigned role names
     private List<Map<String, Object>> menu; // Hierarchical menu

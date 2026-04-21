@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import apiClient from "../utils/apiClient";
+import { ENDPOINTS } from "../config/apiConfig";
 
 export default function FormsPage() {
 
   const [forms, setForms] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:9090/api/v1/forms")
-      .then(res => res.json())
-      .then(data => setForms(data));
+    apiClient.get(ENDPOINTS.FORMS)
+      .then(res => setForms(res.data.data || []));
   }, []);
 
   return (

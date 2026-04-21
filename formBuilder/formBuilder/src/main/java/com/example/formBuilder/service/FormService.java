@@ -234,6 +234,11 @@ public class FormService {
             direction = "asc";
         }
 
+        // Prevent SQL Injection on sortBy
+        if (sortBy == null || !sortBy.matches("^[a-zA-Z][a-zA-Z0-9_]*$")) {
+            sortBy = "created_at";
+        }
+
         int offset = page * size;
 
         String condition = deletedOnly ? "is_deleted = true" : "is_deleted = false";

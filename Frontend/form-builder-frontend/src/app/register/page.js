@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { ENDPOINTS } from "../../config/apiConfig";
-import { ArrowRight, Loader2, ShieldCheck, User, Phone, Camera } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck, User, Phone } from "lucide-react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
+
+import apiClient from "../../utils/apiClient";
 
 export default function RegisterPage() {
     const [username, setUsername] = useState("");
@@ -12,7 +14,6 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [password, setPassword] = useState("");
-    const [profilePicture, setProfilePicture] = useState(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -22,7 +23,6 @@ export default function RegisterPage() {
         setError("");
         setLoading(true);
 
-        const formData = new FormData();
         const requestData = {
             username,
             fullName,
@@ -31,31 +31,16 @@ export default function RegisterPage() {
             password
         };
 
-        // Spring Boot expects the JSON part as a Blob with application/json type for @RequestPart
-        formData.append("request", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
-        
-        if (profilePicture) {
-            formData.append("profilePicture", profilePicture);
-        }
-
         try {
-            const res = await fetch(ENDPOINTS.AUTH_REGISTER, {
-                method: "POST",
-                // Note: Do NOT set Content-Type header when sending FormData. 
-                // The browser will automatically set it to multipart/form-data with the correct boundary.
-                body: formData,
-                credentials: "include"
-            });
+            const res = await apiClient.post(ENDPOINTS.AUTH_REGISTER, requestData);
 
-            const data = await res.json();
-            if (res.ok && data.success) {
+            if (res.data.success) {
                 router.push("/login");
             } else {
-                setError(data.message || "Registration failed");
+                setError(res.data.message || "Registration failed");
             }
         } catch (err) {
-            console.error(err);
-            setError("Network error occurred.");
+            setError(err.message || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
@@ -129,27 +114,6 @@ export default function RegisterPage() {
                             placeholder="••••••••" />
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">Profile Picture</label>
-                        <div className="relative group">
-                            <input 
-                                type="file" 
-                                accept="image/*"
-                                onChange={(e) => setProfilePicture(e.target.files[0])}
-                                className="hidden" 
-                                id="profile-upload"
-                            />
-                            <label 
-                                htmlFor="profile-upload"
-                                className="flex items-center gap-3 w-full bg-slate-50 border border-slate-200 border-dashed p-3.5 rounded-xl text-sm font-bold text-slate-500 cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 transition-all shadow-sm"
-                            >
-                                <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center group-hover:border-emerald-200 transition-all">
-                                    <Camera size={20} className="text-slate-400 group-hover:text-emerald-500" />
-                                </div>
-                                <span>{profilePicture ? profilePicture.name : "Choose an image..."}</span>
-                            </label>
-                        </div>
-                    </div>
 
                     <button type="submit" disabled={loading}
                         className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-xl text-sm font-black transition-all shadow-md hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98] mt-4">

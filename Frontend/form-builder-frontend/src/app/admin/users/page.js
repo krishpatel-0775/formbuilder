@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { User, Shield, Check, X, Search, ChevronRight } from "lucide-react";
+import { ENDPOINTS } from "../../../config/apiConfig";
+import apiClient from "../../../utils/apiClient";
 
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
@@ -19,14 +21,12 @@ export default function UsersPage() {
     const fetchData = async () => {
         try {
             const [uRes, rRes] = await Promise.all([
-                fetch("http://localhost:9090/api/v1/users", { credentials: "include" }),
-                fetch("http://localhost:9090/api/v1/roles", { credentials: "include" })
+                apiClient.get(ENDPOINTS.USERS),
+                apiClient.get(ENDPOINTS.ROLES)
             ]);
-            const uData = await uRes.json();
-            const rData = await rRes.json();
 
-            if (uData.success) setUsers(uData.data);
-            if (rData.success) setRoles(rData.data);
+            if (uRes.data.success) setUsers(uRes.data.data);
+            if (rRes.data.success) setRoles(rRes.data.data);
         } catch (err) {
             console.error("Error fetching user data:", err);
         } finally {
@@ -48,14 +48,8 @@ export default function UsersPage() {
 
     const handleSaveMapping = async () => {
         try {
-            const res = await fetch(`http://localhost:9090/api/v1/users/${selectedUser.id}/roles`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(assignedRoleIds)
-            });
-            const data = await res.json();
-            if (data.success) {
+            const res = await apiClient.post(`${ENDPOINTS.USERS}/${selectedUser.id}/roles`, assignedRoleIds);
+            if (res.data.success) {
                 fetchData();
                 setShowModal(false);
             }

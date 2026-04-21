@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Check, X, ChevronRight, ChevronDown, Layout, Sidebar, Box } from "lucide-react";
 import { DynamicIcon } from "../../Sidebar";
+import { ENDPOINTS } from "../../../config/apiConfig";
+import apiClient from "../../../utils/apiClient";
 
 export default function ModulesPage() {
     const [modules, setModules] = useState([]);
@@ -30,13 +32,9 @@ export default function ModulesPage() {
 
     const fetchModules = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/v1/modules", {
-                headers: { "Content-Type": "application/json" },
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (data.success) {
-                setModules(data.data);
+            const res = await apiClient.get(ENDPOINTS.MODULES);
+            if (res.data.success) {
+                setModules(res.data.data);
             }
         } catch (err) {
             console.error("Error fetching modules:", err);
@@ -47,20 +45,12 @@ export default function ModulesPage() {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        const url = editingModule 
-            ? `http://localhost:9090/api/v1/modules/${editingModule.id}`
-            : "http://localhost:9090/api/v1/modules";
-        const method = editingModule ? "PUT" : "POST";
-
         try {
-            const res = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(formData)
-            });
-            const data = await res.json();
-            if (data.success) {
+            const res = editingModule 
+                ? await apiClient.put(`${ENDPOINTS.MODULES}/${editingModule.id}`, formData)
+                : await apiClient.post(ENDPOINTS.MODULES, formData);
+            
+            if (res.data.success) {
                 fetchModules();
                 setShowModal(false);
                 resetForm();
@@ -74,13 +64,8 @@ export default function ModulesPage() {
         if (!window.confirm("Are you sure you want to delete this module? This will also delete all sub-modules.")) return;
 
         try {
-            const res = await fetch(`http://localhost:9090/api/v1/modules/${id}`, {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include"
-            });
-            const data = await res.json();
-            if (data.success) {
+            const res = await apiClient.delete(`${ENDPOINTS.MODULES}/${id}`);
+            if (res.data.success) {
                 fetchModules();
             }
         } catch (err) {

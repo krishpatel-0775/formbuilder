@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Shield, X, Check, Search } from "lucide-react";
+import { ENDPOINTS } from "../../../config/apiConfig";
+import apiClient from "../../../utils/apiClient";
 
 export default function RolesPage() {
     const [roles, setRoles] = useState([]);
@@ -24,35 +26,27 @@ export default function RolesPage() {
 
     const fetchRoles = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/v1/roles", { credentials: "include" });
-            const data = await res.json();
-            if (data.success) setRoles(data.data);
+            const res = await apiClient.get(ENDPOINTS.ROLES);
+            if (res.data.success) setRoles(res.data.data);
         } catch (err) { console.error("Error fetching roles:", err); }
         finally { setLoading(false); }
     };
 
     const fetchModules = async () => {
         try {
-            const res = await fetch("http://localhost:9090/api/v1/modules", { credentials: "include" });
-            const data = await res.json();
-            if (data.success) setModules(data.data);
+            const res = await apiClient.get(ENDPOINTS.MODULES);
+            if (res.data.success) setModules(res.data.data);
         } catch (err) { console.error("Error fetching modules:", err); }
     };
 
     const handleSaveRole = async (e) => {
         e.preventDefault();
-        const url = editingRole ? `http://localhost:9090/api/v1/roles/${editingRole.id}` : "http://localhost:9090/api/v1/roles";
-        const method = editingRole ? "PUT" : "POST";
-
         try {
-            const res = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(formData)
-            });
-            const data = await res.json();
-            if (data.success) {
+            const res = editingRole 
+                ? await apiClient.put(`${ENDPOINTS.ROLES}/${editingRole.id}`, formData)
+                : await apiClient.post(ENDPOINTS.ROLES, formData);
+
+            if (res.data.success) {
                 fetchRoles();
                 setShowModal(false);
                 setFormData({ roleName: "", roleDescription: "" });
@@ -64,10 +58,9 @@ export default function RolesPage() {
     const openMapping = async (role) => {
         setSelectedRole(role);
         try {
-            const res = await fetch(`http://localhost:9090/api/v1/roles/${role.id}/modules`, { credentials: "include" });
-            const data = await res.json();
-            if (data.success) {
-                setAssignedModuleIds(data.data.map(m => m.id));
+            const res = await apiClient.get(`${ENDPOINTS.ROLES}/${role.id}/modules`);
+            if (res.data.success) {
+                setAssignedModuleIds(res.data.data.map(m => m.id));
                 setShowMappingModal(true);
             }
         } catch (err) { console.error("Error fetching assigned modules:", err); }
@@ -75,14 +68,8 @@ export default function RolesPage() {
 
     const handleSaveMapping = async () => {
         try {
-            const res = await fetch(`http://localhost:9090/api/v1/roles/${selectedRole.id}/modules`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(assignedModuleIds)
-            });
-            const data = await res.json();
-            if (data.success) {
+            const res = await apiClient.post(`${ENDPOINTS.ROLES}/${selectedRole.id}/modules`, assignedModuleIds);
+            if (res.data.success) {
                 setShowMappingModal(false);
             }
         } catch (err) { console.error("Error saving mapping:", err); }

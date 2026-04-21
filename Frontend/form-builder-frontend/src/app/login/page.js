@@ -6,6 +6,7 @@ import { ENDPOINTS } from "../../config/apiConfig";
 import { ArrowRight, Loader2, Link as LinkIcon, ShieldAlert } from "lucide-react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
+import apiClient from "../../utils/apiClient";
 
 export default function LoginPage() {
     const [identifier, setIdentifier] = useState("");
@@ -21,22 +22,16 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await fetch(ENDPOINTS.AUTH_LOGIN, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ identifier, password }),
-                credentials: "include"
-            });
+            const res = await apiClient.post(ENDPOINTS.AUTH_LOGIN, { identifier, password });
 
-            const data = await res.json();
-            if (res.ok && data.success) {
+            if (res.data.success) {
                 await refetchAuth();
                 router.push("/forms/all");
             } else {
-                setError(data.message || "Invalid credentials");
+                setError(res.data.message || "Invalid credentials");
             }
         } catch (err) {
-            setError("Network error occurred.");
+            setError(err.message || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
