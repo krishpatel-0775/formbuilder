@@ -23,5 +23,6 @@ public class FormResponseDto {
     private FormStatus status;
     private String rules;
     private UUID formVersionId;
+    private Integer activeVersionNumber;
     private List<FormFieldResponseDto> fields;
 }

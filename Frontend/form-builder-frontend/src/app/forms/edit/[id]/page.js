@@ -30,10 +30,17 @@ const isDisplayOnly = (type) => DISPLAY_ONLY_TYPES.has(type);
 // ─── Main EditFormPage ─────────────────────────────────────────────────────────
 export default function EditFormPage() {
   const { id } = useParams();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
-  const userRole = "SYSTEM_ADMIN"; // Standardized role name
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  const userRole = "SYSTEM_ADMIN";
 
   // Version context — if versionId is in the query, we're editing a specific draft version
   const versionId = searchParams.get("versionId");
@@ -56,8 +63,39 @@ export default function EditFormPage() {
   const [isDirty, setIsDirty] = useState(false);
   const savedSnapshot = useRef(null);
 
+  const activeField = useMemo(() => fields.find((f) => f.id === activeFieldId), [fields, activeFieldId]);
+  const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
+
   useEffect(() => {
-    if (!savedSnapshot.current || isVersionActive) return;
+    if (user && ["select", "radio", "checkbox"].includes(activeField?.type)) {
+      apiClient.get(ENDPOINTS.FORMS)
+        .then(res => setAvailableForms(res.data.data || []))
+        .catch(console.error);
+    }
+  }, [activeFieldId, fields, user]);
+
+  useEffect(() => {
+    if (user && ["select", "radio", "checkbox"].includes(activeField?.type) && activeField?.sourceTable) {
+      apiClient.get(`${ENDPOINTS.FORMS}/${activeField.sourceTable}`)
+        .then(res => setSelectedFormFields(res.data.data?.fields || []))
+        .catch(console.error);
+    } else {
+      setSelectedFormFields([]);
+    }
+  }, [activeFieldId, fields.find((f) => f.id === activeFieldId)?.sourceTable, user]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-background relative overflow-hidden">
+        <div className="relative z-10 text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+          <p className="text-[10px] font-black tracking-widest uppercase text-slate-400">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  useEffect(() => {
     const current = JSON.stringify({ formName, fields, rules: rules.map(({ _id, ...r }) => r) });
     const saved = JSON.stringify(savedSnapshot.current);
     setIsDirty(current !== saved);
@@ -184,28 +222,6 @@ export default function EditFormPage() {
       .catch((err) => { console.log(err); router.push("/forms/all"); });
   }, [id, user, versionId]);
 
-  useEffect(() => {
-    const af = fields.find((f) => f.id === activeFieldId);
-    if (["select", "radio", "checkbox"].includes(af?.type) && user) {
-      apiClient.get(ENDPOINTS.FORMS)
-        .then(res => setAvailableForms(res.data.data || []))
-        .catch(console.error);
-    }
-  }, [activeFieldId, fields, user]);
-
-  useEffect(() => {
-    const af = fields.find((f) => f.id === activeFieldId);
-    if (["select", "radio", "checkbox"].includes(af?.type) && af?.sourceTable) {
-      apiClient.get(`${ENDPOINTS.FORMS}/${af.sourceTable}`)
-        .then(res => setSelectedFormFields(res.data.data?.fields || []))
-        .catch(console.error);
-    } else {
-      setSelectedFormFields([]);
-    }
-  }, [activeFieldId, fields.find((f) => f.id === activeFieldId)?.sourceTable]);
-
-  const activeField = useMemo(() => fields.find((f) => f.id === activeFieldId), [fields, activeFieldId]);
-  const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

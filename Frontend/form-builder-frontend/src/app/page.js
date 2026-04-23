@@ -32,8 +32,13 @@ import { Sidebar } from "../components/builder/Sidebar";
 import { FormPreview } from "../components/builder/FormPreview";
 import { ENDPOINTS } from "../config/apiConfig";
 import apiClient from "../utils/apiClient";
+import { useAuth } from "../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function BuilderPage() {
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
+
     const userRole = "SYSTEM_ADMIN";
     const [formName, setFormName] = useState("");
     const [fields, setFields] = useState([]);
@@ -48,6 +53,33 @@ export default function BuilderPage() {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const savedSnapshot = useRef(null);
+
+    const activeField = useMemo(() => fields.find((f) => f.id === activeFieldId), [fields, activeFieldId]);
+    const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push("/login");
+        }
+    }, [user, authLoading, router]);
+
+    useEffect(() => {
+        if (user && ["select", "radio", "checkbox"].includes(activeField?.type)) {
+            apiClient.get(ENDPOINTS.FORMS)
+                .then(res => setAvailableForms(res.data.data || []))
+                .catch(console.error);
+        }
+    }, [activeField?.id, activeField?.type, user]);
+
+    useEffect(() => {
+        if (user && ["select", "radio", "checkbox"].includes(activeField?.type) && activeField?.sourceTable) {
+            apiClient.get(`${ENDPOINTS.FORMS}/${activeField.sourceTable}`)
+                .then(res => setSelectedFormFields(res.data.data?.fields || []))
+                .catch(console.error);
+        } else {
+            setSelectedFormFields([]);
+        }
+    }, [activeField?.sourceTable, activeField?.id, activeField?.type, user]);
 
     useEffect(() => {
         savedSnapshot.current = { formName: "", fields: [], rules: [] };
@@ -77,26 +109,13 @@ export default function BuilderPage() {
 
     const isDisplayOnly = (type) => ["page_break", "heading", "paragraph", "divider"].includes(type);
 
-    const activeField = useMemo(() => fields.find((f) => f.id === activeFieldId), [fields, activeFieldId]);
-    const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
-
-    useEffect(() => {
-        if (["select", "radio", "checkbox"].includes(activeField?.type)) {
-            apiClient.get(ENDPOINTS.FORMS)
-                .then(res => setAvailableForms(res.data.data || []))
-                .catch(console.error);
-        }
-    }, [activeField?.id, activeField?.type]);
-
-    useEffect(() => {
-        if (["select", "radio", "checkbox"].includes(activeField?.type) && activeField?.sourceTable) {
-            apiClient.get(`${ENDPOINTS.FORMS}/${activeField.sourceTable}`)
-                .then(res => setSelectedFormFields(res.data.data?.fields || []))
-                .catch(console.error);
-        } else {
-            setSelectedFormFields([]);
-        }
-    }, [activeField?.sourceTable, activeField?.id, activeField?.type]);
+    if (authLoading || !user) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-[#f8fafc]">
+                <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

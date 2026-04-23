@@ -27,12 +27,30 @@ import {
     Globe,
     Send,
     X,
-    Grid
+    Grid,
+    Database,
+    Settings2,
+    ChevronRight,
+    Layers,
+    Sparkles
 } from "lucide-react";
+import { useAuth } from "../../../context/AuthContext";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { ENDPOINTS, API_BASE_URL } from "../../../config/apiConfig";
 import apiClient from "../../../utils/apiClient";
+import Swal from "sweetalert2";
 
 export default function FormVaultPage() {
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push("/login");
+        }
+    }, [user, authLoading, router]);
+
     const [forms, setForms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
@@ -43,6 +61,21 @@ export default function FormVaultPage() {
     const [showRestoreModal, setShowRestoreModal] = useState(false);
     const [deletedForms, setDeletedForms] = useState([]);
     const [fetchingDeleted, setFetchingDeleted] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            setMounted(true);
+            fetchForms();
+        }
+    }, [user]);
+
+    if (authLoading || !user) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-[#f8fafc]">
+                <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
     
     // API Links Modal State
     const [showApiModal, setShowApiModal] = useState(false);
@@ -247,7 +280,7 @@ export default function FormVaultPage() {
             {/* Scrollable Content Section: Grid/List */}
             <div className="flex-1 overflow-y-auto custom-scrollbar no-scrollbar p-6 lg:p-10 pt-4 pb-24">
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="h-80 bg-white rounded-[3rem] border border-slate-100 animate-pulse shadow-sm" />
                         ))}
@@ -261,127 +294,61 @@ export default function FormVaultPage() {
                         <p className="text-slate-500 mt-2 font-semibold">Ready to start building something great?</p>
                     </div>
                 ) : viewMode === "grid" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                         {filteredForms.map(form => (
-                            <div key={form.id} className="group relative flex flex-col bg-white rounded-[3.5rem] border border-slate-200/80 hover:border-[#2463eb55] transition-all duration-500 hover:shadow-[0_45px_100px_-20px_rgba(36,99,235,0.12)] hover:-translate-y-2 overflow-hidden">
-                                
-                                {/* Status Accent Strip */}
-                                <div className={`absolute top-0 left-0 w-full h-[6px] transition-all duration-700 ${form.status === "PUBLISHED" ? "bg-[#2463eb]" : "bg-slate-200"}`} />
-
-                                <div className="p-9 pb-6 flex-1">
-                                    <div className="flex justify-between items-start mb-8">
-                                        <div className="w-16 h-16 bg-[#2463eb0a] rounded-[1.75rem] flex items-center justify-center text-[var(--primary)] group-hover:scale-110 group-hover:bg-[#2463eb15] transition-all duration-500 border border-[#2463eb0d]">
-                                            <FileText size={32} strokeWidth={2} />
-                                        </div>
-                                        <div className={`px-5 py-2 rounded-full text-[10px] font-[900] uppercase tracking-[0.15em] border transition-all ${
-                                            form.status === "PUBLISHED" 
-                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.1)]" 
-                                            : "bg-slate-50 text-slate-400 border-slate-100"
-                                        }`}>
-                                            <span className="flex items-center gap-2.5">
-                                                <span className={`w-2 h-2 rounded-full ${form.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" : "bg-slate-300"}`} />
-                                                {form.status}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <h3 className="text-2xl font-[900] text-slate-900 tracking-tight leading-tight mb-4 group-hover:text-[var(--primary)] transition-colors line-clamp-2">
-                                        {form.formName}
-                                    </h3>
+                                <Link key={form.id} href={`/forms/detail/${form.id}`} className="group relative block">
+                                    {/* Subtle Radial Glow */}
+                                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-[80px] group-hover:bg-indigo-500/10 transition-all duration-700" />
                                     
-                                    <div className="flex items-center gap-6 text-slate-400 text-[11px] font-[800] uppercase tracking-widest pl-1" suppressHydrationWarning={true}>
-                                        <div className="flex items-center gap-2.5">
-                                            <Calendar size={15} strokeWidth={2.5} className="text-slate-300" />
-                                            {mounted ? new Date(form.createdAt).toLocaleDateString() : "---"}
-                                        </div>
-                                        {form.activeVersion != null && (
-                                             <div className="flex items-center gap-2.5">
-                                                <GitBranch size={15} strokeWidth={2.5} className="text-slate-300" />
-                                                v{form.activeVersion}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Premium Action Area */}
-                                <div className="px-9 pb-9 space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <Link
-                                            href={`/forms/edit/${form.id}`}
-                                            className="flex items-center justify-center gap-2.5 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] transition-all shadow-lg active:scale-95"
-                                        >
-                                            <FileText size={16} strokeWidth={3} /> Edit
-                                        </Link>
+                                    {/* Main Card Container */}
+                                    <div className="relative flex flex-col justify-between h-64 p-10 bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-[40px] shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-700 cursor-pointer overflow-hidden group">
                                         
-                                        {form.status === "PUBLISHED" ? (
-                                            <Link
-                                                href={`/forms/data/${form.id}`}
-                                                className="flex items-center justify-center gap-2.5 py-4 bg-white text-emerald-600 border-2 border-emerald-50 rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-emerald-100 hover:border-emerald-100 transition-all active:scale-95 shadow-sm"
-                                            >
-                                                <ArrowUpRight size={16} strokeWidth={3} /> Data
-                                            </Link>
-                                        ) : (
-                                            <button
-                                                onClick={() => handlePublish(form.id)}
-                                                disabled={publishingState[form.id]}
-                                                className="flex items-center justify-center gap-2.5 py-4 bg-[var(--primary-soft)] text-[var(--primary)] border-2 border-[#2463eb15] rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all disabled:opacity-50 active:scale-95"
-                                            >
-                                                {publishingState[form.id] ? (
-                                                    <RefreshCw size={16} className="animate-spin" />
-                                                ) : (
-                                                    <Rocket size={16} strokeWidth={3} />
-                                                )}
-                                                Publish
-                                            </button>
-                                        )}
-                                    </div>
+                                        <div className="relative">
+                                            <div className="flex justify-between items-center mb-8">
+                                                <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border transition-all duration-500 ${
+                                                    form.status === 'PUBLISHED' 
+                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.1)]' 
+                                                    : 'bg-slate-50 text-slate-400 border-slate-200'
+                                                }`}>
+                                                    <span className="flex items-center gap-2">
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${form.status === 'PUBLISHED' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                                                        {form.status}
+                                                    </span>
+                                                </div>
 
-                                    {/* Glass-styled Utility Row */}
-                                    <div className="flex items-center justify-between p-2.5 bg-slate-50/50 backdrop-blur-md rounded-2xl border border-white/80 shadow-inner">
-                                        <div className="flex items-center gap-2">
-                                            {form.status === "PUBLISHED" && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleCopyLink(form.id)}
-                                                        className={`p-3 rounded-xl transition-all ${copiedId === form.id ? "bg-[#2463eb] text-white shadow-lg shadow-[#2463eb44]" : "text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-md"}`}
-                                                        title="Copy URL"
-                                                    >
-                                                        {copiedId === form.id ? <Check size={18} strokeWidth={3} /> : <Copy size={18} strokeWidth={2.5} />}
-                                                    </button>
-                                                    <Link
-                                                        href={`/forms/${form.id}`}
-                                                        className="p-3 rounded-xl text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-md transition-all"
-                                                        title="Live Preview"
-                                                    >
-                                                        <ExternalLink size={18} strokeWidth={2.5} />
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleOpenApiModal(form)}
-                                                        className="p-3 rounded-xl text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-md transition-all"
-                                                        title="API Docs"
-                                                    >
-                                                        <Code size={18} strokeWidth={2.5} />
-                                                    </button>
-                                                </>
-                                            )}
-                                            <Link
-                                                href={`/forms/${form.id}/versions`}
-                                                className="p-3 rounded-xl text-slate-400 hover:bg-white hover:text-violet-600 hover:shadow-md transition-all"
-                                                title="History"
+                                                {form.activeVersionNumber != null && (
+                                                    <div className="flex items-center gap-2 text-indigo-400 font-black text-[9px] uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100 transition-opacity">
+                                                        <Layers size={12} strokeWidth={3} />
+                                                        v{form.activeVersionNumber}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <h3 
+                                                className="text-2xl md:text-3xl font-black text-slate-900 leading-[1.1] tracking-tighter group-hover:text-indigo-600 transition-all duration-500 line-clamp-2 break-words"
+                                                title={form.formName}
                                             >
-                                                <GitBranch size={18} strokeWidth={2.5} />
-                                            </Link>
+                                                {form.formName}
+                                            </h3>
                                         </div>
-                                        <button
-                                            onClick={() => handleDelete(form.id)}
-                                            className="p-3 rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all"
-                                            title="Archive Unit"
-                                        >
-                                            <Trash2 size={18} strokeWidth={2.5} />
-                                        </button>
+
+                                        <div className="relative flex items-center justify-between pt-6 border-t border-slate-50">
+                                            <div className="flex items-center gap-2.5 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em]" suppressHydrationWarning={true}>
+                                                <Calendar size={14} className="text-slate-300" />
+                                                {mounted ? new Date(form.createdAt).toLocaleDateString() : "---"}
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+                                                    Manage Hub
+                                                </span>
+                                                <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 shadow-xl shadow-indigo-200 group-hover:rotate-[360deg]">
+                                                    <ChevronRight size={18} strokeWidth={3} />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                </Link>
                         ))}
                     </div>
                 ) : (
@@ -533,13 +500,13 @@ export default function FormVaultPage() {
                             ) : (
                                 <div className="space-y-5">
                                     {deletedForms.map(form => (
-                                        <div key={form.id} className="flex items-center justify-between p-7 bg-slate-50 border border-slate-200 rounded-[2rem] group hover:border-[var(--primary)] hover:bg-white transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/40">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-[var(--primary)] transition-colors shadow-inner">
+                                        <div key={form.id} className="flex items-center justify-between p-7 bg-slate-50 border border-slate-200 rounded-[2rem] group hover:border-[var(--primary)] hover:bg-white transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 gap-4">
+                                            <div className="flex items-center gap-5 min-w-0 flex-1">
+                                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-[var(--primary)] transition-colors shadow-inner shrink-0">
                                                     <FileText size={24} />
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-[900] text-slate-900 text-lg tracking-tight">{form.formName}</h4>
+                                                <div className="min-w-0 flex-1">
+                                                    <h4 className="font-[900] text-slate-900 text-lg tracking-tight truncate" title={form.formName}>{form.formName}</h4>
                                                     <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1" suppressHydrationWarning={true}>
                                                         Purged {mounted ? new Date(form.updatedAt).toLocaleDateString() : "---"}
                                                     </p>
@@ -547,7 +514,7 @@ export default function FormVaultPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleRestore(form.id)}
-                                                className="flex items-center gap-3 px-7 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] transition-all shadow-xl active:scale-95"
+                                                className="flex items-center gap-3 px-7 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-[900] uppercase tracking-widest hover:bg-[var(--primary)] transition-all shadow-xl active:scale-95 shrink-0"
                                             >
                                                 <RefreshCw size={16} strokeWidth={3} /> Restore
                                             </button>

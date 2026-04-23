@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
+                                "/api/v1/forms/*",
                                 "/api/v1/submissions"
                         )
                 )
@@ -57,9 +58,9 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
                         
                         // Public Form Rendering Endpoints (needed by the public form filler)
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/{id:[a-fA-F0-9-]+}").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/{id:[a-fA-F0-9-]+}/rules").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/{id:[a-fA-F0-9-]+}/lookup/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/*").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/*/rules").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/*/lookup/**").permitAll()
                         
                         // Public Submission Endpoints
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/submissions").permitAll()

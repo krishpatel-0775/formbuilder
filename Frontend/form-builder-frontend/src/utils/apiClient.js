@@ -46,7 +46,8 @@ apiClient.interceptors.response.use(
         
         // Handle 401 Unauthorized globally
         if (status === 401) {
-            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            const isAuthCheck = error.config?.url?.includes('/auth/me');
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login') && !isAuthCheck) {
                 window.location.href = '/login?expired=true';
                 return Promise.reject(error);
             }
@@ -59,8 +60,9 @@ apiClient.interceptors.response.use(
             error.message || 
             'An unexpected error occurred';
         
-        // Show SweetAlert2 popup for all other errors
-        if (typeof window !== 'undefined') {
+        // Show SweetAlert2 popup for all other errors (exclude 401s and auth checks)
+        const isAuthCheck = error.config?.url?.includes('/auth/me');
+        if (typeof window !== 'undefined' && !isAuthCheck && status !== 401) {
             Swal.fire({
                 icon: 'error',
                 title: status === 403 ? 'Access Denied' : 'Request Failed',
