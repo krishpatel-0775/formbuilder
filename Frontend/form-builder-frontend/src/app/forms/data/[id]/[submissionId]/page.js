@@ -159,7 +159,7 @@ export default function SubmissionDetailPage() {
 
                 <div className="p-10 space-y-1 transition-all">
                     {Object.entries(submission.data).map(([key, value]) => {
-                        const isFile = value && typeof value === 'string' && value.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+                        const isFile = submission.fieldTypes?.[key] === "file_upload";
                         
                         return (
                             <div key={key} className="group py-8 first:pt-0 last:pb-0">

@@ -16,4 +16,5 @@ public class SubmissionDetailDTO {
     private String status;
     private Map<String, Object> data;
     private Map<String, String> fieldLabels;
+    private Map<String, String> fieldTypes;
 }

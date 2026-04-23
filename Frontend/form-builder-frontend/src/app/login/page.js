@@ -5,8 +5,9 @@ import { useAuth } from "../../context/AuthContext";
 import { ENDPOINTS } from "../../config/apiConfig";
 import { ArrowRight, Loader2, Link as LinkIcon, ShieldAlert } from "lucide-react";
 import NextLink from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import apiClient from "../../utils/apiClient";
+import { useEffect } from "react";
 
 export default function LoginPage() {
     const [identifier, setIdentifier] = useState("");
@@ -15,6 +16,13 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const { refetchAuth } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (searchParams.get("expired") === "true") {
+            setError("Your session has expired. Please log in again.");
+        }
+    }, [searchParams]);
 
     const handleLogin = async (e) => {
         e.preventDefault();

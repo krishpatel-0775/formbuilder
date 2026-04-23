@@ -255,12 +255,21 @@ export default function FormDataPage() {
     <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Database className="text-indigo-600" size={20} />
-              <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">Manage Submissions</span>
+          <div className="flex items-center gap-5">
+            <button 
+              onClick={() => router.back()}
+              className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all active:scale-95 shadow-sm group"
+              title="Go back"
+            >
+              <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Database className="text-indigo-600" size={20} />
+                <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">Manage Submissions</span>
+              </div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Form Responses</h1>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Form Responses</h1>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">

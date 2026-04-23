@@ -30,6 +30,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
+import java.time.format.DateTimeFormatter;
+import java.sql.Timestamp;
+import java.sql.Time;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -241,7 +244,7 @@ public class FormService {
 
         int offset = page * size;
 
-        String condition = deletedOnly ? "is_deleted = true" : "is_deleted = false";
+        String condition = deletedOnly ? "is_deleted = true AND is_draft = false" : "is_deleted = false AND is_draft = false";
         StringBuilder queryBuilder = new StringBuilder("SELECT * FROM " + tableName + " WHERE " + condition);
         List<Object> queryParams = new ArrayList<>();
 
@@ -343,7 +346,45 @@ public class FormService {
             }
         }
 
-        String countCondition = deletedOnly ? "is_deleted = true" : "is_deleted = false";
+        // STEP: Format Date and Time fields for readability
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        for (Map<String, Object> row : dataList) {
+            for (FormField field : activeFields) {
+                String key = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
+                Object val = row.get(key);
+                if (val == null) continue;
+
+                try {
+                    if ("datetime".equals(field.getFieldType())) {
+                        if (val instanceof java.time.LocalDateTime ldt) row.put(key, ldt.format(dateTimeFormatter));
+                        else if (val instanceof Timestamp ts) row.put(key, ts.toLocalDateTime().format(dateTimeFormatter));
+                    } else if ("date".equals(field.getFieldType())) {
+                        if (val instanceof LocalDate ld) row.put(key, ld.format(dateFormatter));
+                        else if (val instanceof java.sql.Date sd) row.put(key, sd.toLocalDate().format(dateFormatter));
+                    } else if ("time".equals(field.getFieldType())) {
+                        if (val instanceof java.time.LocalTime lt) row.put(key, lt.format(timeFormatter));
+                        else if (val instanceof Time st) row.put(key, st.toLocalTime().format(timeFormatter));
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to format date/time field {}: {}", key, e.getMessage());
+                }
+            }
+            // Format standard created_at column
+            Object createdAt = row.get("created_at");
+            if (createdAt != null) {
+                try {
+                    if (createdAt instanceof java.time.LocalDateTime ldt) row.put("created_at", ldt.format(dateTimeFormatter));
+                    else if (createdAt instanceof Timestamp ts) row.put("created_at", ts.toLocalDateTime().format(dateTimeFormatter));
+                } catch (Exception e) {
+                    log.warn("Failed to format created_at: {}", e.getMessage());
+                }
+            }
+        }
+
+        String countCondition = deletedOnly ? "is_deleted = true AND is_draft = false" : "is_deleted = false AND is_draft = false";
         StringBuilder countQueryBuilder = new StringBuilder("SELECT COUNT(*) FROM " + tableName + " WHERE " + countCondition);
         List<Object> countParams = new ArrayList<>();
         if (versionId != null) {

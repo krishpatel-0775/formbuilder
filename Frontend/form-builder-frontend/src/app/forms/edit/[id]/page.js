@@ -12,6 +12,7 @@ import { GripVertical, AlertCircle, ArrowRight, Loader2, Save, MousePointer2, Sp
 import { ENDPOINTS } from "../../../../config/apiConfig";
 import Link from "next/link";
 import apiClient from "../../../../utils/apiClient";
+import Swal from "sweetalert2";
 
 // Components
 import { FieldIcons } from "../../../../components/builder/FieldConstants";
@@ -379,16 +380,34 @@ export default function EditFormPage() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
     } catch (err) {
-      alert(`❌ ${err.message}`);
+      console.error("Operation failed:", err);
     } finally {
       setIsPublishing(false);
     }
   };
 
   const saveForm = async () => {
-    if (!formName.trim()) return alert("Please name your form.");
+    if (!formName.trim()) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Missing Form Name',
+        text: 'Please provide a name for your form before saving.',
+        confirmButtonColor: '#4F46E5',
+        customClass: { popup: 'rounded-[32px]' }
+      });
+      return;
+    }
     const realFields = fields.filter(f => !isDisplayOnly(f.type));
-    if (realFields.length === 0) return alert("Add at least one input field.");
+    if (realFields.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Empty Form',
+        text: 'Please add at least one input field before saving.',
+        confirmButtonColor: '#4F46E5',
+        customClass: { popup: 'rounded-[32px]' }
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       const formattedFields = fields.map((field, idx) => {
@@ -500,15 +519,30 @@ export default function EditFormPage() {
         }, 1500);
       }
     } catch (err) {
-      alert(`❌ ${err.message}`);
-      // throw null;
+      console.error("Save error:", err);
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteForm = async () => {
-    if (!window.confirm("Are you sure you want to delete this form? This action cannot be undone and will preserve the dynamic table data.")) return;
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This action cannot be undone and will preserve the dynamic table data.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Yes, delete it!',
+      customClass: {
+        popup: 'rounded-[32px]',
+        confirmButton: 'rounded-2xl px-6 py-3 font-bold uppercase tracking-widest text-xs',
+        cancelButton: 'rounded-2xl px-6 py-3 font-bold uppercase tracking-widest text-xs'
+      }
+    });
+
+    if (!result.isConfirmed) return;
+    
     setIsSaving(true);
     try {
       const res = await apiClient.delete(`${ENDPOINTS.FORMS}/${id}`);
@@ -518,7 +552,7 @@ export default function EditFormPage() {
       setShowSuccess(true);
       setTimeout(() => { setShowSuccess(false); router.push("/forms/all"); }, 1000);
     } catch (err) {
-      alert(`❌ ${err.message}`);
+      console.error("Operation failed:", err);
     } finally {
       setIsSaving(false);
     }

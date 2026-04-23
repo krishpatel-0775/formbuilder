@@ -16,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.format.DateTimeFormatter;
+import java.sql.Timestamp;
+import java.sql.Time;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -124,9 +127,80 @@ public class SubmissionService {
                         f -> f.getFieldName() != null ? f.getFieldName() : "",
                         (existing, replacement) -> existing
                 ));
+
+        Map<String, String> fieldTypes = fields.stream()
+                .filter(f -> !isDisplayOnly(f.getFieldType()))
+                .collect(Collectors.toMap(
+                        f -> f.getFieldKey() != null ? f.getFieldKey() : f.getFieldName(),
+                        FormField::getFieldType,
+                        (existing, replacement) -> existing
+                ));
         
         // Remove internal columns from data
         rowData.keySet().retainAll(fieldLabels.keySet());
+
+        // Resolve Lookup UUIDs to Labels for Display
+        List<FormField> lookupFields = fields.stream()
+                .filter(f -> f.getSourceTable() != null && !f.getSourceTable().isBlank())
+                .collect(Collectors.toList());
+
+        for (FormField field : lookupFields) {
+            String col = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
+            Object val = rowData.get(col);
+            if (val == null) continue;
+
+            String sourceFormId = field.getSourceTable();
+            String sourceTable;
+            try {
+                Form sourceForm = formRepository.findById(UUID.fromString(sourceFormId)).orElse(null);
+                if (sourceForm == null) continue;
+                sourceTable = sourceForm.getTableName();
+            } catch (Exception e) { continue; }
+            
+            String sourceCol = field.getSourceColumn();
+            String[] ids = val.toString().split(",");
+            List<String> labels = new ArrayList<>();
+            
+            for (String idStr : ids) {
+                String trimmedId = idStr.trim();
+                if (trimmedId.isEmpty()) continue;
+                
+                try {
+                    String labelSql = "SELECT " + sourceCol + " FROM " + sourceTable + " WHERE id::text = ?";
+                    String label = jdbcTemplate.queryForObject(labelSql, String.class, trimmedId);
+                    labels.add(label != null ? label : trimmedId);
+                } catch (Exception e) {
+                    labels.add(trimmedId);
+                }
+            }
+            rowData.put(col, String.join(", ", labels));
+        }
+
+        // Format Date and Time fields for readability
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        for (FormField field : fields) {
+            String key = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
+            Object val = rowData.get(key);
+            if (val == null) continue;
+
+            try {
+                if ("datetime".equals(field.getFieldType())) {
+                    if (val instanceof java.time.LocalDateTime ldt) rowData.put(key, ldt.format(dateTimeFormatter));
+                    else if (val instanceof Timestamp ts) rowData.put(key, ts.toLocalDateTime().format(dateTimeFormatter));
+                } else if ("date".equals(field.getFieldType())) {
+                    if (val instanceof java.time.LocalDate ld) rowData.put(key, ld.format(dateFormatter));
+                    else if (val instanceof java.sql.Date sd) rowData.put(key, sd.toLocalDate().format(dateFormatter));
+                } else if ("time".equals(field.getFieldType())) {
+                    if (val instanceof java.time.LocalTime lt) rowData.put(key, lt.format(timeFormatter));
+                    else if (val instanceof Time st) rowData.put(key, st.toLocalTime().format(timeFormatter));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to format date/time field {} in detail view: {}", key, e.getMessage());
+            }
+        }
 
         return SubmissionDetailDTO.builder()
                 .id(responseId)
@@ -135,6 +209,7 @@ public class SubmissionService {
                 .status(meta.getStatus())
                 .data(rowData)
                 .fieldLabels(fieldLabels)
+                .fieldTypes(fieldTypes)
                 .build();
     }
 
