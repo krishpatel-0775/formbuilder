@@ -180,6 +180,9 @@ export default function PublicFormPage() {
 
   useEffect(() => {
     if (!id) return;
+    // Increment view count
+    apiClient.post(ENDPOINTS.incrementFormView(id)).catch(() => {});
+    
     apiClient.get(`${ENDPOINTS.FORMS}/${id}`)
       .then(async (res) => {
         const data = res.data.data;

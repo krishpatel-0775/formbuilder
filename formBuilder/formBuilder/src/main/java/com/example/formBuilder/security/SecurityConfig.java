@@ -47,6 +47,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
                                 "/api/v1/forms/*",
+                                "/api/v1/forms/*/view",
                                 "/api/v1/submissions"
                         )
                 )
@@ -61,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/*").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/*/rules").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/forms/*/lookup/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/forms/*/view").permitAll()
                         
                         // Public Submission Endpoints
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/submissions").permitAll()

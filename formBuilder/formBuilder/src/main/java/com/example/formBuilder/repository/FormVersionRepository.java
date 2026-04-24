@@ -13,6 +13,7 @@ import java.util.UUID;
 public interface FormVersionRepository extends JpaRepository<FormVersion, UUID> {
 
     List<FormVersion> findByForm_IdOrderByVersionNumberAsc(UUID formId);
+    List<FormVersion> findByForm_IdOrderByVersionNumberDesc(UUID formId);
 
     Optional<FormVersion> findFirstByForm_IdOrderByVersionNumberDesc(UUID formId);
 

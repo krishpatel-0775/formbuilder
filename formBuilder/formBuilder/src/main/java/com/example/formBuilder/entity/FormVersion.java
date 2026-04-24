@@ -40,6 +40,10 @@ public class FormVersion {
     @Column(name = "created_by")
     private String createdBy;
 
+    @Column(name = "views")
+    @Builder.Default
+    private Long views = 0L;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -55,6 +59,7 @@ public class FormVersion {
         if (updatedAt == null) updatedAt = LocalDateTime.now();
         if (isActive == null) isActive = false;
         if (isLatest == null) isLatest = false;
+        if (views == null) views = 0L;
     }
 
     @PreUpdate

@@ -23,5 +23,6 @@ public class FormVersionDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String rules;
+    private Long views;
     private List<FormFieldResponseDto> fields;
 }

@@ -19,7 +19,8 @@ import {
   Calendar,
   Zap,
   Archive,
-  Sparkles
+  Sparkles,
+  BarChart3
 } from 'lucide-react';
 import { ENDPOINTS, API_BASE_URL } from "../../../../config/apiConfig";
 import apiClient from "../../../../utils/apiClient";
@@ -273,13 +274,20 @@ const FormDetailHub = () => {
               </div>
             </section>
 
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <Link href={`/forms/edit/${id}`}>
                 <ActionCard 
                   icon={<LayoutDashboard size={32} />} 
                   title="Edit Form" 
                   desc="Visual drag-and-drop editor for forms." 
                   primary 
+                />
+              </Link>
+              <Link href={`/forms/analytics/${id}`}>
+                <ActionCard 
+                  icon={<BarChart3 size={32} />} 
+                  title="Analytics" 
+                  desc="Deep dive into submission trends & stats." 
                 />
               </Link>
               <Link href={`/forms/data/${id}`}>

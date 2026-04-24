@@ -42,6 +42,9 @@ public class Form {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Column(name = "views")
+    private long views = 0;
+
     @Enumerated(EnumType.STRING)
     private FormStatus status = FormStatus.DRAFT;
 

@@ -1,12 +1,7 @@
 package com.example.formBuilder.controller;
 
 import com.example.formBuilder.constants.AppConstants;
-import com.example.formBuilder.dto.ApiResponse;
-import com.example.formBuilder.dto.FormListDto;
-import com.example.formBuilder.dto.FormRequest;
-import com.example.formBuilder.dto.FormRuleDTO;
-import com.example.formBuilder.dto.FormResponseDto;
-import com.example.formBuilder.dto.UpdateFormRequest;
+import com.example.formBuilder.dto.*;
 import com.example.formBuilder.entity.Form;
 import com.example.formBuilder.service.FormService;
 import jakarta.validation.Valid;
@@ -123,6 +118,20 @@ public class FormController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> restoreForm(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(formService.restoreForm(id), null));
+    }
+
+    @GetMapping(AppConstants.API_FORM_ANALYTICS)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<FormAnalyticsDto>> getFormAnalytics(
+            @PathVariable UUID id,
+            @RequestParam(required = false) UUID versionId) {
+        return ResponseEntity.ok(ApiResponse.success(formService.getFormAnalytics(id, versionId)));
+    }
+
+    @PostMapping(AppConstants.API_FORM_VIEW)
+    public ResponseEntity<ApiResponse<String>> incrementViewCount(@PathVariable UUID id) {
+        formService.incrementViewCount(id);
+        return ResponseEntity.ok(ApiResponse.success("View counted", null));
     }
 
     @GetMapping("/{id}/export/csv")

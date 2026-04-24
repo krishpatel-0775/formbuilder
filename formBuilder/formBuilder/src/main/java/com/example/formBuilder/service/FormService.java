@@ -28,6 +28,10 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.DoubleSummaryStatistics;
+import com.example.formBuilder.entity.FormSubmissionMeta;
+import com.example.formBuilder.repository.FormSubmissionMetaRepository;
 
 import static com.example.formBuilder.enums.FormStatus.PUBLISHED;
 import java.time.format.DateTimeFormatter;
@@ -51,6 +55,7 @@ public class FormService {
     private final UserRepository userRepository;
     private final FormVersionRepository versionRepository;
     private final FormVersionService versionService;
+    private final FormSubmissionMetaRepository submissionMetaRepository;
 
     @Value("${app.limits.max-fields-per-form:50}")
     private int maxFields;
@@ -1034,5 +1039,165 @@ public class FormService {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    public FormAnalyticsDto getFormAnalytics(UUID formId, UUID versionId) {
+        Form form = getFormWithPermission(formId);
+        List<FormSubmissionMeta> metas = submissionMetaRepository.findByForm_IdOrderByCreatedAtDesc(formId);
+
+        // Fetch all versions for the dropdown
+        List<FormVersion> versions = versionRepository.findByForm_IdOrderByVersionNumberDesc(formId);
+        List<FormVersionDto> versionDtos = versions.stream()
+                .map(v -> FormVersionDto.builder()
+                        .id(v.getId())
+                        .versionNumber(v.getVersionNumber())
+                        .isActive(v.getIsActive())
+                        .isLatest(v.getIsLatest())
+                        .createdAt(v.getCreatedAt())
+                        .views(v.getViews())
+                        .build())
+                .collect(Collectors.toList());
+
+        // If no versionId provided, default to active version
+        if (versionId == null) {
+            versionId = versions.stream()
+                    .filter(FormVersion::getIsActive)
+                    .map(FormVersion::getId)
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        final UUID finalVersionId = versionId;
+
+        // Filter metas by version
+        List<FormSubmissionMeta> filteredMetas = metas;
+        if (finalVersionId != null) {
+            filteredMetas = metas.stream()
+                    .filter(m -> m.getFormVersion() != null && m.getFormVersion().getId().equals(finalVersionId))
+                    .collect(Collectors.toList());
+        }
+
+        long total = filteredMetas.size();
+        long drafts = filteredMetas.stream().filter(m -> "DRAFT".equals(m.getStatus())).count();
+        long submitted = total - drafts;
+
+        // Submission Trend (last 30 days) - based on filtered data
+        Map<LocalDate, Long> trendMap = filteredMetas.stream()
+                .filter(m -> m.getSubmittedAt() != null)
+                .collect(Collectors.groupingBy(
+                        m -> m.getSubmittedAt().toLocalDate(),
+                        Collectors.counting()
+                ));
+
+        List<Map<String, Object>> trend = trendMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> {
+                    Map<String, Object> point = new HashMap<>();
+                    point.put("date", e.getKey().toString());
+                    point.put("count", e.getValue());
+                    return point;
+                })
+                .collect(Collectors.toList());
+
+        long viewsToUse = 0;
+        List<FormField> fieldsToAnalyze;
+        if (finalVersionId != null) {
+            FormVersion selectedVersion = versionRepository.findById(finalVersionId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Form version not found with id: " + finalVersionId));
+            fieldsToAnalyze = selectedVersion.getFields().stream()
+                    .filter(f -> !f.getIsDeleted())
+                    .collect(Collectors.toList());
+            viewsToUse = selectedVersion.getViews() != null ? selectedVersion.getViews() : 0;
+        } else {
+            fieldsToAnalyze = getActiveFields(form);
+            viewsToUse = form.getViews();
+        }
+
+        String tableName = form.getTableName();
+        String sql = "SELECT * FROM " + tableName + " WHERE is_deleted = false AND is_draft = false";
+        if (finalVersionId != null) {
+            sql += " AND form_version_id = '" + finalVersionId + "'";
+        }
+        
+        List<Map<String, Object>> allData = jdbcTemplate.queryForList(sql);
+
+        List<FieldStatDto> fieldAnalytics = new ArrayList<>();
+
+        for (FormField field : fieldsToAnalyze) {
+            if (isDisplayOnly(field.getFieldType())) continue;
+
+            String key = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
+            String type = field.getFieldType();
+            
+            Map<String, Object> stats = new HashMap<>();
+            
+            if ("select".equals(type) || "radio".equals(type) || "checkbox".equals(type)) {
+                Map<String, Long> counts = allData.stream()
+                        .map(row -> row.get(key))
+                        .filter(Objects::nonNull)
+                        .flatMap(val -> {
+                            if (val instanceof String s && s.contains(",")) {
+                                return Arrays.stream(s.split(",")).map(String::trim);
+                            }
+                            return Stream.of(val.toString());
+                        })
+                        .collect(Collectors.groupingBy(v -> v, Collectors.counting()));
+                stats.put("distribution", counts);
+            } else if ("number".equals(type)) {
+                DoubleSummaryStatistics summary = allData.stream()
+                        .map(row -> row.get(key))
+                        .filter(Objects::nonNull)
+                        .mapToDouble(val -> {
+                            try {
+                                return Double.parseDouble(val.toString());
+                            } catch (Exception e) {
+                                return 0.0;
+                            }
+                        })
+                        .summaryStatistics();
+                
+                if (summary.getCount() > 0) {
+                    stats.put("avg", summary.getAverage());
+                    stats.put("min", summary.getMin());
+                    stats.put("max", summary.getMax());
+                    stats.put("count", summary.getCount());
+                }
+            } else {
+                long count = allData.stream().map(row -> row.get(key)).filter(Objects::nonNull).count();
+                stats.put("responseCount", count);
+            }
+
+            fieldAnalytics.add(FieldStatDto.builder()
+                    .fieldLabel(field.getFieldName())
+                    .fieldName(key)
+                    .fieldType(type)
+                    .stats(stats)
+                    .build());
+        }
+
+        return FormAnalyticsDto.builder()
+                .totalSubmissions(total)
+                .draftCount(drafts)
+                .submittedCount(submitted)
+                .totalViews(viewsToUse)
+                .engagementRate(viewsToUse > 0 ? ((double) submitted / viewsToUse) * 100 : 0)
+                .submissionTrend(trend)
+                .fieldAnalytics(fieldAnalytics)
+                .availableVersions(versionDtos)
+                .selectedVersionId(finalVersionId)
+                .build();
+    }
+
+    @Transactional
+    public void incrementViewCount(UUID formId) {
+        // Initialize views to 0 if they are NULL (for older records) before incrementing
+        jdbcTemplate.update("UPDATE form SET views = 0 WHERE id = ? AND views IS NULL", formId);
+        jdbcTemplate.update("UPDATE form_version SET views = 0 WHERE form_id = ? AND views IS NULL", formId);
+
+        // Increment form total views
+        jdbcTemplate.update("UPDATE form SET views = views + 1 WHERE id = ?", formId);
+        
+        // Increment active version views
+        jdbcTemplate.update("UPDATE form_version SET views = views + 1 WHERE form_id = ? AND is_active = true", formId);
     }
 }
