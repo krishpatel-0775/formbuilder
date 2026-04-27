@@ -44,14 +44,14 @@ export const AuthProvider = ({ children }) => {
         if (!user) return false;
         
         // Profiles and root/dashboard usually accessible to all authenticated users
-        if (path === "/" || path.startsWith("/profile") || path === "/docs" || path === "/dashboard") return true;
+        if (path.startsWith("/profile") || path === "/docs" || path === "/dashboard") return true;
         
         const permissions = user.permissions || [];
         
         // Multi-level checks for forms
         const hasFormsVaultAccess = permissions.includes("/forms/all");
         if (hasFormsVaultAccess) {
-            const protectedFormPaths = ["/forms/edit/", "/forms/data/", "/forms/create", "/forms/edit", "/forms/all"];
+            const protectedFormPaths = ["/forms/edit/", "/forms/data/", "/forms/create", "/forms/edit", "/forms/all", "/forms/analytics/", "/forms/detail/"];
             if (protectedFormPaths.some(bp => path.startsWith(bp)) || /^\/forms\/[a-f0-9-]+\/versions$/.test(path)) {
                 return true;
             }

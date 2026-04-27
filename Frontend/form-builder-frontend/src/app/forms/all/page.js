@@ -42,14 +42,18 @@ import apiClient from "../../../utils/apiClient";
 import Swal from "sweetalert2";
 
 export default function FormVaultPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, hasPermission } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (!authLoading && !user) {
-            router.push("/login");
+        if (!authLoading) {
+            if (!user) {
+                router.push("/login");
+            } else if (!hasPermission("/forms/all")) {
+                router.push("/dashboard");
+            }
         }
-    }, [user, authLoading, router]);
+    }, [user, authLoading, router, hasPermission]);
 
     const [forms, setForms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,6 +65,11 @@ export default function FormVaultPage() {
     const [showRestoreModal, setShowRestoreModal] = useState(false);
     const [deletedForms, setDeletedForms] = useState([]);
     const [fetchingDeleted, setFetchingDeleted] = useState(false);
+
+    // API Links Modal State
+    const [showApiModal, setShowApiModal] = useState(false);
+    const [selectedFormForLinks, setSelectedFormForLinks] = useState(null);
+    const [copiedLinkType, setCopiedLinkType] = useState(null); // 'metadata' | 'submission' | 'json'
 
     useEffect(() => {
         if (user) {
@@ -76,16 +85,6 @@ export default function FormVaultPage() {
             </div>
         );
     }
-    
-    // API Links Modal State
-    const [showApiModal, setShowApiModal] = useState(false);
-    const [selectedFormForLinks, setSelectedFormForLinks] = useState(null);
-    const [copiedLinkType, setCopiedLinkType] = useState(null); // 'metadata' | 'submission' | 'json'
-
-    useEffect(() => {
-        setMounted(true);
-        fetchForms();
-    }, []);
 
     const fetchForms = async () => {
         try {

@@ -46,7 +46,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
-                                "/api/v1/forms/*",
+                                "/api/v1/forms/*", // "/api/v1/forms/*/view"
                                 "/api/v1/forms/*/view",
                                 "/api/v1/submissions"
                         )

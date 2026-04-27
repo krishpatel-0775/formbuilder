@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -28,10 +28,11 @@ import Swal from "sweetalert2";
 
 import { useAuth } from "../../../../context/AuthContext";
 
-const FormDetailHub = () => {
-  const { user, loading: authLoading } = useAuth();
+export default function FormDetailHub() {
+  const { user, loading: authLoading, hasPermission } = useAuth();
   const { id } = useParams();
   const router = useRouter();
+  const pathname = usePathname();
 
   const [form, setForm] = useState(null);
   const [stats, setStats] = useState({ total: 0, lastResponse: "N/A", rate: "---" });
@@ -40,10 +41,14 @@ const FormDetailHub = () => {
   const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
+    if (!authLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (!hasPermission(pathname)) {
+        router.push("/dashboard");
+      }
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, pathname, hasPermission]);
 
   useEffect(() => {
     if (id && user) {
@@ -451,4 +456,3 @@ const ToggleRow = ({ label, active = false }) => (
   </div>
 );
 
-export default FormDetailHub;

@@ -62,7 +62,9 @@ apiClient.interceptors.response.use(
         
         // Show SweetAlert2 popup for all other errors (exclude 401s and auth checks)
         const isAuthCheck = error.config?.url?.includes('/auth/me');
-        if (typeof window !== 'undefined' && !isAuthCheck && status !== 401) {
+        const skipModal = error.config?.skipErrorModal;
+
+        if (typeof window !== 'undefined' && !isAuthCheck && status !== 401 && !skipModal) {
             Swal.fire({
                 icon: 'error',
                 title: status === 403 ? 'Access Denied' : 'Request Failed',

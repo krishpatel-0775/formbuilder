@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay,
 } from "@dnd-kit/core";
@@ -30,15 +30,20 @@ const isDisplayOnly = (type) => DISPLAY_ONLY_TYPES.has(type);
 // ─── Main EditFormPage ─────────────────────────────────────────────────────────
 export default function EditFormPage() {
   const { id } = useParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasPermission } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
+    if (!authLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (!hasPermission(pathname)) {
+        router.push("/dashboard");
+      }
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, pathname, hasPermission]);
 
   const userRole = "SYSTEM_ADMIN";
 
@@ -535,7 +540,13 @@ export default function EditFormPage() {
         }, 1500);
       }
     } catch (err) {
-      console.error("Save error:", err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: err.message || "An unexpected error occurred",
+        confirmButtonColor: '#4F46E5',
+        customClass: { popup: 'rounded-[32px]' }
+      });
     } finally {
       setIsSaving(false);
     }

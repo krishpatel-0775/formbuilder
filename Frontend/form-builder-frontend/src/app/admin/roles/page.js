@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Shield, X, Check, Search } from "lucide-react";
+import { Plus, Edit2, Shield, X, Check, Search, Trash2 } from "lucide-react";
 import { ENDPOINTS } from "../../../config/apiConfig";
 import apiClient from "../../../utils/apiClient";
 
@@ -55,6 +55,16 @@ export default function RolesPage() {
         } catch (err) { console.error("Error saving role:", err); }
     };
 
+    const handleDeleteRole = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this role? This might affect users assigned to it.")) return;
+        try {
+            const res = await apiClient.delete(`${ENDPOINTS.ROLES}/${id}`);
+            if (res.data.success) {
+                fetchRoles();
+            }
+        } catch (err) { console.error("Error deleting role:", err); }
+    };
+
     const openMapping = async (role) => {
         setSelectedRole(role);
         try {
@@ -101,9 +111,12 @@ export default function RolesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {roles.map(role => (
                     <div key={role.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-xl hover:shadow-2xl transition-all group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                             <button onClick={() => { setEditingRole(role); setFormData({ roleName: role.roleName, roleDescription: role.roleDescription }); setShowModal(true); }} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl transition-all">
                                 <Edit2 size={16} />
+                            </button>
+                            <button onClick={() => handleDeleteRole(role.id)} className="p-2 text-slate-400 hover:text-red-600 bg-slate-50 rounded-xl transition-all">
+                                <Trash2 size={16} />
                             </button>
                         </div>
                         <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110">

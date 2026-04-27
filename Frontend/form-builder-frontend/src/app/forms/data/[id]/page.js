@@ -1,8 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square, RotateCcw, LayoutPanelLeft } from "lucide-react";
+import { useAuth } from "../../../../context/AuthContext";
+import { Loader2, Download, Database, Inbox, ExternalLink, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileSpreadsheet, CheckSquare, Square, RotateCcw, LayoutPanelLeft } from "lucide-react";
 import Link from "next/link";
 import * as XLSX from "xlsx";
 import { ENDPOINTS, API_BASE_URL } from "../../../../config/apiConfig";
@@ -16,6 +17,19 @@ import apiClient from "../../../../utils/apiClient";
 export default function FormDataPage() {
   const { id } = useParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const { user, loading: authLoading, hasPermission } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (!hasPermission(pathname)) {
+        router.push("/dashboard");
+      }
+    }
+  }, [user, authLoading, router, pathname, hasPermission]);
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formStatus, setFormStatus] = useState("DRAFT");
@@ -226,6 +240,15 @@ export default function FormDataPage() {
       setRestoring(false);
     }
   };
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
+        <p className="text-slate-500 font-bold tracking-widest uppercase text-xs">Authenticating...</p>
+      </div>
+    );
+  }
 
   if (loading && data.length === 0) {
     return (

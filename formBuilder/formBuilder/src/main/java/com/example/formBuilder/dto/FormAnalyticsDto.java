@@ -19,7 +19,21 @@ public class FormAnalyticsDto {
     private long submittedCount;
     private long totalViews;
     private double engagementRate;
+
+    /** Percentage of sessions that led to a completed submission (submitted / (submitted + draft)) */
+    private double completionRate;
+
+    /** Average number of submissions per day over the trend window */
+    private double avgSubmissionsPerDay;
+
+    /** The calendar date with the highest number of submissions (ISO-8601 string) */
+    private String peakDay;
+
+    /** Number of submissions on the peak day */
+    private long peakCount;
+
     private List<Map<String, Object>> submissionTrend; // List of { date: "2023-01-01", count: 5 }
+    private List<Map<String, Object>> dayOfWeekTrend;  // List of { day: "Monday", count: 5 }
     private List<FieldStatDto> fieldAnalytics;
     private List<FormVersionDto> availableVersions;
     private UUID selectedVersionId;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import apiClient from "../utils/apiClient";
-import { ENDPOINTS } from "../config/apiConfig";
+import apiClient from "../../utils/apiClient";
+import { ENDPOINTS } from "../../config/apiConfig";
 
 export default function FormsPage() {
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertCircle, Send, ArrowLeft, Loader2, ChevronRight, ChevronLeft, CheckCircle2, RotateCcw } from "lucide-react";
 import Link from "next/link";
@@ -178,10 +178,19 @@ export default function PublicFormPage() {
   const [lastSavedData, setLastSavedData] = useState(null);
   const { user } = useAuth();
 
+  // Guard against React StrictMode double-mount firing the view increment twice.
+  // useRef value persists across the double remount, so the POST only fires once.
+  const viewCounted = useRef(false);
+
   useEffect(() => {
     if (!id) return;
-    // Increment view count
-    apiClient.post(ENDPOINTS.incrementFormView(id)).catch(() => {});
+
+    // Increment view count exactly once per page load.
+    // The ref guard prevents React StrictMode's double-invoke from counting twice.
+    if (!viewCounted.current) {
+      viewCounted.current = true;
+      apiClient.post(ENDPOINTS.incrementFormView(id)).catch(() => {});
+    }
     
     apiClient.get(`${ENDPOINTS.FORMS}/${id}`)
       .then(async (res) => {
@@ -605,7 +614,7 @@ export default function PublicFormPage() {
         formId: id, 
         versionId: formConfig.formVersionId, 
         values: submissionData 
-      });
+      }, { skipErrorModal: true });
 
       if (res.data.success) {
         setIsSubmitted(true);
@@ -616,24 +625,28 @@ export default function PublicFormPage() {
             router.push("/forms/all");
           }, 1200);
         }
+      } else {
+        // Handle validation errors from the normalized response
+        const errorData = res.data.error;
+        if (errorData?.errors && Object.keys(errorData.errors).length > 0) {
+          setErrors((prev) => ({ ...prev, ...errorData.errors }));
+          
+          if (errorData.errors["_FORM_ERROR_"]) {
+            setErrors((prev) => ({ ...prev, _ruleError: errorData.errors["_FORM_ERROR_"] }));
+          }
+          
+          const fieldError = Object.keys(errorData.errors).find(k => k !== "_FORM_ERROR_");
+          if (fieldError) {
+            const el = document.getElementById(`field-${fieldError}`);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        } else {
+          setErrors((prev) => ({ ...prev, _ruleError: [res.data.message || "Submission failed"] }));
+        }
       }
     } catch (err) {
-      const errorData = err.response?.data;
-      if (errorData?.errors && Object.keys(errorData.errors).length > 0) {
-        setErrors((prev) => ({ ...prev, ...errorData.errors }));
-        
-        if (errorData.errors["_FORM_ERROR_"]) {
-          setErrors((prev) => ({ ...prev, _ruleError: errorData.errors["_FORM_ERROR_"] }));
-        }
-        
-        const fieldError = Object.keys(errorData.errors).find(k => k !== "_FORM_ERROR_");
-        if (fieldError) {
-          const el = document.getElementById(`field-${fieldError}`);
-          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      } else {
-        setErrors((prev) => ({ ...prev, _ruleError: [err.message || "Submission failed"] }));
-      }
+      // This block is fallback, though apiClient currently resolves all errors
+      setErrors((prev) => ({ ...prev, _ruleError: [err.message || "Submission failed"] }));
     } finally {
       setIsSubmitting(false);
     }

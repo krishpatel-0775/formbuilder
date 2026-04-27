@@ -34,9 +34,10 @@ import { ENDPOINTS } from "../config/apiConfig";
 import apiClient from "../utils/apiClient";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 export default function BuilderPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, hasPermission } = useAuth();
     const router = useRouter();
 
     const userRole = "SYSTEM_ADMIN";
@@ -57,11 +58,20 @@ export default function BuilderPage() {
     const activeField = useMemo(() => fields.find((f) => f.id === activeFieldId), [fields, activeFieldId]);
     const activeSortField = useMemo(() => fields.find((f) => f.id === activeSortId), [fields, activeSortId]);
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
     useEffect(() => {
-        if (!authLoading && !user) {
-            router.push("/login");
+        if (!authLoading) {
+            if (!user) {
+                router.push("/login");
+            } else if (!hasPermission("/")) {
+                router.push("/dashboard");
+            }
         }
-    }, [user, authLoading, router]);
+    }, [user, authLoading, router, hasPermission]);
 
     useEffect(() => {
         if (user && ["select", "radio", "checkbox"].includes(activeField?.type)) {
@@ -116,11 +126,6 @@ export default function BuilderPage() {
             </div>
         );
     }
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    );
 
     const handleDragStart = (e, type) => e.dataTransfer.setData("fieldType", type);
 
@@ -257,10 +262,24 @@ export default function BuilderPage() {
 
     const saveForm = async () => {
         if (!formName.trim() || formName.trim().length < 3) {
-            return alert("Please give your form a name (at least 3 characters).");
+            return Swal.fire({
+                icon: 'info',
+                title: 'Missing Form Name',
+                text: 'Please give your form a name (at least 3 characters).',
+                confirmButtonColor: '#4F46E5',
+                customClass: { popup: 'rounded-[32px]' }
+            });
         }
         const realFields = fields.filter(f => !isDisplayOnly(f.type));
-        if (realFields.length === 0) return alert("Add at least one input field.");
+        if (realFields.length === 0) {
+            return Swal.fire({
+                icon: 'info',
+                title: 'Empty Form',
+                text: 'Add at least one input field.',
+                confirmButtonColor: '#4F46E5',
+                customClass: { popup: 'rounded-[32px]' }
+            });
+        }
         setIsPublishing(true);
         try {
             const formattedFields = fields.map((field, idx) => {
@@ -346,7 +365,13 @@ export default function BuilderPage() {
                 setIsDirty(false);
             }
         } catch (err) {
-            alert(`❌ ${err.response?.data?.message || err.message}`);
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: err.message || "An unexpected error occurred",
+                confirmButtonColor: '#4F46E5',
+                customClass: { popup: 'rounded-[32px]' }
+            });
         } finally {
             setIsPublishing(false);
         }

@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.OptionalDouble;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1081,24 +1082,59 @@ public class FormService {
         long drafts = filteredMetas.stream().filter(m -> "DRAFT".equals(m.getStatus())).count();
         long submitted = total - drafts;
 
-        // Submission Trend (last 30 days) - based on filtered data
+        // ── Completion rate: submitted / total (avoid divide-by-zero)
+        double completionRate = total > 0 ? ((double) submitted / total) * 100 : 0.0;
+
+        // ── Submission Trend: fill ALL 30 days (zero-padded)
+        LocalDate today = LocalDate.now();
+        LocalDate windowStart = today.minusDays(29); // last 30 days inclusive
+
         Map<LocalDate, Long> trendMap = filteredMetas.stream()
                 .filter(m -> m.getSubmittedAt() != null)
+                .filter(m -> !m.getSubmittedAt().toLocalDate().isBefore(windowStart))
                 .collect(Collectors.groupingBy(
                         m -> m.getSubmittedAt().toLocalDate(),
                         Collectors.counting()
                 ));
 
-        List<Map<String, Object>> trend = trendMap.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(e -> {
-                    Map<String, Object> point = new HashMap<>();
-                    point.put("date", e.getKey().toString());
-                    point.put("count", e.getValue());
-                    return point;
+        List<Map<String, Object>> trend = new ArrayList<>();
+        for (int i = 0; i < 30; i++) {
+            LocalDate day = windowStart.plusDays(i);
+            Map<String, Object> point = new HashMap<>();
+            point.put("date", day.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")));
+            point.put("count", trendMap.getOrDefault(day, 0L));
+            trend.add(point);
+        }
+
+        // ── Avg submissions per day (only non-zero days to avoid skewing)
+        double avgPerDay = trendMap.isEmpty() ? 0.0
+                : trendMap.values().stream().mapToLong(Long::longValue).average().orElse(0.0);
+
+        // ── Peak day
+        Map.Entry<LocalDate, Long> peakEntry = trendMap.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .orElse(null);
+        String peakDay = peakEntry != null ? peakEntry.getKey().toString() : null;
+        long peakCount = peakEntry != null ? peakEntry.getValue() : 0L;
+
+        // ── Day-of-week aggregation (use ALL submitted metas, not just 30-day window)
+        Map<java.time.DayOfWeek, Long> dowMap = filteredMetas.stream()
+                .filter(m -> m.getSubmittedAt() != null && "SUBMITTED".equals(m.getStatus()))
+                .collect(Collectors.groupingBy(
+                        m -> m.getSubmittedAt().getDayOfWeek(),
+                        Collectors.counting()
+                ));
+
+        List<Map<String, Object>> dayOfWeekTrend = java.util.Arrays.stream(java.time.DayOfWeek.values())
+                .map(dow -> {
+                    Map<String, Object> p = new HashMap<>();
+                    p.put("day", capitalize(dow.name()));
+                    p.put("count", dowMap.getOrDefault(dow, 0L));
+                    return p;
                 })
                 .collect(Collectors.toList());
 
+        // ── Views
         long viewsToUse = 0;
         List<FormField> fieldsToAnalyze;
         if (finalVersionId != null) {
@@ -1113,14 +1149,16 @@ public class FormService {
             viewsToUse = form.getViews();
         }
 
+        // ── Fetch all submitted row data
         String tableName = form.getTableName();
         String sql = "SELECT * FROM " + tableName + " WHERE is_deleted = false AND is_draft = false";
         if (finalVersionId != null) {
             sql += " AND form_version_id = '" + finalVersionId + "'";
         }
-        
         List<Map<String, Object>> allData = jdbcTemplate.queryForList(sql);
+        long totalRows = allData.size();
 
+        // ── Field-level analytics
         List<FieldStatDto> fieldAnalytics = new ArrayList<>();
 
         for (FormField field : fieldsToAnalyze) {
@@ -1128,49 +1166,144 @@ public class FormService {
 
             String key = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
             String type = field.getFieldType();
-            
+
+            // Compute fill rate across all submitted rows
+            long filledCount = allData.stream()
+                    .map(row -> row.get(key))
+                    .filter(val -> val != null && !val.toString().trim().isEmpty())
+                    .count();
+            double fillRate = totalRows > 0 ? ((double) filledCount / totalRows) * 100 : 0.0;
+
             Map<String, Object> stats = new HashMap<>();
-            
+            stats.put("totalResponses", filledCount);
+            stats.put("fillRate", Math.round(fillRate * 10.0) / 10.0); // 1 decimal
+
             if ("select".equals(type) || "radio".equals(type) || "checkbox".equals(type)) {
+                // Distribution map
                 Map<String, Long> counts = allData.stream()
                         .map(row -> row.get(key))
                         .filter(Objects::nonNull)
                         .flatMap(val -> {
                             if (val instanceof String s && s.contains(",")) {
-                                return Arrays.stream(s.split(",")).map(String::trim);
+                                return Arrays.stream(s.split(",")).map(String::trim).filter(v -> !v.isEmpty());
                             }
-                            return Stream.of(val.toString());
+                            String sv = val.toString().trim();
+                            return sv.isEmpty() ? Stream.empty() : Stream.of(sv);
                         })
                         .collect(Collectors.groupingBy(v -> v, Collectors.counting()));
                 stats.put("distribution", counts);
+
+                // Top-3 options
+                List<Map<String, Object>> topN = counts.entrySet().stream()
+                        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                        .limit(3)
+                        .map(e -> {
+                            Map<String, Object> m = new HashMap<>();
+                            m.put("option", e.getKey());
+                            m.put("count", e.getValue());
+                            return m;
+                        })
+                        .collect(Collectors.toList());
+                stats.put("topN", topN);
+
+                if (!counts.isEmpty()) {
+                    String mostCommon = counts.entrySet().stream()
+                            .max(Map.Entry.comparingByValue())
+                            .map(Map.Entry::getKey)
+                            .orElse(null);
+                    stats.put("mostCommon", mostCommon);
+                }
+
             } else if ("number".equals(type)) {
-                DoubleSummaryStatistics summary = allData.stream()
+                List<Double> numbers = allData.stream()
                         .map(row -> row.get(key))
                         .filter(Objects::nonNull)
-                        .mapToDouble(val -> {
-                            try {
-                                return Double.parseDouble(val.toString());
-                            } catch (Exception e) {
-                                return 0.0;
-                            }
+                        .map(val -> {
+                            try { return Double.parseDouble(val.toString()); }
+                            catch (Exception e) { return null; }
                         })
-                        .summaryStatistics();
-                
-                if (summary.getCount() > 0) {
-                    stats.put("avg", summary.getAverage());
+                        .filter(Objects::nonNull)
+                        .sorted()
+                        .collect(Collectors.toList());
+
+                if (!numbers.isEmpty()) {
+                    DoubleSummaryStatistics summary = numbers.stream()
+                            .mapToDouble(Double::doubleValue)
+                            .summaryStatistics();
+                    stats.put("avg", Math.round(summary.getAverage() * 100.0) / 100.0);
                     stats.put("min", summary.getMin());
                     stats.put("max", summary.getMax());
                     stats.put("count", summary.getCount());
+
+                    // Median
+                    int size = numbers.size();
+                    double median = size % 2 == 0
+                            ? (numbers.get(size / 2 - 1) + numbers.get(size / 2)) / 2.0
+                            : numbers.get(size / 2);
+                    stats.put("median", Math.round(median * 100.0) / 100.0);
+
+                    // Standard deviation
+                    double avg = summary.getAverage();
+                    double variance = numbers.stream()
+                            .mapToDouble(n -> Math.pow(n - avg, 2))
+                            .average()
+                            .orElse(0.0);
+                    stats.put("stdDev", Math.round(Math.sqrt(variance) * 100.0) / 100.0);
                 }
+
+            } else if ("date".equals(type) || "datetime".equals(type) || "time".equals(type)) {
+                List<String> dateValues = allData.stream()
+                        .map(row -> row.get(key))
+                        .filter(Objects::nonNull)
+                        .map(val -> val.toString().trim())
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
+
+                if (!dateValues.isEmpty()) {
+                    stats.put("earliest", dateValues.stream().min(String::compareTo).orElse(null));
+                    stats.put("latest", dateValues.stream().max(String::compareTo).orElse(null));
+
+                    // Most common date/time value
+                    String mostCommonDate = dateValues.stream()
+                            .collect(Collectors.groupingBy(v -> v, Collectors.counting()))
+                            .entrySet().stream()
+                            .max(Map.Entry.comparingByValue())
+                            .map(Map.Entry::getKey)
+                            .orElse(null);
+                    stats.put("mostCommonDate", mostCommonDate);
+
+                    long uniqueDates = dateValues.stream().distinct().count();
+                    stats.put("uniqueCount", uniqueDates);
+                }
+
             } else {
-                long count = allData.stream().map(row -> row.get(key)).filter(Objects::nonNull).count();
-                stats.put("responseCount", count);
+                // Text, email, textarea, tel, url, etc.
+                List<String> textValues = allData.stream()
+                        .map(row -> row.get(key))
+                        .filter(Objects::nonNull)
+                        .map(val -> val.toString().trim())
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
+
+                long uniqueCount = textValues.stream().distinct().count();
+                stats.put("uniqueCount", uniqueCount);
+
+                // Average length for text/textarea
+                if ("text".equals(type) || "textarea".equals(type)) {
+                    OptionalDouble avgLen = textValues.stream()
+                            .mapToInt(String::length)
+                            .average();
+                    if (avgLen.isPresent()) {
+                        stats.put("avgLength", Math.round(avgLen.getAsDouble() * 10.0) / 10.0);
+                    }
+                }
             }
 
             fieldAnalytics.add(FieldStatDto.builder()
                     .fieldLabel(field.getFieldName())
                     .fieldName(key)
                     .fieldType(type)
+                    .fillRate(Math.round(fillRate * 10.0) / 10.0)
                     .stats(stats)
                     .build());
         }
@@ -1181,12 +1314,24 @@ public class FormService {
                 .submittedCount(submitted)
                 .totalViews(viewsToUse)
                 .engagementRate(viewsToUse > 0 ? ((double) submitted / viewsToUse) * 100 : 0)
+                .completionRate(completionRate)
+                .avgSubmissionsPerDay(Math.round(avgPerDay * 10.0) / 10.0)
+                .peakDay(peakDay)
+                .peakCount(peakCount)
                 .submissionTrend(trend)
+                .dayOfWeekTrend(dayOfWeekTrend)
                 .fieldAnalytics(fieldAnalytics)
                 .availableVersions(versionDtos)
                 .selectedVersionId(finalVersionId)
                 .build();
     }
+
+    /** Capitalizes the first letter and lowercases the rest of a string. */
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.charAt(0) + s.substring(1).toLowerCase();
+    }
+
 
     @Transactional
     public void incrementViewCount(UUID formId) {
