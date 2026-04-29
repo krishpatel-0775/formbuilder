@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { 
   ChevronLeft, 
   Calendar, 
@@ -13,9 +13,13 @@ import {
   CheckCircle2, 
   Download,
   AlertCircle,
-  Loader2
+  Loader2,
+  FileSpreadsheet
 } from "lucide-react";
 import Link from "next/link";
+import jsPDF from "jspdf";
+import { toPng } from "html-to-image";
+import * as XLSX from "xlsx";
 import { ENDPOINTS, API_BASE_URL } from "../../../../../config/apiConfig";
 import apiClient from "../../../../../utils/apiClient";
 
@@ -31,6 +35,8 @@ export default function SubmissionDetailPage() {
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const detailRef = useRef(null);
 
   useEffect(() => {
     if (!id || !submissionId) return;
@@ -99,6 +105,71 @@ export default function SubmissionDetailPage() {
     minute: "2-digit",
     hour12: true
   });
+  
+  const handleExportCSV = () => {
+    const headers = ["Field Name", "Response"];
+    const metadata = [
+      ["Response ID", submissionId],
+      ["Submitted By", submission.submittedBy || "Anonymous"],
+      ["Submission Date", formattedDate],
+      ["Precise Time", formattedTime],
+      ["", ""]
+    ];
+    
+    const entryData = Object.entries(submission.data).map(([key, value]) => [
+      submission.fieldLabels[key] || key.replace(/_/g, " "),
+      value?.toString() || ""
+    ]);
+
+    const allRows = [...metadata, ...entryData];
+    
+    const ws = XLSX.utils.aoa_to_sheet(allRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Submission");
+    XLSX.writeFile(wb, `submission_${submissionId}.csv`);
+  };
+
+  const handleExportPDF = async () => {
+    if (!detailRef.current) return;
+    setExporting(true);
+    try {
+      const element = detailRef.current;
+      const imgData = await toPng(element, {
+        pixelRatio: 2,
+        backgroundColor: '#F8FAFC',
+        style: {
+          padding: '40px',
+        }
+      });
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`submission_${submissionId}.pdf`);
+    } catch (err) {
+      console.error("PDF Export Error:", err);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-indigo-100 italic-none">
@@ -139,7 +210,7 @@ export default function SubmissionDetailPage() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 p-6 md:p-10 lg:p-16">
+      <main className="flex-1 p-6 md:p-10 lg:p-16" ref={detailRef}>
         <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-10">
           
           {/* Main Data Section */}
@@ -253,9 +324,27 @@ export default function SubmissionDetailPage() {
                     <p className="text-sm font-medium text-slate-400 mb-10 leading-relaxed">
                         Download this individual response in PDF or High-Resolution CSV format.
                     </p>
-                    <button className="w-full bg-white text-slate-900 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-indigo-600 hover:text-white transition-all shadow-lg active:scale-95 mt-auto">
-                        Coming Soon
-                    </button>
+                    <div className="flex flex-col gap-3 mt-auto">
+                        <button 
+                            onClick={handleExportPDF}
+                            disabled={exporting}
+                            className="w-full bg-white text-slate-900 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-indigo-600 hover:text-white transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {exporting ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                <FileText size={16} />
+                            )}
+                            {exporting ? "Generating PDF..." : "Download PDF"}
+                        </button>
+                        <button 
+                            onClick={handleExportCSV}
+                            className="w-full bg-slate-800 text-white py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all border border-slate-700 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <FileSpreadsheet size={16} className="text-emerald-500" />
+                            Download CSV
+                        </button>
+                    </div>
                 </div>
             </div>
           </div>

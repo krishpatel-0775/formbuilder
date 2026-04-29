@@ -1003,7 +1003,8 @@ public class FormService {
             List<String> values = new ArrayList<>();
             for (FormField field : exportFields) {
                 try {
-                    Object val = rs.getObject(field.getFieldName());
+                    String colName = field.getFieldKey() != null ? field.getFieldKey() : field.getFieldName();
+                    Object val = rs.getObject(colName);
                     values.add(formatCsvValue(val));
                 } catch (Exception e) {
                     values.add("");
@@ -1080,6 +1081,26 @@ public class FormService {
 
         long total = filteredMetas.size();
         long submitted = filteredMetas.stream().filter(m -> "SUBMITTED".equals(m.getStatus())).count();
+
+        // ── Monthly Growth
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime startOfThisMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        java.time.LocalDateTime startOfLastMonth = startOfThisMonth.minusMonths(1);
+
+        long thisMonthCount = filteredMetas.stream()
+                .filter(m -> m.getCreatedAt() != null && (m.getCreatedAt().isAfter(startOfThisMonth) || m.getCreatedAt().isEqual(startOfThisMonth)))
+                .count();
+
+        long lastMonthCount = filteredMetas.stream()
+                .filter(m -> m.getCreatedAt() != null && m.getCreatedAt().isAfter(startOfLastMonth) && m.getCreatedAt().isBefore(startOfThisMonth))
+                .count();
+
+        double monthlyGrowth = 0;
+        if (lastMonthCount > 0) {
+            monthlyGrowth = ((double) (thisMonthCount - lastMonthCount) / lastMonthCount) * 100;
+        } else if (thisMonthCount > 0) {
+            monthlyGrowth = 100.0;
+        }
 
         // ── Submission Trend: fill ALL 30 days (zero-padded)
         LocalDate today = LocalDate.now();
@@ -1317,6 +1338,7 @@ public class FormService {
                 .fieldAnalytics(fieldAnalytics)
                 .availableVersions(versionDtos)
                 .selectedVersionId(finalVersionId)
+                .monthlyGrowth(monthlyGrowth)
                 .build();
     }
 

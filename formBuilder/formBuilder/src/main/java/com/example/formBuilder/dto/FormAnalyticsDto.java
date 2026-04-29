@@ -33,4 +33,5 @@ public class FormAnalyticsDto {
     private List<FieldStatDto> fieldAnalytics;
     private List<FormVersionDto> availableVersions;
     private UUID selectedVersionId;
+    private double monthlyGrowth;
 }

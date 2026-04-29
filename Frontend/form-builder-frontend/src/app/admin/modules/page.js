@@ -46,9 +46,15 @@ export default function ModulesPage() {
     const handleSave = async (e) => {
         e.preventDefault();
         try {
+            const payload = {
+                ...formData,
+                parentModule: formData.parentId ? { id: formData.parentId } : null,
+                subParentModule: formData.subParentId ? { id: formData.subParentId } : null
+            };
+            
             const res = editingModule 
-                ? await apiClient.put(`${ENDPOINTS.MODULES}/${editingModule.id}`, formData)
-                : await apiClient.post(ENDPOINTS.MODULES, formData);
+                ? await apiClient.put(`${ENDPOINTS.MODULES}/${editingModule.id}`, payload)
+                : await apiClient.post(ENDPOINTS.MODULES, payload);
             
             if (res.data.success) {
                 fetchModules();
@@ -100,8 +106,8 @@ export default function ModulesPage() {
             plugin: mod.plugin || "",
             controller: mod.controller || "",
             action: mod.action || "",
-            parentId: mod.parentId,
-            subParentId: mod.subParentId,
+            parentId: mod.parentModule?.id || null,
+            subParentId: mod.subParentModule?.id || null,
             iconCss: mod.iconCss || "",
             isParent: mod.isParent,
             isSubParent: mod.isSubParent,
@@ -297,11 +303,11 @@ export default function ModulesPage() {
                                                     setFormData({...formData, parentId: null, subParentId: null});
                                                     return;
                                                 }
-                                                const selectedModule = modules.find(m => m.id == selectedId);
+                                                const selectedModule = modules.find(m => m.id === selectedId);
                                                 if (selectedModule.isSubParent) {
                                                     setFormData({
                                                         ...formData, 
-                                                        parentId: selectedModule.parentId,
+                                                        parentId: selectedModule.parentModule?.id || null,
                                                         subParentId: selectedModule.id
                                                     });
                                                 } else {

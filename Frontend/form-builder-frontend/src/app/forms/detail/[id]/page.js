@@ -35,7 +35,7 @@ export default function FormDetailHub() {
   const pathname = usePathname();
 
   const [form, setForm] = useState(null);
-  const [stats, setStats] = useState({ total: 0, lastResponse: "N/A", rate: "---" });
+  const [stats, setStats] = useState({ total: 0, growth: 0, rate: "---" });
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -85,21 +85,13 @@ export default function FormDetailHub() {
 
   const fetchFormStats = async () => {
     try {
-      // We fetch the first page of data to get the total count
-      const res = await apiClient.get(`${ENDPOINTS.FORMS}/${id}/data`, { params: { size: 1 } });
+      const res = await apiClient.get(ENDPOINTS.formAnalytics(id));
       if (res.data.success) {
         const data = res.data.data;
-        const total = data.totalElements || 0;
-        let lastResponse = "N/A";
-        
-        if (data.content && data.content.length > 0) {
-           lastResponse = "Recent"; // We can improve this with actual timestamp logic if needed
-        }
-
         setStats({
-          total: total,
-          lastResponse: lastResponse,
-          rate: total > 0 ? "84.2%" : "0%" // Dummy engagement rate
+          total: data.submittedCount || 0,
+          growth: data.monthlyGrowth || 0,
+          rate: data.engagementRate ? `${data.engagementRate.toFixed(1)}%` : "0%"
         });
       }
     } catch (err) {
@@ -275,7 +267,10 @@ export default function FormDetailHub() {
               <div className="bg-white/40 backdrop-blur-md border border-white/80 p-8 rounded-[32px] shadow-sm max-w-sm">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Total Submissions</p>
                 <p className="text-3xl font-bold tracking-tight">{stats.total.toLocaleString()}</p>
-                <p className="text-xs font-medium text-indigo-600 mt-1">+0% this month</p>
+                <p className={`text-xs font-bold mt-1.5 flex items-center gap-1.5 ${stats.growth >= 0 ? 'text-indigo-600' : 'text-rose-500'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${stats.growth >= 0 ? 'bg-indigo-600' : 'bg-rose-500'}`} />
+                  {stats.growth >= 0 ? '+' : ''}{Math.round(stats.growth)}% this month
+                </p>
               </div>
             </section>
 

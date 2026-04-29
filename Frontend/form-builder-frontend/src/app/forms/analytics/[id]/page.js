@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -24,6 +24,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar, Cell, ReferenceLine,
 } from 'recharts';
+import jsPDF from 'jspdf';
+import { toPng } from 'html-to-image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ENDPOINTS } from "@/config/apiConfig";
 import apiClient from "@/utils/apiClient";
@@ -77,6 +79,8 @@ export default function FormAnalyticsPage() {
   const [versionLoading, setVersionLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const analyticsRef = useRef(null);
 
   useEffect(() => {
     if (!authLoading) {
@@ -122,6 +126,64 @@ export default function FormAnalyticsPage() {
   const handleVersionChange = (vId) => {
     setSelectedVersion(vId);
     fetchAnalytics(vId, true);
+  };
+
+  const handleExportPDF = async () => {
+    if (!analyticsRef.current) return;
+    setExporting(true);
+
+    try {
+      const element = analyticsRef.current;
+      
+      // Use html-to-image to capture the content
+      const imgData = await toPng(element, {
+        width: 1280,
+        pixelRatio: 2,
+        backgroundColor: "#f8fafc",
+        style: {
+          width: '1280px',
+          padding: '40px',
+          transform: 'scale(1)',
+        },
+        filter: (node) => {
+          // Hide elements with 'no-print' class
+          if (node.classList && node.classList.contains('no-print')) {
+            return false;
+          }
+          return true;
+        }
+      });
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pdfHeight;
+
+      // Add subsequent pages if content is longer than one page
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`form-analytics-${form?.formName?.replace(/\s+/g, '-').toLowerCase() || 'export'}.pdf`);
+    } catch (err) {
+      console.error("PDF Export Error:", err);
+      alert("Failed to export PDF. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (authLoading || loading) {
@@ -187,7 +249,8 @@ export default function FormAnalyticsPage() {
         <div className="absolute bottom-[10%] right-[20%] w-[400px] h-[400px] bg-violet-50/30 rounded-full blur-[80px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-12 space-y-14">
+      <div className="relative z-10 mx-auto px-6 pt-12 max-w-7xl">
+        <div className="space-y-14" ref={analyticsRef}>
 
         {/* ── Header ── */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -213,7 +276,7 @@ export default function FormAnalyticsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 bg-white/60 backdrop-blur-xl p-2 rounded-[24px] border border-white shadow-sm">
+            <div className="flex items-center gap-4 bg-white/60 backdrop-blur-xl p-2 rounded-[24px] border border-white shadow-sm no-print">
             {/* Version Dropdown */}
             <div className="relative group/select">
               <select
@@ -235,15 +298,25 @@ export default function FormAnalyticsPage() {
             </div>
 
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 px-8 py-4 bg-white rounded-[16px] font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all text-slate-600 shadow-sm border border-slate-100"
+              onClick={handleExportPDF}
+              disabled={exporting}
+              className="flex items-center gap-2 px-8 py-4 bg-white rounded-[16px] font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all text-slate-600 shadow-sm border border-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download size={18} /> Export PDF
+              {exporting ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> Generating...
+                </>
+              ) : (
+                <>
+                  <Download size={18} /> Export PDF
+                </>
+              )}
             </button>
           </div>
         </header>
 
-        {/* ── KPI Summary Row (4 cards) ── */}
+        <div className="space-y-14">
+          {/* KPI Summary Row */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
             title="Submissions"
@@ -474,7 +547,9 @@ export default function FormAnalyticsPage() {
         </section>
       </div>
     </div>
-  );
+  </div>
+</div>
+);
 }
 
 /** Single row in the fill-rate leaderboard */
