@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   BarChart3,
   Users,
-  Clock,
   Calendar,
   Loader2,
   TrendingUp,
@@ -15,7 +14,6 @@ import {
   AlertCircle,
   Send,
   ChevronDown,
-  CheckCircle2,
   Activity,
   Zap,
   Star,
@@ -245,8 +243,8 @@ export default function FormAnalyticsPage() {
           </div>
         </header>
 
-        {/* ── KPI Summary Row (6 cards) ── */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* ── KPI Summary Row (4 cards) ── */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
             title="Submissions"
             value={analytics.submittedCount}
@@ -266,21 +264,6 @@ export default function FormAnalyticsPage() {
             icon={TrendingUp}
             colorClass="bg-emerald-600"
             subtitle="views → submissions"
-          />
-          <SummaryCard
-            title="Draft Entries"
-            value={analytics.draftCount}
-            icon={Clock}
-            colorClass="bg-blue-600"
-            subtitle="incomplete sessions"
-          />
-          <SummaryCard
-            title="Completion"
-            value={`${analytics.completionRate?.toFixed(1)}%`}
-            icon={CheckCircle2}
-            colorClass="bg-violet-600"
-            subtitle="sessions completed"
-            trend={analytics.completionRate >= 70 ? 'up' : analytics.completionRate >= 40 ? 'neutral' : 'down'}
           />
           <SummaryCard
             title="Avg / Day"

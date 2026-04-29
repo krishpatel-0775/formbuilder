@@ -295,22 +295,22 @@ export default function FormVaultPage() {
                 ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                         {filteredForms.map(form => (
-                                <Link key={form.id} href={`/forms/detail/${form.id}`} className="group relative block">
+                                <div key={form.id} className="group relative block">
                                     {/* Subtle Radial Glow */}
-                                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-[80px] group-hover:bg-indigo-500/10 transition-all duration-700" />
+                                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-[80px] group-hover:bg-indigo-500/10 transition-all duration-700 pointer-events-none" />
                                     
                                     {/* Main Card Container */}
-                                    <div className="relative flex flex-col justify-between h-64 p-10 bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-[40px] shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-700 cursor-pointer overflow-hidden group">
+                                    <Link href={`/forms/detail/${form.id}`} className={`relative flex flex-col justify-between p-10 bg-white/80 backdrop-blur-xl border rounded-[40px] shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-700 cursor-pointer overflow-hidden ${form.status === 'DRAFT' ? 'h-72 border-amber-100 hover:border-amber-200' : 'h-64 border-slate-200/60'}`}>
                                         
                                         <div className="relative">
                                             <div className="flex justify-between items-center mb-8">
                                                 <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border transition-all duration-500 ${
                                                     form.status === 'PUBLISHED' 
                                                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.1)]' 
-                                                    : 'bg-slate-50 text-slate-400 border-slate-200'
+                                                    : 'bg-amber-50 text-amber-500 border-amber-100'
                                                 }`}>
                                                     <span className="flex items-center gap-2">
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${form.status === 'PUBLISHED' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${form.status === 'PUBLISHED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400 animate-pulse'}`} />
                                                         {form.status}
                                                     </span>
                                                 </div>
@@ -337,17 +337,38 @@ export default function FormVaultPage() {
                                                 {mounted ? new Date(form.createdAt).toLocaleDateString() : "---"}
                                             </div>
                                             
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
-                                                    Manage Hub
-                                                </span>
-                                                <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 shadow-xl shadow-indigo-200 group-hover:rotate-[360deg]">
-                                                    <ChevronRight size={18} strokeWidth={3} />
+                                            {form.status === 'PUBLISHED' && (
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+                                                        Manage Hub
+                                                    </span>
+                                                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 shadow-xl shadow-indigo-200 group-hover:rotate-[360deg]">
+                                                        <ChevronRight size={18} strokeWidth={3} />
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
-                                    </div>
-                                </Link>
+
+                                        {/* Publish CTA for DRAFT forms */}
+                                        {form.status === 'DRAFT' && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handlePublish(form.id);
+                                                }}
+                                                disabled={publishingState[form.id]}
+                                                className="mt-4 w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.02] active:scale-95 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                                            >
+                                                {publishingState[form.id] ? (
+                                                    <><RefreshCw size={14} className="animate-spin" /> Publishing...</>
+                                                ) : (
+                                                    <><Rocket size={14} /> Publish Form</>
+                                                )}
+                                            </button>
+                                        )}
+                                    </Link>
+                                </div>
                         ))}
                     </div>
                 ) : (

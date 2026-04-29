@@ -1079,11 +1079,7 @@ public class FormService {
         }
 
         long total = filteredMetas.size();
-        long drafts = filteredMetas.stream().filter(m -> "DRAFT".equals(m.getStatus())).count();
-        long submitted = total - drafts;
-
-        // ── Completion rate: submitted / total (avoid divide-by-zero)
-        double completionRate = total > 0 ? ((double) submitted / total) * 100 : 0.0;
+        long submitted = filteredMetas.stream().filter(m -> "SUBMITTED".equals(m.getStatus())).count();
 
         // ── Submission Trend: fill ALL 30 days (zero-padded)
         LocalDate today = LocalDate.now();
@@ -1310,11 +1306,9 @@ public class FormService {
 
         return FormAnalyticsDto.builder()
                 .totalSubmissions(total)
-                .draftCount(drafts)
                 .submittedCount(submitted)
                 .totalViews(viewsToUse)
                 .engagementRate(viewsToUse > 0 ? ((double) submitted / viewsToUse) * 100 : 0)
-                .completionRate(completionRate)
                 .avgSubmissionsPerDay(Math.round(avgPerDay * 10.0) / 10.0)
                 .peakDay(peakDay)
                 .peakCount(peakCount)

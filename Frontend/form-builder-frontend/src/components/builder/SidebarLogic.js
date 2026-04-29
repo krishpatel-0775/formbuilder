@@ -27,19 +27,9 @@ export function SidebarLogic({
     );
   }
 
-  const isFieldInCondition = (condition, name) => {
-    if (!condition) return false;
-    if (condition.field === name) return true;
-    if (condition.conditions && Array.isArray(condition.conditions)) {
-      return condition.conditions.some(c => isFieldInCondition(c, name));
-    }
-    return false;
-  };
-
   const isRuleRelevant = (rule) => {
-    const isTarget = rule.action?.targetField === fieldName;
-    const isSource = isFieldInCondition(rule.condition, fieldName);
-    return isTarget || isSource;
+    // A rule belongs only to its target field, not to fields used in conditions.
+    return rule.action?.targetField === fieldName;
   };
 
   // Partition rules into those relevant to this sidebar view and those that are not

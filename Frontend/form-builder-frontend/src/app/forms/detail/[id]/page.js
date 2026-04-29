@@ -330,7 +330,7 @@ export default function FormDetailHub() {
                     >
                       {copied ? <Check size={20} className="text-green-600" /> : <Copy size={20} className="text-indigo-600" />}
                     </button>
-                    <Link href={`/forms/${id}`} target="_blank" className="p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                    <Link href={`/forms/${id}`} className="p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
                       <ExternalLink size={20} className="text-indigo-600" />
                     </Link>
                   </div>

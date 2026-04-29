@@ -15,13 +15,9 @@ import java.util.UUID;
 @AllArgsConstructor
 public class FormAnalyticsDto {
     private long totalSubmissions;
-    private long draftCount;
     private long submittedCount;
     private long totalViews;
     private double engagementRate;
-
-    /** Percentage of sessions that led to a completed submission (submitted / (submitted + draft)) */
-    private double completionRate;
 
     /** Average number of submissions per day over the trend window */
     private double avgSubmissionsPerDay;
