@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -57,6 +60,8 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
         assignDefaultRole(savedUser);
+
+        log.info("SECURITY_EVENT: [REGISTER_SUCCESS] user={} reqId={}", savedUser.getUsername(), MDC.get("requestId"));
 
         return "User registered successfully";
     }
@@ -96,16 +101,21 @@ public class AuthService {
         user.setLastSessionId(session.getId());
         userRepository.save(user);
 
+        log.info("SECURITY_EVENT: [LOGIN_SUCCESS] user={} reqId={}", user.getUsername(), MDC.get("requestId"));
+
         return new LoginResponse(user.getId(), user.getUsername(), user.getEmail());
     }
 
     // ================= LOGOUT =================
     public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String username = SessionUtil.getCurrentUsername();
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
+
+        log.info("SECURITY_EVENT: [LOGOUT] user={} reqId={}", username, org.slf4j.MDC.get("requestId"));
 
         // 🔥 Remove cookie from browser
         Cookie cookie = new Cookie("JSESSIONID", null);

@@ -20,7 +20,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
-        log.error("Runtime exception caught: {}", ex.getMessage(), ex);
+        log.error("EXCEPTION: [RuntimeException] user={} reqId={} - {}", 
+                org.slf4j.MDC.get("user"), org.slf4j.MDC.get("requestId"), ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
@@ -96,6 +97,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        log.error("EXCEPTION: [UnhandledException] user={} reqId={} - {}", 
+                org.slf4j.MDC.get("user"), org.slf4j.MDC.get("requestId"), ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage()));

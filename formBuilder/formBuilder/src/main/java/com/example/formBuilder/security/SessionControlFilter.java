@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@Order(5)
 @RequiredArgsConstructor
 public class SessionControlFilter extends OncePerRequestFilter {
 
@@ -27,6 +29,7 @@ public class SessionControlFilter extends OncePerRequestFilter {
         String username = SessionUtil.getCurrentUsername();
 
         if (username != null && !"anonymousUser".equals(username)) {
+            org.slf4j.MDC.put("user", username);
             HttpSession session = request.getSession(false);
             
             if (session != null) {

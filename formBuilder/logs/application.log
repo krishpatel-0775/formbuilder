@@ -1,0 +1,694 @@
+2026-04-30 00:45:27.055 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 26908 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:45:27.056 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [User: ] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-04-30 00:45:27.057 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:45:27.724 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 00:45:27.796 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Finished Spring Data repository scanning in 70 ms. Found 10 JPA repository interfaces.
+2026-04-30 00:45:28.119 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat initialized with port 9090 (http)
+2026-04-30 00:45:28.124 [restartedMain] INFO  o.a.catalina.core.StandardService - [User: ] - Starting service [Tomcat]
+2026-04-30 00:45:28.124 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [User: ] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-30 00:45:28.241 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [User: ] - Initializing Spring embedded WebApplicationContext
+2026-04-30 00:45:28.241 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [User: ] - Root WebApplicationContext: initialization completed in 1180 ms
+2026-04-30 00:45:28.352 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [User: ] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 00:45:28.358 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [User: ] - HHH000026: Second-level cache disabled
+2026-04-30 00:45:28.382 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [User: ] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-30 00:45:28.385 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-2 - Starting...
+2026-04-30 00:45:28.597 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [User: ] - HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@48f51d40
+2026-04-30 00:45:28.597 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-2 - Start completed.
+2026-04-30 00:45:28.615 [restartedMain] WARN  org.hibernate.orm.deprecation - [User: ] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 00:45:28.617 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [User: ] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-30 00:45:29.194 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [User: ] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-30 00:45:29.415 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:45:29.858 [restartedMain] DEBUG c.e.f.security.SessionControlFilter - [User: ] - Filter 'sessionControlFilter' configured for use
+2026-04-30 00:45:30.370 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:45:31.346 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [User: ] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:45:32.454 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - [User: ] - LiveReload server is running on port 35729
+2026-04-30 00:45:32.501 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat started on port 9090 (http) with context path '/'
+2026-04-30 00:45:32.514 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 5.853 seconds (process running for 661.987)
+2026-04-30 00:45:32.542 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:45:32.620 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:45:32.755 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:45:32.805 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:45:32.833 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:45:32.833 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:45:32.836 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - [User: ] - Condition evaluation unchanged
+2026-04-30 00:45:36.060 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - [User: ] - Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
+2026-04-30 00:45:36.063 [Thread-7] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-30 00:45:36.091 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Graceful shutdown complete
+2026-04-30 00:45:36.098 [Thread-7] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:45:36.099 [Thread-7] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-2 - Shutdown initiated...
+2026-04-30 00:45:36.116 [Thread-7] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-2 - Shutdown completed.
+2026-04-30 00:45:36.369 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 26908 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:45:36.369 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [User: ] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-04-30 00:45:36.369 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:45:38.760 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 00:45:39.008 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Finished Spring Data repository scanning in 242 ms. Found 10 JPA repository interfaces.
+2026-04-30 00:45:39.544 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat initialized with port 9090 (http)
+2026-04-30 00:45:39.546 [restartedMain] INFO  o.a.catalina.core.StandardService - [User: ] - Starting service [Tomcat]
+2026-04-30 00:45:39.548 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [User: ] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-30 00:45:39.657 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [User: ] - Initializing Spring embedded WebApplicationContext
+2026-04-30 00:45:39.658 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [User: ] - Root WebApplicationContext: initialization completed in 3285 ms
+2026-04-30 00:45:39.855 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [User: ] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 00:45:39.861 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [User: ] - HHH000026: Second-level cache disabled
+2026-04-30 00:45:39.887 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [User: ] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-30 00:45:39.890 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-3 - Starting...
+2026-04-30 00:45:40.005 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [User: ] - HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@3666e7c6
+2026-04-30 00:45:40.007 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-3 - Start completed.
+2026-04-30 00:45:40.023 [restartedMain] WARN  org.hibernate.orm.deprecation - [User: ] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 00:45:40.027 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [User: ] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-3)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-30 00:45:40.885 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [User: ] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-30 00:45:41.176 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:45:41.580 [restartedMain] DEBUG c.e.f.security.SessionControlFilter - [User: ] - Filter 'sessionControlFilter' configured for use
+2026-04-30 00:45:41.583 [restartedMain] DEBUG c.e.f.security.ActivityLoggingFilter - [User: ] - Filter 'activityLoggingFilter' configured for use
+2026-04-30 00:45:42.481 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:45:43.264 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [User: ] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:45:44.211 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - [User: ] - LiveReload server is running on port 35729
+2026-04-30 00:45:44.285 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat started on port 9090 (http) with context path '/'
+2026-04-30 00:45:44.296 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 8.042 seconds (process running for 673.769)
+2026-04-30 00:45:44.313 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:45:44.368 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:45:44.491 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:45:44.531 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:45:44.557 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:45:44.557 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:45:44.560 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - [User: ] - Condition evaluation unchanged
+2026-04-30 00:45:48.840 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - [User: ] - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-04-30 00:45:48.843 [Thread-12] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-30 00:45:48.867 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Graceful shutdown complete
+2026-04-30 00:45:48.873 [Thread-12] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:45:48.875 [Thread-12] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-3 - Shutdown initiated...
+2026-04-30 00:45:48.888 [Thread-12] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-3 - Shutdown completed.
+2026-04-30 00:45:49.086 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 26908 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:45:49.086 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [User: ] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-04-30 00:45:49.087 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:45:49.703 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 00:45:49.777 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Finished Spring Data repository scanning in 72 ms. Found 10 JPA repository interfaces.
+2026-04-30 00:45:50.071 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat initialized with port 9090 (http)
+2026-04-30 00:45:50.073 [restartedMain] INFO  o.a.catalina.core.StandardService - [User: ] - Starting service [Tomcat]
+2026-04-30 00:45:50.074 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [User: ] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-30 00:45:50.116 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [User: ] - Initializing Spring embedded WebApplicationContext
+2026-04-30 00:45:50.116 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [User: ] - Root WebApplicationContext: initialization completed in 1026 ms
+2026-04-30 00:45:50.193 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [User: ] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 00:45:50.198 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [User: ] - HHH000026: Second-level cache disabled
+2026-04-30 00:45:50.213 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [User: ] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-30 00:45:50.214 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-4 - Starting...
+2026-04-30 00:45:50.315 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [User: ] - HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@e72e22e
+2026-04-30 00:45:50.315 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-4 - Start completed.
+2026-04-30 00:45:50.330 [restartedMain] WARN  org.hibernate.orm.deprecation - [User: ] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 00:45:50.333 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [User: ] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-4)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-30 00:45:50.800 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [User: ] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-30 00:45:51.058 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:45:51.436 [restartedMain] DEBUG c.e.f.security.SessionControlFilter - [User: ] - Filter 'sessionControlFilter' configured for use
+2026-04-30 00:45:51.437 [restartedMain] DEBUG c.e.f.security.ActivityLoggingFilter - [User: ] - Filter 'activityLoggingFilter' configured for use
+2026-04-30 00:45:52.873 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:45:53.717 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [User: ] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:45:54.680 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - [User: ] - LiveReload server is running on port 35729
+2026-04-30 00:45:54.726 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat started on port 9090 (http) with context path '/'
+2026-04-30 00:45:54.738 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 5.722 seconds (process running for 684.212)
+2026-04-30 00:45:54.790 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:45:54.875 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:45:54.997 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:45:55.042 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:45:55.072 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:45:55.072 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:45:55.073 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - [User: ] - Condition evaluation unchanged
+2026-04-30 00:46:50.292 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-30 00:46:50.305 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Graceful shutdown complete
+2026-04-30 00:46:50.309 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:46:50.310 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-4 - Shutdown initiated...
+2026-04-30 00:46:50.313 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-4 - Shutdown completed.
+2026-04-30 00:46:57.558 [background-preinit] INFO  o.h.validator.internal.util.Version - [User: ] - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-30 00:46:57.636 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 20388 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:46:57.636 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [User: ] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-04-30 00:46:57.637 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:46:57.704 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - [User: ] - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-04-30 00:46:57.705 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - [User: ] - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-04-30 00:46:59.234 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 00:46:59.396 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [User: ] - Finished Spring Data repository scanning in 144 ms. Found 10 JPA repository interfaces.
+2026-04-30 00:47:00.407 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat initialized with port 9090 (http)
+2026-04-30 00:47:00.424 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [User: ] - Initializing ProtocolHandler ["http-nio-9090"]
+2026-04-30 00:47:00.427 [restartedMain] INFO  o.a.catalina.core.StandardService - [User: ] - Starting service [Tomcat]
+2026-04-30 00:47:00.429 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [User: ] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-30 00:47:00.517 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [User: ] - Initializing Spring embedded WebApplicationContext
+2026-04-30 00:47:00.518 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [User: ] - Root WebApplicationContext: initialization completed in 2812 ms
+2026-04-30 00:47:00.754 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [User: ] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 00:47:00.830 [restartedMain] INFO  org.hibernate.Version - [User: ] - HHH000412: Hibernate ORM core version 6.6.42.Final
+2026-04-30 00:47:00.883 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [User: ] - HHH000026: Second-level cache disabled
+2026-04-30 00:47:01.538 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [User: ] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-30 00:47:01.611 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-1 - Starting...
+2026-04-30 00:47:02.020 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [User: ] - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@78eefc78
+2026-04-30 00:47:02.026 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-1 - Start completed.
+2026-04-30 00:47:02.095 [restartedMain] WARN  org.hibernate.orm.deprecation - [User: ] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 00:47:02.154 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [User: ] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-30 00:47:05.165 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [User: ] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-30 00:47:05.637 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:47:06.649 [restartedMain] DEBUG c.e.f.security.SessionControlFilter - [User: ] - Filter 'sessionControlFilter' configured for use
+2026-04-30 00:47:06.651 [restartedMain] DEBUG c.e.f.security.ActivityLoggingFilter - [User: ] - Filter 'activityLoggingFilter' configured for use
+2026-04-30 00:47:06.895 [restartedMain] INFO  o.s.d.j.r.query.QueryEnhancerFactory - [User: ] - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-30 00:47:08.519 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:47:09.447 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [User: ] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:47:10.762 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - [User: ] - LiveReload server is running on port 35729
+2026-04-30 00:47:10.810 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [User: ] - Starting ProtocolHandler ["http-nio-9090"]
+2026-04-30 00:47:10.853 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [User: ] - Tomcat started on port 9090 (http) with context path '/'
+2026-04-30 00:47:10.878 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 14.122 seconds (process running for 14.912)
+2026-04-30 00:47:11.072 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:47:11.299 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:47:11.416 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:47:11.472 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:47:11.499 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:47:11.500 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:47:18.952 [http-nio-9090-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [User: ] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 00:47:18.952 [http-nio-9090-exec-1] INFO  o.s.web.servlet.DispatcherServlet - [User: ] - Initializing Servlet 'dispatcherServlet'
+2026-04-30 00:47:18.955 [http-nio-9090-exec-1] INFO  o.s.web.servlet.DispatcherServlet - [User: ] - Completed initialization in 3 ms
+2026-04-30 00:47:19.045 [http-nio-9090-exec-1] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [OPTIONS /api/v1/auth/logout] status=200 duration=81ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=308bf4c8
+2026-04-30 00:47:19.308 [http-nio-9090-exec-2] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [POST /api/v1/auth/logout] status=200 duration=252ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=440a4b51
+2026-04-30 00:47:22.066 [http-nio-9090-exec-8] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [OPTIONS /api/v1/auth/login] status=200 duration=3ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=b507fa89
+2026-04-30 00:47:22.903 [http-nio-9090-exec-4] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [POST /api/v1/auth/login] status=200 duration=831ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=748f0c87
+2026-04-30 00:47:23.065 [http-nio-9090-exec-5] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/auth/me] status=200 duration=157ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=7ad19059
+2026-04-30 00:47:23.305 [http-nio-9090-exec-6] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms] status=200 duration=87ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=3d85cf0e
+2026-04-30 00:47:23.369 [http-nio-9090-exec-7] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms] status=200 duration=62ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=cbc10536
+2026-04-30 00:48:28.272 [http-nio-9090-exec-1] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [OPTIONS /api/v1/auth/logout] status=200 duration=3ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=c42d33bd
+2026-04-30 00:48:28.289 [http-nio-9090-exec-2] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [POST /api/v1/auth/logout] status=200 duration=13ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=1c94a42b
+2026-04-30 00:48:54.095 [http-nio-9090-exec-8] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [OPTIONS /api/v1/auth/login] status=200 duration=3ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=36726957
+2026-04-30 00:48:54.432 [http-nio-9090-exec-4] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [POST /api/v1/auth/login] status=200 duration=331ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=a753ec71
+2026-04-30 00:48:54.541 [http-nio-9090-exec-5] INFO  c.e.f.security.ActivityLoggingFilter - [User: krish] - Activity: [GET /api/v1/auth/me] status=200 duration=97ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=4cf224a3
+2026-04-30 00:48:54.744 [http-nio-9090-exec-6] INFO  c.e.f.security.ActivityLoggingFilter - [User: krish] - Activity: [GET /api/v1/forms] status=200 duration=31ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=41e3c8eb
+2026-04-30 00:48:54.765 [http-nio-9090-exec-7] INFO  c.e.f.security.ActivityLoggingFilter - [User: krish] - Activity: [GET /api/v1/forms] status=200 duration=19ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=d2ed62cf
+2026-04-30 00:49:19.273 [http-nio-9090-exec-9] INFO  c.e.f.security.ActivityLoggingFilter - [User: krish] - Activity: [GET /api/v1/forms] status=200 duration=22ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=71d2b6da
+2026-04-30 00:49:19.293 [http-nio-9090-exec-3] INFO  c.e.f.security.ActivityLoggingFilter - [User: krish] - Activity: [GET /api/v1/forms] status=200 duration=18ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=85f1c405
+2026-04-30 00:49:24.951 [http-nio-9090-exec-10] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [OPTIONS /api/v1/auth/login] status=200 duration=1ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=24701bc3
+2026-04-30 00:49:25.347 [http-nio-9090-exec-1] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [POST /api/v1/auth/login] status=200 duration=391ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=d0701a95
+2026-04-30 00:49:25.458 [http-nio-9090-exec-2] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/auth/me] status=200 duration=103ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=46d29b78
+2026-04-30 00:49:25.693 [http-nio-9090-exec-8] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms] status=200 duration=106ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=0e851598
+2026-04-30 00:49:25.745 [http-nio-9090-exec-4] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms] status=200 duration=50ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=6d663495
+2026-04-30 00:50:02.912 [http-nio-9090-exec-6] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms/eee22dbd-5470-441b-95cc-64b12ddee3ed] status=200 duration=124ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=027671fc
+2026-04-30 00:50:02.984 [http-nio-9090-exec-7] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms/eee22dbd-5470-441b-95cc-64b12ddee3ed] status=200 duration=70ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=8e0be52c
+2026-04-30 00:50:03.198 [http-nio-9090-exec-9] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms/eee22dbd-5470-441b-95cc-64b12ddee3ed/analytics] status=200 duration=235ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=d4535028
+2026-04-30 00:50:03.264 [http-nio-9090-exec-3] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/forms/eee22dbd-5470-441b-95cc-64b12ddee3ed/analytics] status=200 duration=65ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=ab81ec93
+2026-04-30 00:51:46.980 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - [User: ] - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2026-04-30 00:51:46.995 [Thread-6] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-30 00:51:46.999 [tomcat-shutdown] INFO  o.a.coyote.http11.Http11NioProtocol - [User: ] - Pausing ProtocolHandler ["http-nio-9090"]
+2026-04-30 00:51:47.035 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [User: ] - Graceful shutdown complete
+2026-04-30 00:51:47.036 [Thread-6] INFO  o.a.coyote.http11.Http11NioProtocol - [User: ] - Stopping ProtocolHandler ["http-nio-9090"]
+2026-04-30 00:51:47.052 [Thread-6] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [User: ] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:51:47.063 [Thread-6] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-1 - Shutdown initiated...
+2026-04-30 00:51:47.071 [Thread-6] INFO  com.zaxxer.hikari.HikariDataSource - [User: ] - HikariPool-1 - Shutdown completed.
+2026-04-30 00:51:47.477 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 20388 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:51:47.478 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:51:49.944 [restartedMain] WARN  org.hibernate.orm.deprecation - [User: ] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 00:51:51.639 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:51:52.064 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [User: ] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:51:52.663 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 5.341 seconds (process running for 296.697)
+2026-04-30 00:51:52.677 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:51:52.723 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:51:52.779 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:51:52.807 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:51:52.827 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:51:52.827 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:52:03.676 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 20388 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:52:03.677 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:52:04.525 [restartedMain] WARN  org.hibernate.orm.deprecation - [User: ] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 00:52:05.361 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:52:05.670 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [User: ] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:52:06.114 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 2.482 seconds (process running for 310.149)
+2026-04-30 00:52:06.132 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:52:06.181 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:52:06.254 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:52:06.292 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:52:06.315 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:52:06.315 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:52:51.530 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 22524 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:52:51.533 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:52:57.107 [restartedMain] WARN  org.hibernate.orm.deprecation - [User: ] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 00:53:05.971 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:53:07.273 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [User: ] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:53:09.291 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 18.579 seconds (process running for 19.32)
+2026-04-30 00:53:09.460 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:53:09.635 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:53:09.697 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:53:09.735 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:53:09.761 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:53:09.763 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:53:21.497 [http-nio-9090-exec-1] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [OPTIONS /api/v1/auth/logout] status=200 duration=95ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=24cdbacb
+2026-04-30 00:53:21.747 [http-nio-9090-exec-8] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [POST /api/v1/auth/logout] status=200 duration=238ms user=admin ip=0:0:0:0:0:0:0:1 reqId=31f7f21d
+2026-04-30 00:53:26.449 [http-nio-9090-exec-5] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [OPTIONS /api/v1/auth/login] status=200 duration=6ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=e8779d2a
+2026-04-30 00:53:27.214 [http-nio-9090-exec-7] INFO  c.e.f.security.ActivityLoggingFilter - [User: ] - Activity: [POST /api/v1/auth/login] status=200 duration=760ms user=anonymous ip=0:0:0:0:0:0:0:1 reqId=de8b3b43
+2026-04-30 00:53:27.379 [http-nio-9090-exec-6] INFO  c.e.f.security.ActivityLoggingFilter - [User: admin] - Activity: [GET /api/v1/auth/me] status=200 duration=159ms user=admin ip=0:0:0:0:0:0:0:1 reqId=01c736bd
+2026-04-30 00:56:15.305 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 22524 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:56:15.307 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:56:19.896 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:56:21.781 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 6.757 seconds (process running for 211.81)
+2026-04-30 00:56:21.806 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:56:21.891 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:56:22.001 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:56:22.062 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:56:22.096 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:56:22.097 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 00:56:53.188 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 00:56:53.190 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:57:01.814 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 00:57:04.049 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 11.858 seconds (process running for 12.641)
+2026-04-30 00:57:04.186 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 00:57:04.393 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 00:57:04.473 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 00:57:04.523 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 00:57:04.552 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 00:57:04.552 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 01:03:50.460 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:03:50.460 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:03:53.724 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 01:03:55.653 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 5.282 seconds (process running for 424.245)
+2026-04-30 01:03:55.706 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 01:03:55.785 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 01:03:55.936 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 01:03:55.996 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 01:03:56.049 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 01:03:56.050 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 01:04:02.576 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:04:02.576 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:04:05.315 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [User: ] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 01:04:07.260 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Started FormBuilderApplication in 4.754 seconds (process running for 435.852)
+2026-04-30 01:04:07.285 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - form_version schema initialized.
+2026-04-30 01:04:07.393 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - Form versioning schema and migration completed.
+2026-04-30 01:04:07.572 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 01:04:07.620 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 01:04:07.651 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 01:04:07.652 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [User: ] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 01:04:09.141 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:04:09.143 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:04:21.326 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:04:21.327 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:04:28.510 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:04:28.511 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:04:36.925 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:04:36.925 [restartedMain] INFO  c.e.f.FormBuilderApplication - [User: ] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:04:46.081 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:04:46.083 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [] [] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-04-30 01:04:46.084 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:04:47.498 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 01:04:47.623 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Finished Spring Data repository scanning in 120 ms. Found 10 JPA repository interfaces.
+2026-04-30 01:04:48.085 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [] [] - Tomcat initialized with port 9090 (http)
+2026-04-30 01:04:48.086 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [] [] - Initializing ProtocolHandler ["http-nio-9090"]
+2026-04-30 01:04:48.087 [restartedMain] INFO  o.a.catalina.core.StandardService - [] [] - Starting service [Tomcat]
+2026-04-30 01:04:48.088 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [] [] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-30 01:04:48.207 [restartedMain] INFO  o.a.c.c.C.[Tomcat-4].[localhost].[/] - [] [] - Initializing Spring embedded WebApplicationContext
+2026-04-30 01:04:48.212 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [] [] - Root WebApplicationContext: initialization completed in 2120 ms
+2026-04-30 01:04:48.419 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [] [] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 01:04:48.427 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [] [] - HHH000026: Second-level cache disabled
+2026-04-30 01:04:48.455 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [] [] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-30 01:04:48.457 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-8 - Starting...
+2026-04-30 01:04:48.599 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [] [] - HikariPool-8 - Added connection org.postgresql.jdbc.PgConnection@7b1d3a0e
+2026-04-30 01:04:48.600 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-8 - Start completed.
+2026-04-30 01:04:48.613 [restartedMain] WARN  org.hibernate.orm.deprecation - [] [] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 01:04:48.616 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [] [] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-8)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-30 01:04:49.195 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [] [] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-30 01:04:49.480 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [] [] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:04:49.654 [restartedMain] ERROR o.s.b.w.e.tomcat.TomcatStarter - [] [] - Error starting Tomcat context. Exception: org.springframework.beans.factory.BeanCreationException. Message: Error creating bean with name 'sessionControlFilter' defined in file [D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes\com\example\formBuilder\security\SessionControlFilter.class]: Failed to instantiate [com.example.formBuilder.security.SessionControlFilter]: Constructor threw exception
+2026-04-30 01:04:49.674 [restartedMain] INFO  o.a.catalina.core.StandardService - [] [] - Stopping service [Tomcat]
+2026-04-30 01:04:49.685 [restartedMain] WARN  o.a.c.loader.WebappClassLoaderBase - [] [] - The web application [ROOT] appears to have started a thread named [HikariPool-8:housekeeper] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+ java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:1758)
+ java.base/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1182)
+ java.base/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:899)
+ java.base/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+ java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+ java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+ java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-30 01:04:49.687 [restartedMain] WARN  o.a.c.loader.WebappClassLoaderBase - [] [] - The web application [ROOT] appears to have started a thread named [HikariPool-8:connection-adder] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base/sun.nio.ch.Net.poll(Native Method)
+ java.base/sun.nio.ch.NioSocketImpl.park(NioSocketImpl.java:191)
+ java.base/sun.nio.ch.NioSocketImpl.timedRead(NioSocketImpl.java:280)
+ java.base/sun.nio.ch.NioSocketImpl.implRead(NioSocketImpl.java:304)
+ java.base/sun.nio.ch.NioSocketImpl.read(NioSocketImpl.java:346)
+ java.base/sun.nio.ch.NioSocketImpl$1.read(NioSocketImpl.java:796)
+ java.base/java.net.Socket$SocketInputStream.read(Socket.java:1099)
+ org.postgresql.core.VisibleBufferedInputStream.readMore(VisibleBufferedInputStream.java:192)
+ org.postgresql.core.VisibleBufferedInputStream.ensureBytes(VisibleBufferedInputStream.java:159)
+ org.postgresql.core.VisibleBufferedInputStream.ensureBytes(VisibleBufferedInputStream.java:144)
+ org.postgresql.core.VisibleBufferedInputStream.read(VisibleBufferedInputStream.java:76)
+ org.postgresql.core.PGStream.receiveChar(PGStream.java:477)
+ org.postgresql.core.v3.ConnectionFactoryImpl.enableSSL(ConnectionFactoryImpl.java:627)
+ org.postgresql.core.v3.ConnectionFactoryImpl.tryConnect(ConnectionFactoryImpl.java:207)
+ org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:289)
+ org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:57)
+ org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:290)
+ org.postgresql.Driver.makeConnection(Driver.java:448)
+ org.postgresql.Driver.connect(Driver.java:298)
+ com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:144)
+ com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:370)
+ com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:207)
+ com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:488)
+ com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:752)
+ com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:731)
+ java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+ java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+ java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+ java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-30 01:04:49.692 [restartedMain] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - [] [] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Unable to start web server
+2026-04-30 01:04:49.693 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [] [] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:04:49.696 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-8 - Shutdown initiated...
+2026-04-30 01:04:49.829 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-8 - Shutdown completed.
+2026-04-30 01:04:49.841 [restartedMain] INFO  o.s.b.a.l.ConditionEvaluationReportLogger - [] [] - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-04-30 01:04:49.857 [restartedMain] ERROR o.s.boot.SpringApplication - [] [] - Application run failed
+org.springframework.context.ApplicationContextException: Unable to start web server
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:170)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:622)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.example.formBuilder.FormBuilderApplication.main(FormBuilderApplication.java:10)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+Caused by: org.springframework.boot.web.server.WebServerException: Unable to start embedded Tomcat
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:147)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.<init>(TomcatWebServer.java:107)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getTomcatWebServer(TomcatServletWebServerFactory.java:517)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getWebServer(TomcatServletWebServerFactory.java:219)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.createWebServer(ServletWebServerApplicationContext.java:193)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:167)
+	... 11 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'sessionControlFilter' defined in file [D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes\com\example\formBuilder\security\SessionControlFilter.class]: Failed to instantiate [com.example.formBuilder.security.SessionControlFilter]: Constructor threw exception
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:321)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:309)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1395)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1232)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:207)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:230)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addAsRegistrationBean(ServletContextInitializerBeans.java:184)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addAsRegistrationBean(ServletContextInitializerBeans.java:179)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addAdaptableBeans(ServletContextInitializerBeans.java:164)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.<init>(ServletContextInitializerBeans.java:96)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.getServletContextInitializerBeans(ServletWebServerApplicationContext.java:271)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.selfInitialize(ServletWebServerApplicationContext.java:245)
+	at org.springframework.boot.web.embedded.tomcat.TomcatStarter.onStartup(TomcatStarter.java:52)
+	at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4452)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1201)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1191)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:81)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:747)
+	at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:783)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1201)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1191)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:81)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:747)
+	at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:201)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.StandardService.startInternal(StandardService.java:410)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:868)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.startup.Tomcat.start(Tomcat.java:436)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:128)
+	... 16 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [com.example.formBuilder.security.SessionControlFilter]: Constructor threw exception
+	at org.springframework.beans.BeanUtils.instantiateClass(BeanUtils.java:223)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:146)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:318)
+	... 57 common frames omitted
+Caused by: java.lang.Error: Unresolved compilation problem: 
+	Order cannot be resolved to a type
+
+	at com.example.formBuilder.security.SessionControlFilter.<init>(SessionControlFilter.java:18)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.springframework.beans.BeanUtils.instantiateClass(BeanUtils.java:210)
+	... 59 common frames omitted
+2026-04-30 01:04:53.898 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - Starting FormBuilderApplication using Java 21.0.2 with PID 19656 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:04:53.899 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [] [] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-04-30 01:04:53.899 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:04:54.893 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 01:04:55.043 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Finished Spring Data repository scanning in 147 ms. Found 10 JPA repository interfaces.
+2026-04-30 01:04:55.526 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [] [] - Tomcat initialized with port 9090 (http)
+2026-04-30 01:04:55.528 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [] [] - Initializing ProtocolHandler ["http-nio-9090"]
+2026-04-30 01:04:55.529 [restartedMain] INFO  o.a.catalina.core.StandardService - [] [] - Starting service [Tomcat]
+2026-04-30 01:04:55.530 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [] [] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-30 01:04:55.650 [restartedMain] INFO  o.a.c.c.C.[Tomcat-5].[localhost].[/] - [] [] - Initializing Spring embedded WebApplicationContext
+2026-04-30 01:04:55.651 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [] [] - Root WebApplicationContext: initialization completed in 1747 ms
+2026-04-30 01:04:56.086 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [] [] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 01:04:56.095 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [] [] - HHH000026: Second-level cache disabled
+2026-04-30 01:04:56.120 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [] [] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-30 01:04:56.123 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-9 - Starting...
+2026-04-30 01:04:56.243 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [] [] - HikariPool-9 - Added connection org.postgresql.jdbc.PgConnection@af8146
+2026-04-30 01:04:56.243 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-9 - Start completed.
+2026-04-30 01:04:56.258 [restartedMain] WARN  org.hibernate.orm.deprecation - [] [] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 01:04:56.260 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [] [] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-9)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-30 01:04:56.868 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [] [] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-30 01:04:57.140 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [] [] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:04:57.311 [restartedMain] ERROR o.s.b.w.e.tomcat.TomcatStarter - [] [] - Error starting Tomcat context. Exception: org.springframework.beans.factory.BeanCreationException. Message: Error creating bean with name 'sessionControlFilter' defined in file [D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes\com\example\formBuilder\security\SessionControlFilter.class]: Failed to instantiate [com.example.formBuilder.security.SessionControlFilter]: Constructor threw exception
+2026-04-30 01:04:57.333 [restartedMain] INFO  o.a.catalina.core.StandardService - [] [] - Stopping service [Tomcat]
+2026-04-30 01:04:57.348 [restartedMain] WARN  o.a.c.loader.WebappClassLoaderBase - [] [] - The web application [ROOT] appears to have started a thread named [HikariPool-9:housekeeper] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+ java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:1758)
+ java.base/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1182)
+ java.base/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:899)
+ java.base/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+ java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+ java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+ java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-30 01:04:57.350 [restartedMain] WARN  o.a.c.loader.WebappClassLoaderBase - [] [] - The web application [ROOT] appears to have started a thread named [HikariPool-9:connection-adder] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base/sun.nio.ch.Net.poll(Native Method)
+ java.base/sun.nio.ch.NioSocketImpl.park(NioSocketImpl.java:191)
+ java.base/sun.nio.ch.NioSocketImpl.timedRead(NioSocketImpl.java:280)
+ java.base/sun.nio.ch.NioSocketImpl.implRead(NioSocketImpl.java:304)
+ java.base/sun.nio.ch.NioSocketImpl.read(NioSocketImpl.java:346)
+ java.base/sun.nio.ch.NioSocketImpl$1.read(NioSocketImpl.java:796)
+ java.base/java.net.Socket$SocketInputStream.read(Socket.java:1099)
+ org.postgresql.core.VisibleBufferedInputStream.readMore(VisibleBufferedInputStream.java:192)
+ org.postgresql.core.VisibleBufferedInputStream.ensureBytes(VisibleBufferedInputStream.java:159)
+ org.postgresql.core.VisibleBufferedInputStream.ensureBytes(VisibleBufferedInputStream.java:144)
+ org.postgresql.core.VisibleBufferedInputStream.read(VisibleBufferedInputStream.java:76)
+ org.postgresql.core.PGStream.receiveChar(PGStream.java:477)
+ org.postgresql.core.v3.ConnectionFactoryImpl.enableSSL(ConnectionFactoryImpl.java:627)
+ org.postgresql.core.v3.ConnectionFactoryImpl.tryConnect(ConnectionFactoryImpl.java:207)
+ org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:289)
+ org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:57)
+ org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:290)
+ org.postgresql.Driver.makeConnection(Driver.java:448)
+ org.postgresql.Driver.connect(Driver.java:298)
+ com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:144)
+ com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:370)
+ com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:207)
+ com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:488)
+ com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:752)
+ com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:731)
+ java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+ java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+ java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+ java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-30 01:04:57.351 [restartedMain] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - [] [] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Unable to start web server
+2026-04-30 01:04:57.352 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [] [] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:04:57.354 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-9 - Shutdown initiated...
+2026-04-30 01:04:57.485 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-9 - Shutdown completed.
+2026-04-30 01:04:57.495 [restartedMain] INFO  o.s.b.a.l.ConditionEvaluationReportLogger - [] [] - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-04-30 01:04:57.503 [restartedMain] ERROR o.s.boot.SpringApplication - [] [] - Application run failed
+org.springframework.context.ApplicationContextException: Unable to start web server
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:170)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:622)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.example.formBuilder.FormBuilderApplication.main(FormBuilderApplication.java:10)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+Caused by: org.springframework.boot.web.server.WebServerException: Unable to start embedded Tomcat
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:147)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.<init>(TomcatWebServer.java:107)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getTomcatWebServer(TomcatServletWebServerFactory.java:517)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getWebServer(TomcatServletWebServerFactory.java:219)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.createWebServer(ServletWebServerApplicationContext.java:193)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:167)
+	... 11 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'sessionControlFilter' defined in file [D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes\com\example\formBuilder\security\SessionControlFilter.class]: Failed to instantiate [com.example.formBuilder.security.SessionControlFilter]: Constructor threw exception
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:321)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:309)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1395)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1232)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:207)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:230)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addAsRegistrationBean(ServletContextInitializerBeans.java:184)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addAsRegistrationBean(ServletContextInitializerBeans.java:179)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addAdaptableBeans(ServletContextInitializerBeans.java:164)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.<init>(ServletContextInitializerBeans.java:96)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.getServletContextInitializerBeans(ServletWebServerApplicationContext.java:271)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.selfInitialize(ServletWebServerApplicationContext.java:245)
+	at org.springframework.boot.web.embedded.tomcat.TomcatStarter.onStartup(TomcatStarter.java:52)
+	at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4452)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1201)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1191)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:81)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:747)
+	at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:783)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1201)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1191)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:81)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:747)
+	at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:201)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.StandardService.startInternal(StandardService.java:410)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:868)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.startup.Tomcat.start(Tomcat.java:436)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:128)
+	... 16 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [com.example.formBuilder.security.SessionControlFilter]: Constructor threw exception
+	at org.springframework.beans.BeanUtils.instantiateClass(BeanUtils.java:223)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:146)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:318)
+	... 57 common frames omitted
+Caused by: java.lang.Error: Unresolved compilation problem: 
+	Order cannot be resolved to a type
+
+	at com.example.formBuilder.security.SessionControlFilter.<init>(SessionControlFilter.java:18)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.springframework.beans.BeanUtils.instantiateClass(BeanUtils.java:210)
+	... 59 common frames omitted
+2026-04-30 01:05:38.573 [background-preinit] INFO  o.h.validator.internal.util.Version - [] [] - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-30 01:05:38.657 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - Starting FormBuilderApplication using Java 21.0.2 with PID 23224 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-04-30 01:05:38.657 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [] [] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-04-30 01:05:38.657 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:05:38.739 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - [] [] - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-04-30 01:05:38.739 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - [] [] - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-04-30 01:05:40.510 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 01:05:40.688 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Finished Spring Data repository scanning in 161 ms. Found 10 JPA repository interfaces.
+2026-04-30 01:05:41.746 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [] [] - Tomcat initialized with port 9090 (http)
+2026-04-30 01:05:41.768 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [] [] - Initializing ProtocolHandler ["http-nio-9090"]
+2026-04-30 01:05:41.773 [restartedMain] INFO  o.a.catalina.core.StandardService - [] [] - Starting service [Tomcat]
+2026-04-30 01:05:41.774 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [] [] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-30 01:05:41.856 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [] [] - Initializing Spring embedded WebApplicationContext
+2026-04-30 01:05:41.858 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [] [] - Root WebApplicationContext: initialization completed in 3117 ms
+2026-04-30 01:05:42.105 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [] [] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 01:05:42.211 [restartedMain] INFO  org.hibernate.Version - [] [] - HHH000412: Hibernate ORM core version 6.6.42.Final
+2026-04-30 01:05:42.263 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [] [] - HHH000026: Second-level cache disabled
+2026-04-30 01:05:42.657 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [] [] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-30 01:05:42.703 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-1 - Starting...
+2026-04-30 01:05:42.972 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [] [] - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@33f9d9fb
+2026-04-30 01:05:42.975 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-1 - Start completed.
+2026-04-30 01:05:43.035 [restartedMain] WARN  org.hibernate.orm.deprecation - [] [] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-30 01:05:43.069 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [] [] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-30 01:05:45.093 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [] [] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-30 01:05:45.467 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [] [] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:05:46.106 [restartedMain] DEBUG c.e.f.security.SessionControlFilter - [] [] - Filter 'sessionControlFilter' configured for use
+2026-04-30 01:05:46.106 [restartedMain] DEBUG c.e.formBuilder.security.MdcFilter - [] [] - Filter 'mdcFilter' configured for use
+2026-04-30 01:05:46.108 [restartedMain] DEBUG c.e.f.security.ActivityLoggingFilter - [] [] - Filter 'activityLoggingFilter' configured for use
+2026-04-30 01:05:46.293 [restartedMain] INFO  o.s.d.j.r.query.QueryEnhancerFactory - [] [] - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-30 01:05:47.364 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [] [] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-04-30 01:05:48.043 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [] [] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 01:05:49.117 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - [] [] - LiveReload server is running on port 35729
+2026-04-30 01:05:49.147 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [] [] - Starting ProtocolHandler ["http-nio-9090"]
+2026-04-30 01:05:49.182 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [] [] - Tomcat started on port 9090 (http) with context path '/'
+2026-04-30 01:05:49.199 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - Started FormBuilderApplication in 11.473 seconds (process running for 12.27)
+2026-04-30 01:05:49.318 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - ----------------------------------------------------------
+2026-04-30 01:05:49.318 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Application 'Form Builder' is running!
+2026-04-30 01:05:49.319 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Port:     9090
+2026-04-30 01:05:49.319 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Profiles: []
+2026-04-30 01:05:49.320 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Database: CONNECTED (postgresql)
+2026-04-30 01:05:49.349 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Startup:  11.59s
+2026-04-30 01:05:49.349 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - ----------------------------------------------------------
+2026-04-30 01:05:49.363 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - form_version schema initialized.
+2026-04-30 01:05:49.542 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - Form versioning schema and migration completed.
+2026-04-30 01:05:49.634 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-04-30 01:05:49.682 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] OK — form: 'test1'
+2026-04-30 01:05:49.712 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] OK — form: 'test2'
+2026-04-30 01:05:49.713 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] All published forms passed drift check.
+2026-04-30 01:06:25.799 [http-nio-9090-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [] [] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 01:06:25.799 [http-nio-9090-exec-1] INFO  o.s.web.servlet.DispatcherServlet - [] [] - Initializing Servlet 'dispatcherServlet'
+2026-04-30 01:06:25.805 [http-nio-9090-exec-1] INFO  o.s.web.servlet.DispatcherServlet - [] [] - Completed initialization in 6 ms
+2026-04-30 01:06:26.284 [http-nio-9090-exec-2] INFO  c.e.formBuilder.service.AuthService - [0b3f92e5] [admin] - SECURITY_EVENT: [LOGOUT] user=admin reqId=0b3f92e5
+2026-04-30 01:06:26.490 [http-nio-9090-exec-2] INFO  c.e.f.security.ActivityLoggingFilter - [0b3f92e5] [admin] - Activity: [POST /api/v1/auth/logout] status=200 duration=327ms user=admin reqId=0b3f92e5
+2026-04-30 01:06:51.133 [http-nio-9090-exec-6] INFO  c.e.formBuilder.service.AuthService - [e6810d2b] [] - SECURITY_EVENT: [LOGIN_SUCCESS] user=admin reqId=e6810d2b
+2026-04-30 01:06:51.144 [http-nio-9090-exec-6] INFO  c.e.f.security.ActivityLoggingFilter - [e6810d2b] [admin] - Activity: [POST /api/v1/auth/login] status=200 duration=828ms user=admin reqId=e6810d2b
+2026-04-30 01:06:51.327 [http-nio-9090-exec-4] INFO  c.e.f.security.ActivityLoggingFilter - [b031f78a] [admin] - Activity: [GET /api/v1/auth/me] status=200 duration=164ms user=admin reqId=b031f78a
+2026-04-30 01:09:15.268 [HikariPool-1:housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - [] [] - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m2s161ms263µs600ns).
+2026-04-30 01:09:35.518 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [] [] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-30 01:09:35.532 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - [] [] - Graceful shutdown complete
+2026-04-30 01:09:35.542 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [] [] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:09:35.549 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-1 - Shutdown initiated...
+2026-04-30 01:09:35.564 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-1 - Shutdown completed.
