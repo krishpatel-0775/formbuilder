@@ -22,7 +22,7 @@ public class ApplicationReadyListener implements ApplicationListener<Application
     }
 
     @Override
-    public void onApplicationEvent(ApplicationReadyEvent event) {
+    public void onApplicationEvent(ApplicationReadyEvent event) { 
         String port = environment.getProperty("server.port", "8080");
         String profiles = Arrays.toString(environment.getActiveProfiles());
         String dbUrl = environment.getProperty("spring.datasource.url");
