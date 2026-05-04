@@ -1,0 +1,70 @@
+2026-05-01 15:26:23.394 [background-preinit] INFO  o.h.validator.internal.util.Version - [] [] - HV000001: Hibernate Validator 8.0.3.Final
+2026-05-01 15:26:23.502 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - Starting FormBuilderApplication using Java 21.0.2 with PID 25088 (D:\projects\Form Builder Full App\formBuilder\formBuilder\target\classes started by mukes in D:\projects\Form Builder Full App\formBuilder)
+2026-05-01 15:26:23.503 [restartedMain] DEBUG c.e.f.FormBuilderApplication - [] [] - Running with Spring Boot v3.5.11, Spring v6.2.16
+2026-05-01 15:26:23.504 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - No active profile set, falling back to 1 default profile: "default"
+2026-05-01 15:26:23.568 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - [] [] - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-05-01 15:26:23.568 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - [] [] - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-05-01 15:26:29.466 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-01 15:26:29.890 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - [] [] - Finished Spring Data repository scanning in 371 ms. Found 10 JPA repository interfaces.
+2026-05-01 15:26:33.287 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [] [] - Tomcat initialized with port 9090 (http)
+2026-05-01 15:26:33.341 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [] [] - Initializing ProtocolHandler ["http-nio-9090"]
+2026-05-01 15:26:33.356 [restartedMain] INFO  o.a.catalina.core.StandardService - [] [] - Starting service [Tomcat]
+2026-05-01 15:26:33.357 [restartedMain] INFO  o.a.catalina.core.StandardEngine - [] [] - Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-05-01 15:26:33.735 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [] [] - Initializing Spring embedded WebApplicationContext
+2026-05-01 15:26:33.740 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - [] [] - Root WebApplicationContext: initialization completed in 10171 ms
+2026-05-01 15:26:34.703 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - [] [] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-01 15:26:35.729 [restartedMain] INFO  org.hibernate.Version - [] [] - HHH000412: Hibernate ORM core version 6.6.42.Final
+2026-05-01 15:26:36.561 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - [] [] - HHH000026: Second-level cache disabled
+2026-05-01 15:26:39.460 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - [] [] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-01 15:26:39.615 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-1 - Starting...
+2026-05-01 15:26:41.281 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - [] [] - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@595aba8c
+2026-05-01 15:26:41.287 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - [] [] - HikariPool-1 - Start completed.
+2026-05-01 15:26:41.606 [restartedMain] WARN  org.hibernate.orm.deprecation - [] [] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-01 15:26:41.690 [restartedMain] INFO  o.hibernate.orm.connections.pooling - [] [] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 18.1
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-01 15:26:50.343 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - [] [] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-01 15:26:52.536 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - [] [] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-01 15:26:54.899 [restartedMain] DEBUG c.e.f.security.SessionControlFilter - [] [] - Filter 'sessionControlFilter' configured for use
+2026-05-01 15:26:54.907 [restartedMain] DEBUG c.e.formBuilder.security.MdcFilter - [] [] - Filter 'mdcFilter' configured for use
+2026-05-01 15:26:54.925 [restartedMain] DEBUG c.e.f.security.ActivityLoggingFilter - [] [] - Filter 'activityLoggingFilter' configured for use
+2026-05-01 15:26:57.794 [restartedMain] INFO  o.s.d.j.r.query.QueryEnhancerFactory - [] [] - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-01 15:27:01.869 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - [] [] - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2026-05-01 15:27:03.621 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - [] [] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-01 15:27:08.013 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - [] [] - LiveReload server is running on port 35729
+2026-05-01 15:27:08.053 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - [] [] - Starting ProtocolHandler ["http-nio-9090"]
+2026-05-01 15:27:08.114 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - [] [] - Tomcat started on port 9090 (http) with context path '/'
+2026-05-01 15:27:08.132 [restartedMain] INFO  c.e.f.FormBuilderApplication - [] [] - Started FormBuilderApplication in 45.864 seconds (process running for 46.913)
+2026-05-01 15:27:08.320 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - ----------------------------------------------------------
+2026-05-01 15:27:08.320 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Application 'Form Builder' is running!
+2026-05-01 15:27:08.321 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Port:     9090
+2026-05-01 15:27:08.321 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Profiles: []
+2026-05-01 15:27:08.321 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Database: CONNECTED (postgresql)
+2026-05-01 15:27:08.322 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - Startup:  46.05s
+2026-05-01 15:27:08.323 [restartedMain] INFO  c.e.f.c.ApplicationReadyListener - [] [] - ----------------------------------------------------------
+2026-05-01 15:27:08.345 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - form_version schema initialized.
+2026-05-01 15:27:08.608 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - Form versioning schema and migration completed.
+2026-05-01 15:27:08.722 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] Checking 2 published form(s) for schema drift...
+2026-05-01 15:27:08.805 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] OK — form: 'test1'
+2026-05-01 15:27:08.848 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] OK — form: 'test2'
+2026-05-01 15:27:08.849 [restartedMain] INFO  c.e.f.c.FormVersionMigrationRunner - [] [] - [SchemaDrift] All published forms passed drift check.
+2026-05-01 15:27:51.006 [http-nio-9090-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - [] [] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-01 15:27:51.007 [http-nio-9090-exec-1] INFO  o.s.web.servlet.DispatcherServlet - [] [] - Initializing Servlet 'dispatcherServlet'
+2026-05-01 15:27:51.014 [http-nio-9090-exec-1] INFO  o.s.web.servlet.DispatcherServlet - [] [] - Completed initialization in 5 ms
+2026-05-01 15:27:57.453 [http-nio-9090-exec-5] INFO  c.e.formBuilder.service.AuthService - [ebdeac60] [] - SECURITY_EVENT: [LOGIN_SUCCESS] user=admin reqId=ebdeac60
+2026-05-01 15:27:57.583 [http-nio-9090-exec-5] WARN  c.e.f.security.ActivityLoggingFilter - [ebdeac60] [admin] - SLOW REQUEST - [POST /api/v1/auth/login] status=200 duration=1428ms user=admin reqId=ebdeac60
+2026-05-01 15:27:57.940 [http-nio-9090-exec-2] INFO  c.e.f.security.ActivityLoggingFilter - [7a6c4b03] [admin] - Activity: [GET /api/v1/auth/me] status=200 duration=336ms user=admin reqId=7a6c4b03
+2026-05-01 15:29:27.342 [http-nio-9090-exec-7] INFO  c.e.f.security.ActivityLoggingFilter - [ba0bba4b] [admin] - Activity: [POST /api/v1/forms/eee22dbd-5470-441b-95cc-64b12ddee3ed/view] status=200 duration=43ms user=admin reqId=ba0bba4b
+2026-05-01 15:29:27.420 [http-nio-9090-exec-8] INFO  c.e.f.service.SubmissionService - [403b4ec3] [admin] - Retrieving draft for form eee22dbd-5470-441b-95cc-64b12ddee3ed and user admin
+2026-05-01 15:29:27.466 [http-nio-9090-exec-6] INFO  c.e.f.service.SubmissionService - [ab1f07e3] [admin] - Retrieving draft for form eee22dbd-5470-441b-95cc-64b12ddee3ed and user admin
+2026-05-01 15:29:48.039 [http-nio-9090-exec-9] INFO  c.e.f.security.ActivityLoggingFilter - [8cd3c640] [admin] - Activity: [POST /api/v1/submissions/draft] status=200 duration=98ms user=admin reqId=8cd3c640
+2026-05-01 15:29:50.127 [http-nio-9090-exec-2] INFO  c.e.f.security.ActivityLoggingFilter - [0692b3c6] [admin] - Activity: [POST /api/v1/submissions] status=200 duration=79ms user=admin reqId=0692b3c6
+2026-05-01 15:29:50.419 [http-nio-9090-exec-3] INFO  c.e.f.security.ActivityLoggingFilter - [60d646be] [admin] - Activity: [POST /api/v1/submissions/draft] status=200 duration=116ms user=admin reqId=60d646be
+2026-05-01 15:33:33.448 [http-nio-9090-exec-7] INFO  c.e.f.security.ActivityLoggingFilter - [fe10f10e] [admin] - Activity: [GET /api/v1/auth/me] status=200 duration=90ms user=admin reqId=fe10f10e
+2026-05-01 15:45:29.444 [HikariPool-1:housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - [] [] - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m47s808ms531µs900ns).
+2026-05-01 17:17:37.211 [HikariPool-1:housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - [] [] - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h27m37s691ms612µs700ns).

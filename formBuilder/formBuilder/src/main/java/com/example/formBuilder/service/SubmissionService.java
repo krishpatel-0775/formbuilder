@@ -467,7 +467,7 @@ public class SubmissionService {
             StringBuilder updateSql = new StringBuilder("UPDATE " + tableName + " SET ");
             List<Object> updateValues = new ArrayList<>();
             for (String key : values.keySet()) {
-                if (fieldMap.containsKey(key)) {
+                if (fieldMap.containsKey(key) && !isDisplayOnly(fieldMap.get(key).getFieldType())) {
                     updateSql.append(key).append(" = ?, ");
                     updateValues.add(getSafeValue(fieldMap.get(key), values.get(key)));
                 }
@@ -481,7 +481,7 @@ public class SubmissionService {
             List<String> placeholders = new ArrayList<>();
             List<Object> params = new ArrayList<>();
             for (String key : values.keySet()) {
-                if (fieldMap.containsKey(key)) {
+                if (fieldMap.containsKey(key) && !isDisplayOnly(fieldMap.get(key).getFieldType())) {
                     cols.add(key);
                     placeholders.add("?");
                     params.add(getSafeValue(fieldMap.get(key), values.get(key)));
